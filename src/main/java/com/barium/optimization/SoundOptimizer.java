@@ -1,4 +1,4 @@
-package com.barium.client.optimization;
+package com.barium.optimization;
 
 import com.barium.BariumMod;
 import com.barium.config.BariumConfig;

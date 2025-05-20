@@ -1,6 +1,6 @@
-package com.barium.client.mixin;
+package com.barium.mixin;
 
-import com.barium.client.optimization.SoundOptimizer;
+import com.barium.optimization.SoundOptimizer;
 import net.minecraft.client.sound.SoundInstance;
 import net.minecraft.client.sound.SoundSystem;
 import net.minecraft.entity.player.PlayerEntity;

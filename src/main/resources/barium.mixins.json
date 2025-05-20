@@ -11,10 +11,10 @@
     "HopperBlockEntityMixin"
   ],
   "client": [
-    "com.barium.client.mixin.ParticleMixin",
-    "com.barium.client.mixin.SoundSystemMixin",
-    "com.barium.client.mixin.DebugHudMixin",
-    "com.barium.client.mixin.InGameHudMixin"
+    "ParticleMixin",
+    "SoundSystemMixin",
+    "DebugHudMixin",
+    "InGameHudMixin"
   ],
   "injectors": {
     "defaultRequire": 1

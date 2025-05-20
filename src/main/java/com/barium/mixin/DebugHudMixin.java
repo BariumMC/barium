@@ -1,6 +1,6 @@
-package com.barium.client.mixin;
+package com.barium.mixin;
 
-import com.barium.client.optimization.HudOptimizer;
+import com.barium.optimization.HudOptimizer;
 import net.minecraft.client.gui.hud.DebugHud;
 import net.minecraft.client.util.math.MatrixStack;
 import org.spongepowered.asm.mixin.Mixin;
