@@ -13,7 +13,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 @Mixin(HopperBlockEntity.class)
 public class HopperBlockEntityMixin {
     
-    @Inject(method = "tick", at = @At("HEAD"), cancellable = true)
+    @Inject(method = "tick(Lnet/minecraft/world/World;Lnet/minecraft/util/math/BlockPos;Lnet/minecraft/block/BlockState;Lnet/minecraft/block/entity/HopperBlockEntity;)V", at = @At("HEAD"), cancellable = true)
     private static void onTick(World world, BlockPos pos, BlockState state, HopperBlockEntity blockEntity, CallbackInfo ci) {
         if (!BlockTickOptimizer.shouldTickHopper(hopper, hopper.getPos())) {
             ci.cancel(); // cancela o tick
