@@ -9,7 +9,7 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 @Mixin(HopperBlockEntity.class)
-public class HopperBlockEntityMixin {
+public class BlockEntityMixin {
 
     @Inject(method = "tick", at = @At("HEAD"), cancellable = true)
     private static void onTick(net.minecraft.world.World world, net.minecraft.block.BlockPos pos, net.minecraft.block.BlockState state, HopperBlockEntity blockEntity, CallbackInfo ci) {
