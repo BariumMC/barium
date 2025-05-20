@@ -22,13 +22,12 @@ public class ParticleMixin {
         }
     }
     
-    @Inject(method = "shouldRender", at = @At("HEAD"), cancellable = true)
-    private void onShouldRender(Camera camera, CallbackInfoReturnable<Boolean> cir) {
+    @Inject(method = "render", at = @At("HEAD"), cancellable = true)
+    private void onRender(Camera camera, CallbackInfo ci) {
         Particle particle = (Particle)(Object)this;
         
-        // Verifica se a partícula deve ser renderizada
         if (!ParticleOptimizer.shouldRenderParticle(particle, camera)) {
-            cir.setReturnValue(false); // Não renderiza esta partícula
+            ci.cancel();
         }
     }
 }
