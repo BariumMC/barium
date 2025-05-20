@@ -14,13 +14,13 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 public class HopperBlockEntityMixin {
 
     @Inject(
-        method = "tick(Lnet/minecraft/world/World;Lnet/minecraft/util/math/BlockPos;Lnet/minecraft/block/BlockState;Lnet/minecraft/block/entity/HopperBlockEntity;)V",
+        method = "serverTick(Lnet/minecraft/world/World;Lnet/minecraft/util/math/BlockPos;Lnet/minecraft/block/BlockState;Lnet/minecraft/block/entity/HopperBlockEntity;)V",
         at = @At("HEAD"),
         cancellable = true
     )
-    private static void onTick(World world, BlockPos pos, BlockState state, HopperBlockEntity hopper, CallbackInfo ci) {
+    private static void onServerTick(World world, BlockPos pos, BlockState state, HopperBlockEntity hopper, CallbackInfo ci) {
         if (!BlockTickOptimizer.shouldTickHopper(hopper, pos)) {
-            ci.cancel();
+            ci.cancel(); // Cancela o tick do hopper
         }
     }
 }
