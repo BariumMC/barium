@@ -4,6 +4,7 @@ import com.barium.optimization.BlockTickOptimizer;
 import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.block.entity.HopperBlockEntity;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.world.level;
 import net.minecraft.block.BlockState;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
@@ -11,7 +12,7 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 @Mixin(HopperBlockEntity.class)
-public abstract class HopperBlockEntityMixin {
+public abstract class BlockEntityMixin {
 
     // Alvejando o método estático serverTick.
     // A assinatura completa inclui os tipos dos parâmetros.
