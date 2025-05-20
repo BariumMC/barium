@@ -1,0 +1,16 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "com.barium.mixin",
+  "compatibilityLevel": "JAVA_17",
+  "mixins": [
+    "EntityMixin",
+    "BlockEntityMixin",
+    "RedstoneWireMixin",
+    "ServerWorldMixin",
+    "HopperBlockEntityMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

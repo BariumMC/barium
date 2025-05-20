@@ -1,0 +1,14 @@
+{
+	"required": true,
+	"package": "com.barium.client.mixin",
+	"compatibilityLevel": "JAVA_21",
+	"client": [
+		"ParticleMixin",
+		"SoundSystemMixin",
+		"DebugHudMixin",
+		"InGameHudMixin"
+	],
+	"injectors": {
+		"defaultRequire": 1
+	}
+}
