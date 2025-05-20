@@ -3,36 +3,28 @@ package com.barium.mixin;
 import com.barium.optimization.BlockTickOptimizer;
 import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.block.entity.HopperBlockEntity;
+import net.minecraft.util.math.BlockPos
+import net.minecraft.block.BlockState;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-@Mixin(BlockEntity.class)
-public abstract class BlockEntityMixin {
+@Mixin(HopperBlockEntity.class)
+public abstract class HopperBlockEntityMixin {
 
-    // Injetando em um método de instância chamado "tick" que não recebe parâmetros e retorna void.
-    // Este Mixin pressupõe que BlockEntity tenha um método de instância "public void tick()".
+    // Alvejando o método estático serverTick.
+    // A assinatura completa inclui os tipos dos parâmetros.
+    // Lembre-se de usar os nomes de classe completos e corretos para seus mapeamentos.
     @Inject(
-        method = "tick",
-        desc = "()V",     // Descritor para: void tick()
+        method = "serverTick(Lnet/minecraft/world/level/Level;Lnet/minecraft/core/BlockPos;Lnet/minecraft/world/level/block/state/BlockState;Lnet/minecraft/world/level/block/entity/HopperBlockEntity;)V",
         at = @At("HEAD"),
-        cancellable = true,
-        require = 0       // Torna a injeção opcional; não falhará se o método não for encontrado.
-                          // Remova ou ajuste se o método alvo for garantido.
+        cancellable = true
+        // 'require = 0' pode ser adicionado aqui também se necessário.
     )
-    private void onTick(CallbackInfo ci) {
-        BlockEntity blockEntity = (BlockEntity) (Object) this;
-
-        if (blockEntity instanceof HopperBlockEntity) {
-            HopperBlockEntity hopper = (HopperBlockEntity) blockEntity;
-
-            // Supondo que BlockEntity tenha um método getBlockPos() ou similar.
-            // Ajuste conforme necessário para obter a posição da entidade de bloco.
-            if (!BlockTickOptimizer.shouldTickHopper(hopper, blockEntity.getBlockPos())) {
-                 ci.cancel();
-            }
+    private static void onHopperServerTick(Level level, BlockPos pos, BlockState state, HopperBlockEntity hopperEntity, CallbackInfo ci) {
+        if (!BlockTickOptimizer.shouldTickHopper(hopperEntity, pos)) {
+            ci.cancel();
         }
-        // Outras otimizações para diferentes tipos de BlockEntity podem ser adicionadas aqui.
     }
 }
