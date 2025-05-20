@@ -15,7 +15,7 @@ public class HopperBlockEntityMixin {
     
     @Inject(method = "tick", at = @At("HEAD"), cancellable = true)
     private static void onTick(World world, BlockPos pos, BlockState state, HopperBlockEntity blockEntity, CallbackInfo ci) {
-        if (!BlockTickOptimizer.shouldTickHopper(blockEntity, pos)) {
+        if (!BlockTickOptimizer.shouldTickHopper(hopper, hopper.getPos())) {
             ci.cancel(); // cancela o tick
         }
     }
