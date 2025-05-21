@@ -6,9 +6,8 @@
 		"particle.ParticleAccessor",
 		"particle.ParticleMixin",
 		"particle.ParticleManagerMixin",
-		"SoundSystemMixin",
-		"DebugHudMixin",
-		"InGameHudMixin"
+		"hud.DebugHudMixin",
+		"MinecraftClientMixin"
 	],
 	"injectors": {
 		"defaultRequire": 1
