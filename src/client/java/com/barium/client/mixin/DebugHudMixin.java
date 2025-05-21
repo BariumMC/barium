@@ -10,6 +10,10 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 @Mixin(DebugHud.class)
 public class DebugHudMixin {
+
+     static {
+        System.out.println("MixinHud aplicado com sucesso!");
+    }
     
     @Inject(method = "render", at = @At("HEAD"), cancellable = true)
     private void onRender(MatrixStack matrices, CallbackInfo ci) {

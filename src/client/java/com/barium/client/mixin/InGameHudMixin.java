@@ -10,6 +10,10 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 @Mixin(InGameHud.class)
 public class InGameHudMixin {
+
+     static {
+        System.out.println("MixinInGameHud aplicado com sucesso!");
+    }
     
     @Inject(method = "renderStatusEffectOverlay", at = @At("HEAD"), cancellable = true)
     private void onRenderStatusEffects(MatrixStack matrices, CallbackInfo ci) {

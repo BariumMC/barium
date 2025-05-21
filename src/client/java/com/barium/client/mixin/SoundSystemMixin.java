@@ -11,6 +11,10 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 @Mixin(SoundSystem.class)
 public class SoundSystemMixin {
+
+     static {
+        System.out.println("MixinSound aplicado com sucesso!");
+    }
     
     @Inject(method = "play", at = @At("HEAD"), cancellable = true)
     private void onPlay(SoundInstance sound, CallbackInfo ci) {
