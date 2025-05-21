@@ -5,7 +5,7 @@
   "name": "Barium",
   "description": "Mod de otimização para Minecraft",
   "authors": [
-    "Barium MC"
+    "PedrixzZ"
   ],
   "contact": {
     "homepage": "https://github.com/bariumteam/barium",
@@ -22,11 +22,10 @@
       "com.barium.client.BariumClient"
     ]
   },
-"mixins": [
-  "barium.mixins.json",
-  "barium.client.mixins.json"
-]
-  },
+  "mixins": [
+    "barium.mixins.json",
+    "barium.client.mixins.json"
+  ],
   "depends": {
     "fabricloader": ">=0.14.0",
     "fabric": "*",
