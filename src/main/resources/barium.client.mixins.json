@@ -5,9 +5,7 @@
 	"client": [
 		"particle.ParticleAccessor",
 		"particle.ParticleMixin",
-		"particle.ParticleManagerMixin",
-		"hud.DebugHudMixin",
-		"MinecraftClientMixin"
+		"hud.DebugHudMixin"
 	],
 	"injectors": {
 		"defaultRequire": 1
