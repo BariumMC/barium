@@ -22,13 +22,10 @@
       "com.barium.client.BariumClient"
     ]
   },
-  "mixins": [
-    "barium.mixins.json"
-  ],
-  "client": {
-    "mixins": [
-      "barium.client.mixins.json"
-    ]
+"mixins": [
+  "barium.mixins.json",
+  "barium.client.mixins.json"
+]
   },
   "depends": {
     "fabricloader": ">=0.14.0",
