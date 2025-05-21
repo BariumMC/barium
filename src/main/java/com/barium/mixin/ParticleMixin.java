@@ -1,6 +1,6 @@
-package com.barium.client.mixin;
+package com.barium.mixin;
 
-import com.barium.client.optimization.ParticleOptimizer;
+import com.barium.optimization.ParticleOptimizer;
 import net.minecraft.client.particle.Particle;
 import net.minecraft.client.render.Camera;
 import org.spongepowered.asm.mixin.Mixin;
