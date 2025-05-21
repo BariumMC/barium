@@ -15,13 +15,14 @@ public class InGameHudMixin {
         System.out.println("MixinInGameHud aplicado com sucesso!");
     }
     
-    @Inject(method = "renderStatusEffectOverlay", at = @At("HEAD"), cancellable = true)
-    private void onRenderStatusEffects(MatrixStack matrices, CallbackInfo ci) {
-        // Verifica se os efeitos de status devem ser atualizados neste frame
-        if (!HudOptimizer.shouldUpdateHudElement("status_effects", () -> "effects")) {
-            ci.cancel(); // Usa o cache em vez de redesenhar
-        }
+@Redirect(method = "render", 
+    at = @At(value = "INVOKE", 
+             target = "Lnet/minecraft/client/gui/hud/InGameHud;renderStatusEffectOverlay(Lnet/minecraft/client/gui/DrawContext;Lnet/minecraft/util/RenderTickCounter;)V"))
+private void redirectRenderStatusEffectOverlay(InGameHud instance, DrawContext context, RenderTickCounter tickCounter) {
+    if (HudOptimizer.shouldUpdateHudElement("status_effects", () -> "effects")) {
+        instance.renderStatusEffectOverlay(context, tickCounter);
     }
+}
     
     @Inject(method = "renderStatusBars", at = @At("HEAD"), cancellable = true)
     private void onRenderStatusBars(MatrixStack matrices, CallbackInfo ci) {
