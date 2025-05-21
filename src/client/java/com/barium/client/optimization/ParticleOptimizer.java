@@ -2,7 +2,7 @@ package com.barium.client.optimization;
 
 import com.barium.BariumMod;
 import com.barium.config.BariumConfig;
-import com.barium.mixin.client.particle.ParticleAccessor;
+import com.barium.client.mixin.particle.ParticleAccessor;
 import net.minecraft.client.particle.Particle;
 import net.minecraft.client.render.Camera;
 import net.minecraft.util.math.Vec3d;
