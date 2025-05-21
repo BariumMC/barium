@@ -2,7 +2,7 @@ package com.barium.client.mixin;
 
 import com.barium.client.optimization.HudOptimizer;
 import net.minecraft.client.gui.DrawContext;
-import net.minecraft.util.RenderTickCounter;
+import net.minecraft.client.render.RenderTickCounter;
 import org.spongepowered.asm.mixin.injection.Redirect;
 import net.minecraft.client.gui.hud.InGameHud;
 import net.minecraft.client.util.math.MatrixStack;
