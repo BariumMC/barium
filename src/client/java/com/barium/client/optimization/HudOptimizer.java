@@ -3,34 +3,33 @@ package com.barium.client.optimization;
 import com.barium.BariumMod;
 import com.barium.config.BariumConfig;
 import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.font.TextRenderer;
-import net.minecraft.client.gui.hud.DebugHud;
-import net.minecraft.client.util.math.MatrixStack;
-import net.minecraft.text.Text;
+import net.minecraft.text.Text; // Ainda útil para contexto, mas não para o cache de "Object"
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
 
 /**
  * Otimizador da HUD e textos (Overlay).
- * 
+ * <p>
  * Implementa:
- * - Redesenho condicional (apenas quando o conteúdo muda)
- * - Cache de fontes pré-rasterizadas
- * - Redução da frequência de atualizações da HUD
+ * - Redesenho condicional (apenas quando o conteúdo muda ou em intervalos definidos)
+ * - Redução da frequência de atualizações da HUD (especialmente Debug HUD)
  */
 public class HudOptimizer {
-    // Cache de textos renderizados
-    private static final Map<String, Object> TEXT_CACHE = new HashMap<>();
-    
-    // Cache de conteúdo da HUD
+    // Cache de conteúdo da HUD para elementos gerais
     private static final Map<String, String> HUD_CONTENT_CACHE = new HashMap<>();
     
-    // Contadores para controlar a frequência de atualizações
+    // Contadores para controlar a frequência de atualizações de elementos da HUD
     private static final Map<String, Integer> UPDATE_COUNTERS = new HashMap<>();
-    
-    // Última posição do jogador para detectar mudanças
+
+    // Cache específico para as linhas do Debug HUD (F3)
+    private static List<String> cachedDebugInfoLines = new ArrayList<>();
+    private static long lastDebugHudUpdateTime = 0; // Para controlar o tempo de atualização
+
+    // Última posição do jogador para detectar mudanças de coordenadas para o Debug HUD
     private static double lastPlayerX = 0;
     private static double lastPlayerY = 0;
     private static double lastPlayerZ = 0;
@@ -40,16 +39,21 @@ public class HudOptimizer {
     }
     
     /**
-     * Verifica se um elemento da HUD deve ser atualizado neste frame
-     * 
-     * @param hudId Identificador único do elemento da HUD
-     * @param contentSupplier Fornecedor do conteúdo atual
-     * @return true se o elemento deve ser atualizado, false caso contrário
+     * Verifica se um elemento da HUD *geral* (que não seja o F3 Debug HUD completo) deve ser atualizado neste frame.
+     * Use este método se você tiver outros elementos customizados da HUD que gostaria de otimizar.
+     *
+     * @param hudId Identificador único do elemento da HUD.
+     * @param currentContent O conteúdo atual do elemento em String.
+     * @return true se o elemento deve ser atualizado/redesenho, false caso contrário.
      */
-    public static boolean shouldUpdateHudElement(String hudId, Supplier<String> contentSupplier) {
+    public static boolean shouldUpdateHudElement(String hudId, String currentContent) {
         if (!BariumConfig.ENABLE_HUD_CACHING) {
             return true;
         }
+
+        // Verifica se o conteúdo mudou
+        String cachedContent = HUD_CONTENT_CACHE.get(hudId);
+        boolean contentChanged = cachedContent == null || !cachedContent.equals(currentContent);
         
         // Incrementa o contador para este elemento
         int counter = UPDATE_COUNTERS.getOrDefault(hudId, 0) + 1;
@@ -59,62 +63,53 @@ public class HudOptimizer {
         int updateInterval = getUpdateIntervalForHud(hudId);
         
         // Verifica se é hora de atualizar com base no contador
-        boolean timeToUpdate = counter >= updateInterval;
+        boolean timeToUpdate = (updateInterval > 0) && (counter >= updateInterval);
         
-        // Se não for hora de atualizar, retorna o resultado anterior
-        if (!timeToUpdate) {
+        // Se o conteúdo mudou OU for hora de atualizar
+        boolean shouldUpdate = contentChanged || timeToUpdate;
+
+        if (shouldUpdate) {
+            // Atualiza o cache e reseta o contador SOMENTE se uma atualização ocorrer
+            HUD_CONTENT_CACHE.put(hudId, currentContent);
+            UPDATE_COUNTERS.put(hudId, 0);
+        } else {
+            // Se não atualizou, retorna false (não precisa redesenhar)
             return false;
         }
         
-        // Reseta o contador
-        UPDATE_COUNTERS.put(hudId, 0);
-        
-        // Obtém o conteúdo atual
-        String currentContent = contentSupplier.get();
-        
-        // Verifica se o conteúdo mudou
-        String cachedContent = HUD_CONTENT_CACHE.get(hudId);
-        if (cachedContent != null && cachedContent.equals(currentContent)) {
-            return false;
-        }
-        
-        // Atualiza o cache e indica que o elemento deve ser atualizado
-        HUD_CONTENT_CACHE.put(hudId, currentContent);
-        return true;
+        return true; // Se chegou aqui, deve redesenhar
     }
     
     /**
-     * Determina o intervalo de atualização para um elemento da HUD
+     * Determina o intervalo de atualização para um elemento da HUD.
      * 
-     * @param hudId Identificador do elemento da HUD
-     * @return O intervalo de atualização em frames
+     * @param hudId Identificador do elemento da HUD.
+     * @return O intervalo de atualização em ticks.
      */
     private static int getUpdateIntervalForHud(String hudId) {
-        // Elementos diferentes podem ter frequências diferentes
         switch (hudId) {
-            case "coordinates":
-                // Coordenadas mudam frequentemente, atualiza mais rápido
-                return 2;
-            case "fps":
-                // FPS pode flutuar, atualiza a cada 5 frames
-                return 5;
-            case "debug_full":
-                // F3 completo é pesado, atualiza menos frequentemente
-                return BariumConfig.HUD_UPDATE_INTERVAL_TICKS * 2;
+            case "coordinates": // Coordenadas (parte do F3)
+                return 2; // Atualiza a cada 2 ticks para ser responsivo
+            case "fps": // FPS (parte do F3)
+                return 5; // Atualiza a cada 5 ticks
+            case "debug_full": // O F3 completo
+                return BariumConfig.HUD_UPDATE_INTERVAL_TICKS;
             default:
-                // Padrão
                 return BariumConfig.HUD_UPDATE_INTERVAL_TICKS;
         }
     }
     
     /**
-     * Verifica se as coordenadas do jogador mudaram significativamente
+     * Verifica se as coordenadas do jogador mudaram significativamente.
+     * Usado principalmente para o Debug HUD.
      * 
-     * @param client O cliente Minecraft
-     * @return true se as coordenadas mudaram, false caso contrário
+     * @param client O cliente Minecraft.
+     * @return true se as coordenadas mudaram, false caso contrário.
      */
     public static boolean havePlayerCoordinatesChanged(MinecraftClient client) {
         if (client.player == null) {
+            // Se não há jogador, limpa as últimas coordenadas e retorna false
+            lastPlayerX = 0; lastPlayerY = 0; lastPlayerZ = 0;
             return false;
         }
         
@@ -122,7 +117,7 @@ public class HudOptimizer {
         double y = client.player.getY();
         double z = client.player.getZ();
         
-        // Verifica se houve mudança significativa
+        // Verifica se houve mudança significativa (pelo menos 0.01 blocos)
         boolean changed = Math.abs(x - lastPlayerX) >= 0.01 ||
                           Math.abs(y - lastPlayerY) >= 0.01 ||
                           Math.abs(z - lastPlayerZ) >= 0.01;
@@ -134,49 +129,58 @@ public class HudOptimizer {
         
         return changed;
     }
-    
+
     /**
-     * Obtém um texto pré-renderizado do cache, ou cria um novo se não existir
-     * 
-     * @param text O texto a ser renderizado
-     * @param renderer O renderizador de texto
-     * @return O objeto de texto pré-renderizado
+     * Centraliza a lógica de otimização para a geração das linhas do Debug HUD (F3).
+     *
+     * @param client O cliente Minecraft.
+     * @param originalLines A lista de linhas gerada pelo método original do DebugHud.
+     * @return A lista de linhas a ser exibida (do cache ou a recém-gerada).
      */
-    public static Object getCachedText(String text, TextRenderer renderer) {
-        if (!BariumConfig.ENABLE_FONT_CACHING) {
-            // Retorna null para indicar que não há cache
-            return null;
+    public static List<String> getOptimizedDebugInfo(MinecraftClient client, List<String> originalLines) {
+        if (!BariumConfig.ENABLE_HUD_CACHING) {
+            cachedDebugInfoLines = originalLines; // Apenas atualiza o cache para consistência
+            return originalLines;
         }
+
+        // Verifica se as coordenadas mudaram (força atualização para partes críticas)
+        boolean coordsChanged = havePlayerCoordinatesChanged(client);
         
-        // Chave de cache que inclui o texto e o estilo
-        String cacheKey = text + "_" + renderer.hashCode();
+        // Obtém o tempo atual do tick do jogo
+        long currentTick = client.world != null ? client.world.getTime() : 0;
         
-        // Verifica se já existe no cache
-        Object cached = TEXT_CACHE.get(cacheKey);
-        if (cached != null) {
-            return cached;
+        // Verifica se é hora de atualizar com base no intervalo configurado
+        boolean timeToUpdate = (currentTick - lastDebugHudUpdateTime) >= BariumConfig.HUD_UPDATE_INTERVAL_TICKS;
+
+        // Verifica se o conteúdo crítico (e.g., primeiras linhas) mudou
+        // Isso é uma heurística para evitar recalcular TUDO se apenas algo insignificante mudou.
+        String criticalContent = "";
+        if (!originalLines.isEmpty()) {
+            // Pega as primeiras X linhas para verificar mudanças críticas (FPS, coords, etc.)
+            criticalContent = String.join("\n", originalLines.subList(0, Math.min(originalLines.size(), 8))); // Ex: 8 primeiras linhas
         }
-        
-        // Aqui seria criado o objeto de texto pré-renderizado
-        // Como isso depende da implementação interna do Minecraft, 
-        // retornamos null para indicar que não há cache
-        return null;
+        boolean criticalContentChanged = shouldUpdateHudElement("debug_full_critical_content", criticalContent);
+
+        // Se coordenadas mudaram OU conteúdo crítico mudou OU é hora de uma atualização completa
+        if (coordsChanged || criticalContentChanged || timeToUpdate) {
+            cachedDebugInfoLines = originalLines; // Atualiza o cache com as novas linhas
+            lastDebugHudUpdateTime = currentTick; // Reseta o contador de tempo
+            // Também podemos resetar outros contadores específicos de "debug_full" aqui se necessário
+        }
+
+        return cachedDebugInfoLines; // Retorna as linhas (seja as novas ou as cacheadas)
     }
     
     /**
-     * Limpa o cache de textos
-     * Deve ser chamado quando o estilo de texto muda ou a tela é redimensionada
-     */
-    public static void clearTextCache() {
-        TEXT_CACHE.clear();
-    }
-    
-    /**
-     * Limpa o cache de conteúdo da HUD
-     * Deve ser chamado quando há mudanças significativas no estado do jogo
+     * Limpa o cache de conteúdo da HUD.
+     * Deve ser chamado quando há mudanças significativas no estado do jogo (e.g., troca de mundo).
      */
     public static void clearHudCache() {
+        BariumMod.LOGGER.debug("Limpando cache da HUD.");
         HUD_CONTENT_CACHE.clear();
         UPDATE_COUNTERS.clear();
+        cachedDebugInfoLines.clear();
+        lastDebugHudUpdateTime = 0;
+        lastPlayerX = 0; lastPlayerY = 0; lastPlayerZ = 0; // Reseta as últimas coordenadas
     }
 }
