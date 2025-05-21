@@ -4,7 +4,7 @@ import com.barium.config.BariumConfig;
 import com.barium.client.optimization.ParticleOptimizer;
 import net.minecraft.client.particle.Particle;
 import net.minecraft.client.render.Camera;
-import net.minecraft.client.render.VertexConsumer; // Alterado de VertexConsumerProvider para VertexConsumer
+import net.minecraft.client.render.VertexConsumer; // Importante: Mudar de VertexConsumerProvider para VertexConsumer
 import net.minecraft.util.math.Vec3d;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
@@ -12,12 +12,12 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 @Mixin(Particle.class)
-public abstract class ParticleMixin implements ParticleAccessor { // Implementa a interface Accessor
+public abstract class ParticleMixin implements ParticleAccessor {
 
-    // CORRIGIDO: Injeta no início do método buildGeometry() da partícula
-    // Este é o método de renderização correto para 1.21.5
-    @Inject(method = "buildGeometry", at = @At("HEAD"), cancellable = true)
-    private void barium$beforeBuildGeometry(VertexConsumer vertexConsumer, Camera camera, float tickDelta, CallbackInfo ci) {
+    // CORRIGIDO: Injeta no início do método 'render' da partícula com a assinatura correta para 1.21.5
+    // O primeiro parâmetro agora é 'VertexConsumer', não 'VertexConsumerProvider'
+    @Inject(method = "render", at = @At("HEAD"), cancellable = true)
+    private void barium$beforeRender(VertexConsumer vertexConsumer, Camera camera, float tickDelta, CallbackInfo ci) {
         // Se o culling estiver desabilitado, não faz nada e permite a renderização
         if (!BariumConfig.ENABLE_PARTICLE_CULLING) {
             // Mesmo sem culling, calcule o LOD para que o ticking possa ser otimizado
