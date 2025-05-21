@@ -3,7 +3,9 @@
 	"package": "com.barium.client.mixin",
 	"compatibilityLevel": "JAVA_21",
 	"client": [
-		"ParticleMixin",
+		"particle.ParticleAccessor",
+		"particle.ParticleMixin",
+		"particle.ParticleManagerMixin",
 		"SoundSystemMixin",
 		"DebugHudMixin",
 		"InGameHudMixin"
