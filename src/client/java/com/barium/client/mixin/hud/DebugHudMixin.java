@@ -14,32 +14,29 @@ import java.util.List;
 public abstract class DebugHudMixin {
 
     /**
-     * Injeta no HEAD do método getDebugInfo para otimizar a geração das linhas do Debug HUD.
-     * Se a otimização determinar que não é necessário recalcular, ela cancela a execução
-     * original e retorna as linhas cacheadas.
+     * Injeta no RETORNO do método getDebugInfo() para interceptar seu resultado.
+     * Isso permite que o método original execute totalmente e gere a lista de strings,
+     * e então nosso otimizador decide se usará essa lista ou uma versão cacheada.
      *
-     * @param client O cliente Minecraft.
-     * @param cir O CallbackInfo para controlar o retorno e cancelamento.
+     * @param cir O CallbackInfo para controlar o retorno. O resultado do método original
+     *            está em cir.getReturnValue().
      */
-    @Inject(method = "getDebugInfo", at = @At("HEAD"), cancellable = true)
-    private void barium$optimizeDebugInfo(MinecraftClient client, CallbackInfoReturnable<List<String>> cir) {
-        // Gera as linhas originais primeiro para que HudOptimizer possa comparar
-        // Nota: Esta é uma chamada ao método original do DebugHud.getDebugInfo,
-        // mas feita *dentro* do Mixin para que HudOptimizer possa ter acesso às linhas completas.
-        // O método "super" aqui é o 'this' em termos de DebugHud.
-        List<String> originalLines = ((DebugHud)(Object)this).getDebugInfo(client); // Chama o método original
+    @Inject(method = "getDebugInfo", at = @At("RETURN"), cancellable = true)
+    private void barium$optimizeDebugInfo(CallbackInfoReturnable<List<String>> cir) {
+        // O método original já foi executado, e seu resultado está em cir.getReturnValue()
+        List<String> originalLines = cir.getReturnValue();
+
+        // Obtém a instância do MinecraftClient de forma segura
+        MinecraftClient client = MinecraftClient.getInstance();
 
         // Passa as linhas originais para o otimizador que decidirá se as usa ou retorna as cacheadas
         List<String> optimizedLines = HudOptimizer.getOptimizedDebugInfo(client, originalLines);
 
         // Se as linhas otimizadas são diferentes das originais (ou seja, foram cacheadas e não recalculadas)
-        // então cancelamos a execução original e retornamos as linhas otimizadas.
+        // então definimos o valor de retorno do Mixin para as linhas otimizadas.
         if (optimizedLines != originalLines) {
             cir.setReturnValue(optimizedLines);
-            cir.cancel();
         }
-        // Se optimizedLines == originalLines, a execução original continuará normalmente,
-        // pois o Inject no HEAD já obteve as 'originalLines'. Não precisamos cancelar nem setar.
-        // O SpongePowered/Mixin lida com a continuação do método automaticamente.
+        // Não é necessário chamar ci.cancel() no 'RETURN', apenas definir o setReturnValue é suficiente.
     }
 }

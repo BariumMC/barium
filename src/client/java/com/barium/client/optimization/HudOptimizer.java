@@ -92,8 +92,7 @@ public class HudOptimizer {
                 return 2; // Atualiza a cada 2 ticks para ser responsivo
             case "fps": // FPS (parte do F3)
                 return 5; // Atualiza a cada 5 ticks
-            case "debug_full": // O F3 completo
-                return BariumConfig.HUD_UPDATE_INTERVAL_TICKS;
+            // "debug_full" será tratado por getOptimizedDebugInfo diretamente
             default:
                 return BariumConfig.HUD_UPDATE_INTERVAL_TICKS;
         }
@@ -139,36 +138,32 @@ public class HudOptimizer {
      */
     public static List<String> getOptimizedDebugInfo(MinecraftClient client, List<String> originalLines) {
         if (!BariumConfig.ENABLE_HUD_CACHING) {
-            cachedDebugInfoLines = originalLines; // Apenas atualiza o cache para consistência
-            return originalLines;
+            return originalLines; // Se o cache estiver desabilitado, sempre retorna o original
         }
 
-        // Verifica se as coordenadas mudaram (força atualização para partes críticas)
-        boolean coordsChanged = havePlayerCoordinatesChanged(client);
-        
         // Obtém o tempo atual do tick do jogo
         long currentTick = client.world != null ? client.world.getTime() : 0;
         
-        // Verifica se é hora de atualizar com base no intervalo configurado
+        // Verifica se as coordenadas mudaram significativamente (isso força uma atualização para mudanças comuns)
+        boolean coordsChanged = havePlayerCoordinatesChanged(client);
+        
+        // Verifica se é hora de uma atualização completa com base no intervalo configurado
         boolean timeToUpdate = (currentTick - lastDebugHudUpdateTime) >= BariumConfig.HUD_UPDATE_INTERVAL_TICKS;
 
-        // Verifica se o conteúdo crítico (e.g., primeiras linhas) mudou
-        // Isso é uma heurística para evitar recalcular TUDO se apenas algo insignificante mudou.
-        String criticalContent = "";
-        if (!originalLines.isEmpty()) {
-            // Pega as primeiras X linhas para verificar mudanças críticas (FPS, coords, etc.)
-            criticalContent = String.join("\n", originalLines.subList(0, Math.min(originalLines.size(), 8))); // Ex: 8 primeiras linhas
-        }
-        boolean criticalContentChanged = shouldUpdateHudElement("debug_full_critical_content", criticalContent);
+        // Determina se devemos atualizar as informações de depuração
+        boolean shouldRefresh = coordsChanged || timeToUpdate;
 
-        // Se coordenadas mudaram OU conteúdo crítico mudou OU é hora de uma atualização completa
-        if (coordsChanged || criticalContentChanged || timeToUpdate) {
-            cachedDebugInfoLines = originalLines; // Atualiza o cache com as novas linhas
-            lastDebugHudUpdateTime = currentTick; // Reseta o contador de tempo
-            // Também podemos resetar outros contadores específicos de "debug_full" aqui se necessário
+        if (shouldRefresh) {
+            // Se devemos atualizar, preenche o cache com as novas linhas e atualiza o tempo da última atualização
+            cachedDebugInfoLines = new ArrayList<>(originalLines); // Cria uma nova lista para evitar modificar a original
+            lastDebugHudUpdateTime = currentTick;
+            BariumMod.LOGGER.debug("Debug HUD atualizado. Coordenadas mudaram: " + coordsChanged + ", Hora de atualizar: " + timeToUpdate);
+        } else {
+            // Caso contrário, retorna a versão cacheada
+            BariumMod.LOGGER.debug("Debug HUD retornou cacheado. Tick atual: " + currentTick + ", Última atualização: " + lastDebugHudUpdateTime);
         }
 
-        return cachedDebugInfoLines; // Retorna as linhas (seja as novas ou as cacheadas)
+        return cachedDebugInfoLines;
     }
     
     /**
@@ -179,7 +174,7 @@ public class HudOptimizer {
         BariumMod.LOGGER.debug("Limpando cache da HUD.");
         HUD_CONTENT_CACHE.clear();
         UPDATE_COUNTERS.clear();
-        cachedDebugInfoLines.clear();
+        cachedDebugInfoLines.clear(); // Limpa o cache específico de informações de depuração
         lastDebugHudUpdateTime = 0;
         lastPlayerX = 0; lastPlayerY = 0; lastPlayerZ = 0; // Reseta as últimas coordenadas
     }
