@@ -1,5 +1,7 @@
 package com.barium.client.mixin.particle;
 
+package com.barium.mixin;
+
 import com.barium.BariumMod;
 import com.barium.client.optimization.ParticleOptimizer;
 import com.barium.client.optimization.ParticleTracker;
@@ -9,11 +11,11 @@ import net.minecraft.client.particle.Particle;
 import net.minecraft.client.particle.ParticleManager;
 import net.minecraft.client.render.Camera;
 import net.minecraft.client.render.LightmapTextureManager;
-import net.minecraft.client.render.VertexConsumer; // Necessário para o contexto do redirect
-import net.minecraft.client.render.VertexConsumerProvider; // Necessário para o contexto do redirect
-import net.minecraft.client.util.math.MatrixStack; // Necessário para o contexto do redirect
+import net.minecraft.client.render.VertexConsumer;
+import net.minecraft.client.render.VertexConsumerProvider;
 import net.minecraft.client.world.ClientWorld;
-import net.minecraft.client.particle.ParticleTextureSheet; // Necessário para o loop do iterador
+import net.minecraft.client.util.math.MatrixStack;
+import net.minecraft.client.particle.ParticleTextureSheet;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
@@ -22,9 +24,10 @@ import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
-import java.util.Iterator; // Necessário para manipular o iterador
-import java.util.Map; // Necessário para o mapa de partículas
-import java.util.Queue; // Necessário para a fila de partículas
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Queue;
+import java.util.Random; // Para REDUCE_PARTICLE_EMISSION
 
 @Mixin(ParticleManager.class)
 public abstract class ParticleManagerMixin {
@@ -32,37 +35,64 @@ public abstract class ParticleManagerMixin {
     @Shadow protected abstract <T extends Particle> T addParticle(T particle);
     @Shadow private ClientWorld world;
     @Shadow protected abstract void tickParticle(Particle particle);
-
-    // Shadow para acessar o mapa de partículas por tipo de textura.
-    // É crucial para o loop de renderização.
     @Shadow private Map<ParticleTextureSheet, Queue<Particle>> particlesByType;
+
+    private final Random random = new Random(); // Para REDUCE_PARTICLE_EMISSION
 
     @Inject(method = "<init>", at = @At("RETURN"))
     private void barium$onInit(ClientWorld world, CallbackInfo ci) {
-        ParticleTracker.resetParticleCount();
+        if (BariumConfig.ENABLE_MOD_OPTIMIZATIONS) {
+            ParticleTracker.resetParticleCount();
+        }
     }
 
+    /**
+     * Intercepta a adição de novas partículas para aplicar o limite dinâmico e redução de emissão.
+     */
     @Inject(
             method = "addParticle(Lnet/minecraft/client/particle/Particle;)Lnet/minecraft/client/particle/Particle;",
             at = @At("HEAD"),
             cancellable = true
     )
     private void barium$onAddParticle(Particle particle, CallbackInfoReturnable<Particle> cir) {
-        if (ParticleTracker.isParticleLimitExceeded()) {
+        if (!BariumConfig.ENABLE_MOD_OPTIMIZATIONS) {
+            return; // Permite a adição normal se o mod está desabilitado
+        }
+
+        // Reduz a emissão de partículas se configurado
+        if (BariumConfig.REDUCE_PARTICLE_EMISSION && random.nextFloat() < 0.5f) { // Ex: 50% de chance de não emitir
             if (BariumConfig.ENABLE_DEBUG_LOGGING) {
-                BariumMod.LOGGER.debug("Denied adding particle due to limit: " + ParticleTracker.getCurrentParticleCount() + "/" + BariumConfig.MAX_PARTICLES_TOTAL);
+                BariumMod.LOGGER.debug("Denied adding particle due to emission reduction.");
             }
             cir.setReturnValue(null);
             return;
         }
-        ParticleTracker.incrementParticleCount();
+
+        // Aplica o limite dinâmico
+        if (ParticleTracker.isParticleLimitExceeded()) {
+            if (BariumConfig.ENABLE_DEBUG_LOGGING) {
+                BariumMod.LOGGER.debug("Denied adding particle due to limit: " + ParticleTracker.getCurrentParticleCount() + "/" + BariumConfig.MAX_TOTAL_PARTICLES);
+            }
+            cir.setReturnValue(null); // Impede a adição da partícula
+            return;
+        }
+        ParticleTracker.incrementParticleCount(); // Permite a adição, então incrementa a contagem
     }
 
+    /**
+     * Redireciona a chamada ao método tick() de cada partícula dentro do loop principal de tick do ParticleManager.
+     * Isso nos permite aplicar culling por distância/frustum e LOD para o tick da partícula.
+     */
     @Redirect(
             method = "tick()V",
             at = @At(value = "INVOKE", target = "Lnet/minecraft/client/particle/Particle;tick()V")
     )
     private void barium$redirectParticleTick(Particle instance) {
+        if (!BariumConfig.ENABLE_MOD_OPTIMIZATIONS) {
+            instance.tick(); // Permite o tick normal se o mod está desabilitado
+            return;
+        }
+
         MinecraftClient client = MinecraftClient.getInstance();
         if (client.player == null || client.gameRenderer == null || client.gameRenderer.getCamera() == null) {
             instance.tick();
@@ -71,18 +101,25 @@ public abstract class ParticleManagerMixin {
 
         Camera camera = client.gameRenderer.getCamera();
 
+        // shouldTickParticle já lida com culling por distância (se deve expirar) e LOD de tick.
         if (ParticleOptimizer.shouldTickParticle(instance, camera)) {
-            instance.tick();
+            instance.tick(); // Chama o tick original se a otimização permitir
         } else {
-            // Se shouldTickParticle retornar false, o tick é pulado.
-            // Se a razão for culling por distância, a ParticleOptimizer já gerencia a chamada a expire().
+            // Se shouldTickParticle retornou false, significa que a partícula deve ser expirada
+            // (devido à distância de culling) ou seu tick foi pulado (devido ao LOD).
+            // A ParticleManager irá remover partículas expiradas no próximo ciclo.
+            if (BariumConfig.ENABLE_PARTICLE_CULLING &&
+                ParticleOptimizer.getParticlePosition(instance).squaredDistanceTo(camera.getPos()) > BariumConfig.PARTICLE_CULLING_DISTANCE_SQ) {
+                instance.expire(); // Garante que partículas muito distantes expirem para serem removidas.
+            }
         }
     }
 
-    // --- NOVA LÓGICA DE CULLING DE RENDERIZAÇÃO ---
-    // Esta injeção redefine o comportamento do loop de renderização.
-    // Vamos interceptar a chamada a `Queue.iterator()` e retornar um iterador customizado
-    // que filtra as partículas.
+    /**
+     * NOVA LÓGICA DE CULLING DE RENDERIZAÇÃO:
+     * Intercepta a chamada a `Queue.iterator()` dentro do loop de renderização do ParticleManager
+     * para filtrar partículas que não devem ser renderizadas.
+     */
     @Redirect(
             method = "renderParticles(Lnet/minecraft/client/util/math/MatrixStack;Lnet/minecraft/client.render/VertexConsumerProvider;Lnet.minecraft.client.render/LightmapTextureManager;Lnet.minecraft.client.render.Camera;F)V",
             at = @At(value = "INVOKE", target = "Ljava/util/Queue;iterator()Ljava/util/Iterator;")
@@ -92,8 +129,9 @@ public abstract class ParticleManagerMixin {
             MatrixStack matrices, VertexConsumerProvider vertexConsumers, LightmapTextureManager lightmapTextureManager,
             Camera camera, float tickDelta
     ) {
-        // Retorna um iterador que filtra as partículas.
-        // Este iterador vai encapsular o iterador original da fila.
+        if (!BariumConfig.ENABLE_MOD_OPTIMIZATIONS || !BariumConfig.ENABLE_PARTICLE_CULLING) {
+            return queue.iterator(); // Retorna o iterador original se o mod ou culling estão desabilitados
+        }
         return new FilteredParticleIterator(queue.iterator(), camera);
     }
 
@@ -103,17 +141,16 @@ public abstract class ParticleManagerMixin {
     private static class FilteredParticleIterator implements Iterator<Particle> {
         private final Iterator<Particle> originalIterator;
         private final Camera camera;
-        private Particle nextParticle; // A próxima partícula a ser retornada
+        private Particle nextParticle;
 
         public FilteredParticleIterator(Iterator<Particle> originalIterator, Camera camera) {
             this.originalIterator = originalIterator;
             this.camera = camera;
-            findNextValidParticle(); // Encontra a primeira partícula válida
+            findNextValidParticle();
         }
 
-        // Tenta encontrar a próxima partícula que deve ser renderizada.
         private void findNextValidParticle() {
-            nextParticle = null; // Reseta
+            nextParticle = null;
             while (originalIterator.hasNext()) {
                 Particle particle = originalIterator.next();
                 if (ParticleOptimizer.shouldRenderParticle(particle, camera)) {
@@ -125,21 +162,22 @@ public abstract class ParticleManagerMixin {
 
         @Override
         public boolean hasNext() {
-            return nextParticle != null; // Se há uma partícula válida, tem próximo
+            return nextParticle != null;
         }
 
         @Override
         public Particle next() {
+            if (!hasNext()) {
+                throw new java.util.NoSuchElementException();
+            }
             Particle current = nextParticle;
-            findNextValidParticle(); // Prepara a próxima partícula para a próxima chamada a next()
+            findNextValidParticle();
             return current;
         }
 
         @Override
         public void remove() {
-            // Opcional: implementar se o método remove() do iterador for usado, o que é raro para loops for-each.
-            // originalIterator.remove();
-            throw new UnsupportedOperationException("Remove not supported by this iterator.");
+            originalIterator.remove(); // Permite remover do iterador original se necessário
         }
     }
 }
