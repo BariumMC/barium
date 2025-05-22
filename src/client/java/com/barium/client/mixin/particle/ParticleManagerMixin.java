@@ -1,7 +1,5 @@
 package com.barium.client.mixin.particle;
 
-package com.barium.mixin;
-
 import com.barium.BariumMod;
 import com.barium.client.optimization.ParticleOptimizer;
 import com.barium.client.optimization.ParticleTracker;
