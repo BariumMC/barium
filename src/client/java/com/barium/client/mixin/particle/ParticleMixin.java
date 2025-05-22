@@ -11,12 +11,10 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 @Mixin(Particle.class)
 public abstract class ParticleMixin {
 
-    @Inject(method = "expire", at = @At("HEAD"))
+    // Adicionado o descritor explícito "()V" para o método expire
+    @Inject(method = "expire()V", at = @At("HEAD"))
     private void barium$onExpireHead(CallbackInfo ci) {
         ParticleTracker.decrementParticleCount();
         ParticleOptimizer.removeParticle((Particle)(Object)this);
     }
-
-    // REMOVIDA: A injeção para buildGeometry(VertexConsumer) foi removida desta classe.
-    // A otimização de renderização será feita no ParticleManagerMixin via manipulação do iterador.
 }

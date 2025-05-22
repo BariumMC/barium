@@ -25,17 +25,18 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Queue;
-import java.util.Random; // Para REDUCE_PARTICLE_EMISSION
+import java.util.Random;
 
 @Mixin(ParticleManager.class)
 public abstract class ParticleManagerMixin {
 
+    // Adicione o descritor explícito para addParticle e tickParticle para clareza
     @Shadow protected abstract <T extends Particle> T addParticle(T particle);
     @Shadow private ClientWorld world;
     @Shadow protected abstract void tickParticle(Particle particle);
     @Shadow private Map<ParticleTextureSheet, Queue<Particle>> particlesByType;
 
-    private final Random random = new Random(); // Para REDUCE_PARTICLE_EMISSION
+    private final Random random = new Random();
 
     @Inject(method = "<init>", at = @At("RETURN"))
     private void barium$onInit(ClientWorld world, CallbackInfo ci) {
@@ -48,17 +49,16 @@ public abstract class ParticleManagerMixin {
      * Intercepta a adição de novas partículas para aplicar o limite dinâmico e redução de emissão.
      */
     @Inject(
-            method = "addParticle(Lnet/minecraft/client/particle/Particle;)Lnet/minecraft/client/particle/Particle;",
+            method = "addParticle(Lnet/minecraft/client/particle/Particle;)Lnet/minecraft/client/particle/Particle;", // Descritor já parece correto aqui
             at = @At("HEAD"),
             cancellable = true
     )
     private void barium$onAddParticle(Particle particle, CallbackInfoReturnable<Particle> cir) {
         if (!BariumConfig.ENABLE_MOD_OPTIMIZATIONS) {
-            return; // Permite a adição normal se o mod está desabilitado
+            return;
         }
 
-        // Reduz a emissão de partículas se configurado
-        if (BariumConfig.REDUCE_PARTICLE_EMISSION && random.nextFloat() < 0.5f) { // Ex: 50% de chance de não emitir
+        if (BariumConfig.REDUCE_PARTICLE_EMISSION && random.nextFloat() < 0.5f) {
             if (BariumConfig.ENABLE_DEBUG_LOGGING) {
                 BariumMod.LOGGER.debug("Denied adding particle due to emission reduction.");
             }
@@ -66,20 +66,18 @@ public abstract class ParticleManagerMixin {
             return;
         }
 
-        // Aplica o limite dinâmico
         if (ParticleTracker.isParticleLimitExceeded()) {
             if (BariumConfig.ENABLE_DEBUG_LOGGING) {
                 BariumMod.LOGGER.debug("Denied adding particle due to limit: " + ParticleTracker.getCurrentParticleCount() + "/" + BariumConfig.MAX_TOTAL_PARTICLES);
             }
-            cir.setReturnValue(null); // Impede a adição da partícula
+            cir.setReturnValue(null);
             return;
         }
-        ParticleTracker.incrementParticleCount(); // Permite a adição, então incrementa a contagem
+        ParticleTracker.incrementParticleCount();
     }
 
     /**
      * Redireciona a chamada ao método tick() de cada partícula dentro do loop principal de tick do ParticleManager.
-     * Isso nos permite aplicar culling por distância/frustum e LOD para o tick da partícula.
      */
     @Redirect(
             method = "tick()V",
@@ -87,7 +85,7 @@ public abstract class ParticleManagerMixin {
     )
     private void barium$redirectParticleTick(Particle instance) {
         if (!BariumConfig.ENABLE_MOD_OPTIMIZATIONS) {
-            instance.tick(); // Permite o tick normal se o mod está desabilitado
+            instance.tick();
             return;
         }
 
@@ -99,16 +97,12 @@ public abstract class ParticleManagerMixin {
 
         Camera camera = client.gameRenderer.getCamera();
 
-        // shouldTickParticle já lida com culling por distância (se deve expirar) e LOD de tick.
         if (ParticleOptimizer.shouldTickParticle(instance, camera)) {
-            instance.tick(); // Chama o tick original se a otimização permitir
+            instance.tick();
         } else {
-            // Se shouldTickParticle retornou false, significa que a partícula deve ser expirada
-            // (devido à distância de culling) ou seu tick foi pulado (devido ao LOD).
-            // A ParticleManager irá remover partículas expiradas no próximo ciclo.
             if (BariumConfig.ENABLE_PARTICLE_CULLING &&
                 ParticleOptimizer.getParticlePosition(instance).squaredDistanceTo(camera.getPos()) > BariumConfig.PARTICLE_CULLING_DISTANCE_SQ) {
-                instance.expire(); // Garante que partículas muito distantes expirem para serem removidas.
+                instance.expire();
             }
         }
     }
@@ -119,7 +113,9 @@ public abstract class ParticleManagerMixin {
      * para filtrar partículas que não devem ser renderizadas.
      */
     @Redirect(
-            method = "renderParticles(Lnet/minecraft/client/util/math/MatrixStack;Lnet/minecraft/client.render/VertexConsumerProvider;Lnet.minecraft.client.render/LightmapTextureManager;Lnet.minecraft.client.render.Camera;F)V",
+            method = "renderParticles(Lnet/minecraft/client/util/math/MatrixStack;Lnet/minecraft/client/render/VertexConsumerProvider;Lnet/minecraft/client/render/LightmapTextureManager;Lnet/minecraft/client.render/Camera;F)V", // <--- LINHA 121 ORIGINALMENTE
+            // CORRIGIDO: Lnet.minecraft.client.render/ -> Lnet/minecraft/client/render/
+            // AQUI ESTAVA O ERRO PRINCIPAL!
             at = @At(value = "INVOKE", target = "Ljava/util/Queue;iterator()Ljava/util/Iterator;")
     )
     private Iterator<Particle> barium$redirectQueueIterator(
@@ -128,7 +124,7 @@ public abstract class ParticleManagerMixin {
             Camera camera, float tickDelta
     ) {
         if (!BariumConfig.ENABLE_MOD_OPTIMIZATIONS || !BariumConfig.ENABLE_PARTICLE_CULLING) {
-            return queue.iterator(); // Retorna o iterador original se o mod ou culling estão desabilitados
+            return queue.iterator();
         }
         return new FilteredParticleIterator(queue.iterator(), camera);
     }
@@ -175,7 +171,7 @@ public abstract class ParticleManagerMixin {
 
         @Override
         public void remove() {
-            originalIterator.remove(); // Permite remover do iterador original se necessário
+            originalIterator.remove();
         }
     }
 }
