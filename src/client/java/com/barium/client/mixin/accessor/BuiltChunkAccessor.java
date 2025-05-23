@@ -7,6 +7,7 @@ import org.spongepowered.asm.mixin.gen.Accessor;
 
 @Mixin(ChunkBuilder.BuiltChunk.class)
 public interface BuiltChunkAccessor {
-    @Accessor("origin")
+    // Corrected Accessor target from "origin" to "pos" for 1.21.5 Yarn mappings
+    @Accessor("pos")
     BlockPos getOriginPos();
 }
