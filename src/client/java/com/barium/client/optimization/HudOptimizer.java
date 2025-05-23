@@ -3,13 +3,10 @@ package com.barium.client.optimization;
 import com.barium.BariumMod;
 import com.barium.config.BariumConfig;
 import net.minecraft.client.MinecraftClient;
-import net.minecraft.text.Text;
-
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Supplier;
 
 /**
  * Otimizador da HUD e textos (Overlay).
@@ -26,7 +23,6 @@ public class HudOptimizer {
     private static final Map<String, Integer> UPDATE_COUNTERS = new HashMap<>();
 
     // Cache específico para as linhas do Debug HUD (F3)
-    // A chave pode ser "debug_left" ou "debug_right"
     private static final Map<String, List<String>> cachedDebugInfoMap = new HashMap<>();
     private static long lastDebugHudUpdateTime = 0; // Para controlar o tempo de atualização global do F3
 
@@ -41,13 +37,15 @@ public class HudOptimizer {
     
     /**
      * Verifica se um elemento da HUD *geral* (que não seja o F3 Debug HUD completo) deve ser atualizado neste frame.
+     * Esta função não é usada diretamente pelos Mixins de HUD/Debug HUD, mas pode ser usada
+     * por futuras otimizações de elementos individuais que precisam de cache.
      *
      * @param hudId Identificador único do elemento da HUD.
      * @param currentContent O conteúdo atual do elemento em String.
      * @return true se o elemento deve ser atualizado/redesenho, false caso contrário.
      */
     public static boolean shouldUpdateHudElement(String hudId, String currentContent) {
-        if (!BariumConfig.ENABLE_HUD_CACHING) {
+        if (!BariumConfig.getInstance().HUD_OPTIMIZATIONS.ENABLE_HUD_CACHING) {
             return true;
         }
 
@@ -74,26 +72,17 @@ public class HudOptimizer {
     
     /**
      * Determina o intervalo de atualização para um elemento da HUD.
-     * 
      * @param hudId Identificador do elemento da HUD.
      * @return O intervalo de atualização em ticks.
      */
     private static int getUpdateIntervalForHud(String hudId) {
-        // Coordenadas e FPS são gerados dentro do DebugHud, mas poderiam ser externos
-        switch (hudId) {
-            case "coordinates": 
-                return 2; 
-            case "fps":
-                return 5;
-            default:
-                return BariumConfig.HUD_UPDATE_INTERVAL_TICKS;
-        }
+        // Exemplo: Coordenadas e FPS podem ter taxas de atualização diferentes se forem implementados aqui.
+        // No momento, o DebugHudMixin lida com a frequência global do F3.
+        return BariumConfig.getInstance().HUD_OPTIMIZATIONS.HUD_UPDATE_INTERVAL_TICKS;
     }
     
     /**
-     * Verifica se as coordenadas do jogador mudaram significativamente.
-     * Usado para forçar a atualização do Debug HUD.
-     * 
+     * Verifica se as coordenadas do jogador mudaram significativamente para forçar a atualização do Debug HUD.
      * @param client O cliente Minecraft.
      * @return true se as coordenadas mudaram, false caso contrário.
      */
@@ -107,9 +96,12 @@ public class HudOptimizer {
         double y = client.player.getY();
         double z = client.player.getZ();
         
-        boolean changed = Math.abs(x - lastPlayerX) >= 0.01 ||
-                          Math.abs(y - lastPlayerY) >= 0.01 ||
-                          Math.abs(z - lastPlayerZ) >= 0.01;
+        // Define um pequeno limiar para considerar uma mudança significativa
+        double threshold = 0.01; 
+
+        boolean changed = Math.abs(x - lastPlayerX) >= threshold ||
+                          Math.abs(y - lastPlayerY) >= threshold ||
+                          Math.abs(z - lastPlayerZ) >= threshold;
         
         lastPlayerX = x;
         lastPlayerY = y;
@@ -120,41 +112,43 @@ public class HudOptimizer {
 
     /**
      * Centraliza a lógica de otimização para a geração das linhas do Debug HUD (F3).
-     * Este método será chamado para as listas da esquerda e da direita separadamente.
+     * Este método é chamado pelo `DebugHudMixin` para as listas da esquerda e da direita.
      *
      * @param debugId Um identificador para o cache ("debug_left" ou "debug_right").
      * @param originalLines A lista de linhas gerada pelo método original do DebugHud (getLeftText/getRightText).
      * @return A lista de linhas a ser exibida (do cache ou a recém-gerada).
      */
     public static List<String> getOptimizedDebugInfo(String debugId, List<String> originalLines) {
-        if (!BariumConfig.ENABLE_HUD_CACHING) {
+        if (!BariumConfig.getInstance().HUD_OPTIMIZATIONS.ENABLE_HUD_CACHING) {
             // Se o cache estiver desabilitado, apenas retorna a lista original.
-            // Também a armazenamos para que shouldRefresh possa funcionar se for reabilitado.
-            cachedDebugInfoMap.put(debugId, originalLines);
+            cachedDebugInfoMap.put(debugId, originalLines); // Ainda armazena para manter estado se for reabilitado
             return originalLines;
         }
 
         MinecraftClient client = MinecraftClient.getInstance();
         long currentTick = client.world != null ? client.world.getTime() : 0;
         
-        // Verifica se é necessário forçar uma atualização global do F3.
-        // A decisão de atualizar é baseada em coordenadas ou no intervalo de tempo configurado.
-        // Isso garante que ambos os lados (left/right) sejam atualizados juntos se necessário.
         boolean shouldRefreshGlobal = false;
-        if (debugId.equals("debug_left")) { // Apenas uma das chamadas decide se é hora de refresh global
+        // A lógica de refresh global é controlada apenas uma vez por tick,
+        // geralmente pela primeira chamada (`debug_left`) ou se nenhum cache existir.
+        if (debugId.equals("debug_left") || (!cachedDebugInfoMap.containsKey("debug_left") && !cachedDebugInfoMap.containsKey("debug_right"))) { 
             shouldRefreshGlobal = havePlayerCoordinatesChanged(client) || 
-                                  (currentTick - lastDebugHudUpdateTime) >= BariumConfig.HUD_UPDATE_INTERVAL_TICKS;
+                                  (currentTick - lastDebugHudUpdateTime) >= BariumConfig.getInstance().HUD_OPTIMIZATIONS.HUD_UPDATE_INTERVAL_TICKS;
             
             if (shouldRefreshGlobal) {
                 lastDebugHudUpdateTime = currentTick; // Reseta o tempo de atualização global
-                BariumMod.LOGGER.debug("Debug HUD global refresh triggered. Tick: " + currentTick);
+                if (BariumConfig.getInstance().GENERAL_SETTINGS.ENABLE_DEBUG_LOGGING) {
+                    BariumMod.LOGGER.debug("Debug HUD global refresh triggered. Tick: " + currentTick);
+                }
             }
         }
         
         // Se a decisão global foi para atualizar, ou se este lado ainda não tem cache
         if (shouldRefreshGlobal || !cachedDebugInfoMap.containsKey(debugId)) {
             // Atualiza o cache para este lado do Debug HUD
-            cachedDebugInfoMap.put(debugId, new ArrayList<>(originalLines)); // Cria uma cópia para evitar modificações externas
+            // Cria uma *cópia* para evitar modificações externas na lista original,
+            // que podem levar a ConcurrentModificationException ou bugs sutis.
+            cachedDebugInfoMap.put(debugId, new ArrayList<>(originalLines)); 
             return originalLines; // Retorna a lista original para ser renderizada
         } else {
             // Caso contrário, retorna a versão cacheada
@@ -163,15 +157,18 @@ public class HudOptimizer {
     }
     
     /**
-     * Limpa o cache de conteúdo da HUD.
-     * Deve ser chamado quando há mudanças significativas no estado do jogo (e.g., troca de mundo).
+     * Limpa o cache de conteúdo da HUD e as flags de dirty.
+     * Deve ser chamado quando há mudanças significativas no estado do jogo (e.g., troca de mundo, desconexão).
      */
     public static void clearHudCache() {
-        BariumMod.LOGGER.debug("Limpando cache da HUD.");
+        if (BariumConfig.getInstance().GENERAL_SETTINGS.ENABLE_DEBUG_LOGGING) {
+            BariumMod.LOGGER.debug("Limpando cache da HUD.");
+        }
         HUD_CONTENT_CACHE.clear();
         UPDATE_COUNTERS.clear();
         cachedDebugInfoMap.clear(); // Limpa o cache específico de informações de depuração
         lastDebugHudUpdateTime = 0;
         lastPlayerX = 0; lastPlayerY = 0; lastPlayerZ = 0; // Reseta as últimas coordenadas
+        HudStateTracker.markAllHudDirty(); // Marca todas as flags de dirty como true para forçar redesenho
     }
 }

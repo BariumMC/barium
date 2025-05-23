@@ -4,10 +4,11 @@ import com.barium.BariumMod;
 import com.barium.client.optimization.HudOptimizer;
 import com.barium.client.optimization.ParticleOptimizer;
 import com.barium.client.optimization.SoundOptimizer;
-import com.barium.client.optimization.ClientTerrainOptimizer; // Import the new optimizer
+import com.barium.client.optimization.ClientTerrainOptimizer;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
+import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents; // Import para eventos de desconexão
 
 @Environment(EnvType.CLIENT)
 public class BariumClient implements ClientModInitializer {
@@ -16,9 +17,19 @@ public class BariumClient implements ClientModInitializer {
         BariumMod.LOGGER.info("Inicializando cliente Barium");
         
         // Inicialização dos otimizadores client-side
-        HudOptimizer.init();
+        HudOptimizer.init(); // Otimizador de HUD e Texto
         ParticleOptimizer.init();
         SoundOptimizer.init();
-        ClientTerrainOptimizer.init(); // Initialize the client terrain optimizer
+        ClientTerrainOptimizer.init();
+
+        // Registrar eventos para limpar caches em situações apropriadas
+        ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> {
+            HudOptimizer.clearHudCache(); // Limpa o cache do HUD (incluindo Debug HUD)
+            ClientTerrainOptimizer.clearCaches(); // Limpa caches de terreno
+            SoundOptimizer.clearAudibilityCache(); // Limpa caches de som
+            BariumMod.LOGGER.debug("Caches de cliente limpos devido a desconexão.");
+        });
+
+        BariumMod.LOGGER.info("Cliente Barium inicializado com sucesso!");
     }
 }

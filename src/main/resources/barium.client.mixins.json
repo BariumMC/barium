@@ -3,12 +3,10 @@
 	"package": "com.barium.client.mixin",
 	"compatibilityLevel": "JAVA_21",
 	"client": [
-		"particle.ParticleAccessor",
-		"particle.ParticleMixin",
 		"hud.DebugHudMixin",
-		"WorldRendererMixin",
-		"BuiltChunkMixin",
-		"accessor.ParticleAccessor"
+        "hud.InGameHudMixin",
+        "screen.HandledScreenMixin",
+        "text.TextRendererMixin"
 	],
 	"injectors": {
 		"defaultRequire": 1
