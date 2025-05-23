@@ -16,7 +16,8 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 @Mixin(BuiltChunk.class)
 public abstract class BuiltChunkMixin {
 
-    @Shadow @Final protected BlockPos min; // 'min' is the correct shadow field name for the origin BlockPos in 1.21.5
+    // Corrected shadow field name to 'origin' and access modifier to 'private'
+    @Shadow @Final private BlockPos origin;
 
     @Inject(method = "rebuild", at = @At("HEAD"), cancellable = true)
     private void barium$onRebuild(CallbackInfoReturnable<Runnable> cir) {
@@ -25,9 +26,8 @@ public abstract class BuiltChunkMixin {
             return;
         }
 
-        // Corrected: Create ChunkPos from BlockPos
-        ChunkPos chunkPos = new ChunkPos(min.getX() >> 4, min.getZ() >> 4); // Use bit shift for chunk coordinates
-        // Or simply: ChunkPos chunkPos = new ChunkPos(min); // This constructor takes BlockPos directly
+        // Use 'origin' instead of 'min'
+        ChunkPos chunkPos = new ChunkPos(origin.getX() >> 4, origin.getZ() >> 4);
 
         WorldChunk worldChunk = client.world.getChunk(chunkPos.x, chunkPos.z);
 

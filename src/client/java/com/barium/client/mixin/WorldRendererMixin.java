@@ -4,14 +4,14 @@ import com.barium.BariumMod;
 import com.barium.client.optimization.ClientTerrainOptimizer;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.render.Camera;
-import net.minecraft.client.render.RenderLayer; // Import RenderLayer
+import net.minecraft.client.render.RenderLayer;
 import net.minecraft.client.render.WorldRenderer;
 import net.minecraft.client.render.chunk.ChunkBuilder.BuiltChunk;
 import net.minecraft.client.util.math.MatrixStack;
-import net.minecraft.util.math.BlockPos; // Import BlockPos
+import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.ChunkPos;
 import net.minecraft.world.chunk.WorldChunk;
-import org.joml.Matrix4f; // Import Matrix4f
+import org.joml.Matrix4f;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
@@ -31,10 +31,8 @@ public abstract class WorldRendererMixin {
             return;
         }
         
-        // Corrected: Create ChunkPos from BlockPos
-        BlockPos origin = chunk.getOrigin();
-        ChunkPos chunkPos = new ChunkPos(origin.getX() >> 4, origin.getZ() >> 4); // Use bit shift for chunk coordinates
-        // Or simply: ChunkPos chunkPos = new ChunkPos(origin); // This constructor takes BlockPos directly
+        BlockPos origin = chunk.getOrigin(); // This method is correct for getting the origin BlockPos
+        ChunkPos chunkPos = new ChunkPos(origin.getX() >> 4, origin.getZ() >> 4);
         
         WorldChunk worldChunk = client.world.getChunk(chunkPos.x, chunkPos.z);
 

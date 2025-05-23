@@ -4,6 +4,7 @@ import com.barium.BariumMod;
 import com.barium.config.BariumConfig;
 import net.minecraft.client.particle.Particle;
 import net.minecraft.client.render.Camera;
+import net.minecraft.util.math.Box; // Import Box
 import net.minecraft.util.math.Vec3d;
 
 import java.util.HashMap;
@@ -22,7 +23,7 @@ public class ParticleOptimizer {
     private static final Map<Particle, Integer> PARTICLE_LOD_LEVELS = new WeakHashMap<>();
     
     // Mapa para armazenar contadores de ticks para partículas
-    private static final Map<Particle, Integer> PARTICLE_TICK_COUNTERS = new WeakHashMap<>();
+    private static final Map<Particle, Integer> PARTICLE_TICK_COUNTERS = new WeakHashMap<>(); // Corrected typo
     
     public static void init() {
         BariumMod.LOGGER.info("Inicializando otimizações do sistema de partículas e efeitos");
@@ -56,7 +57,6 @@ public class ParticleOptimizer {
         }
         
         // Culling baseado no campo de visão (frustum culling)
-        // Corrected method name: isBoxVisible -> isFrustumVisible
         if (!camera.isFrustumVisible(particle.getBoundingBox())) {
              if (BariumConfig.ENABLE_DEBUG_LOGGING) {
                 BariumMod.LOGGER.debug("Culling particle by frustum: {}", particlePos);
@@ -118,7 +118,7 @@ public class ParticleOptimizer {
         }
         
         // Incrementa o contador de ticks para esta partícula
-        int counter = PARTICLE_TICK_COUNters.getOrDefault(particle, 0) + 1;
+        int counter = PARTICLE_TICK_COUNTERS.getOrDefault(particle, 0) + 1; // Corrected typo
         PARTICLE_TICK_COUNTERS.put(particle, counter);
         
         // Com base no LOD, reduz a frequência de atualizações
@@ -143,16 +143,8 @@ public class ParticleOptimizer {
      * @return A posição da partícula como Vec3d
      */
     private static Vec3d getParticlePosition(Particle particle) {
-        // Using protected fields x, y, z which are directly accessible if in the same package/class
-        // or via mixin if not. For helper methods, direct access is often not possible without Mixin accessors.
-        // As a fallback, we'll try reflection if needed, but direct access via mixin is preferred.
-        // Assuming 'x', 'y', 'z' are accessible through the Particle object itself (they are public fields in Particle)
-        // If not, a Mixin Accessor would be needed. For 1.21.5, x, y, z are protected fields.
-        // To avoid reflection (which is slow), we'll assume a Mixin Accessor is intended for these fields
-        // or that the Particle class itself exposes a method for its position, which it does (getPos).
-        
-        // Particle has getX(), getY(), getZ() methods directly. No need for reflection.
-        return new Vec3d(particle.getX(), particle.getY(), particle.getZ());
+        // Particle has public fields x, y, z for its position
+        return new Vec3d(particle.x, particle.y, particle.z); // Direct field access
     }
     
     /**
@@ -164,25 +156,19 @@ public class ParticleOptimizer {
      * @return true se a posição está fora do campo de visão, false caso contrário
      */
     private static boolean isOutsideFieldOfView(Vec3d position, Camera camera) {
-        // This is a simplified check. Minecraft's Camera.isFrustumVisible provides more accurate frustum culling.
-        // This method was likely a custom implementation for more specific culling needs.
-        // Keeping it for reference, but it's not used by shouldRenderParticle after the `isFrustumVisible` change.
+        // This method is kept for reference but not used by shouldRenderParticle
+        // as `camera.isFrustumVisible` is more accurate for frustum culling.
 
-        // Vetor da câmera para a posição
         Vec3d direction = position.subtract(camera.getPos()).normalize();
         
-        // Obtém o vetor de direção da câmera
         Vec3d cameraDirection = Vec3d.fromPolar(camera.getPitch(), camera.getYaw());
         
-        // Produto escalar com a direção da câmera
         double dot = direction.dotProduct(cameraDirection);
         
-        // Se o produto escalar for negativo, a posição está atrás da câmera
         if (dot < 0) {
             return true;
         }
         
-        // Verifica se está dentro do cone de visão (aproximadamente 90 graus)
         return dot < 0.5;
     }
     
@@ -193,7 +179,8 @@ public class ParticleOptimizer {
      */
     public static void removeParticle(Particle particle) {
         if (BariumConfig.ENABLE_DEBUG_LOGGING) {
-            BariumMod.LOGGER.debug("Removing particle from optimizers: {}", particle.getUuid());
+            // Particles do not have UUIDs. Log a more generic identifier.
+            BariumMod.LOGGER.debug("Removing particle from optimizers: {}", particle.getClass().getSimpleName());
         }
         PARTICLE_LOD_LEVELS.remove(particle);
         PARTICLE_TICK_COUNTERS.remove(particle);
