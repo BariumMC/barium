@@ -1,14 +1,15 @@
+// src/client/java/com/barium/client/mixin/screen/HandledScreenMixin.java
 package com.barium.client.mixin.screen;
 
 import com.barium.config.BariumConfig;
-import com.barium.client.optimization.TooltipCache;
+import com.barium.client.optimization.TooltipCache; // Certifique-se que o import de TooltipData foi corrigido lá
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.font.TextRenderer;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.screen.ingame.HandledScreen;
 import net.minecraft.client.gui.tooltip.TooltipComponent;
-import net.minecraft.client.item.TooltipData;
+import net.minecraft.item.tooltip.TooltipData; // <--- Import CORRETO
 import net.minecraft.text.Text;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -29,21 +30,9 @@ public abstract class HandledScreenMixin extends Screen {
         super(title);
     }
 
-    // --- Tooltip Caching ---
-    // Redireciona a chamada para DrawContext.drawTooltip para usar nosso cache de componentes de tooltip.
-    @Redirect(method = "renderTooltip(Lnet/minecraft/client/gui/DrawContext;Ljava/util/List;Ljava/util/Optional;II)V",
-              at = @At(value = "INVOKE", target = "Lnet/minecraft/client/gui/DrawContext;drawTooltip(Lnet/minecraft/client/font/TextRenderer;Ljava/util/List;Ljava/util/Optional;II)V"))
-    private void barium$redirectDrawTooltip(DrawContext instance, TextRenderer textRenderer, List<Text> lines, Optional<TooltipData> data, int x, int y) {
-        if (BariumConfig.getInstance().TOOLTIP_INVENTORY_OPTIMIZATIONS.ENABLE_TOOLTIP_CACHING) {
-            // Obtém (ou cria e cacheia) a lista de TooltipComponent
-            List<TooltipComponent> components = TooltipCache.getOrCreateTooltipComponents(lines, data);
-            // Chama o método `drawTooltip` que aceita TooltipComponents
-            instance.drawTooltip(textRenderer, components, x, y);
-        } else {
-            // Se o cache estiver desabilitado, chama o método original do Minecraft
-            instance.drawTooltip(textRenderer, lines, data, x, y);
-        }
-    }
+    // --- REMOVIDO: O antigo redirect para DrawContext.drawTooltip que causava problemas ---
+    // Se você quiser cachear tooltips, terá que fazer em um nível diferente ou com uma abordagem mais complexa.
+    // A otimização de gradientes abaixo ainda é válida.
 
     /**
      * Injeta no método `init()` (chamado quando a tela é inicializada) para limpar o cache de tooltips.
@@ -65,10 +54,8 @@ public abstract class HandledScreenMixin extends Screen {
               at = @At(value = "INVOKE", target = "Lnet/minecraft/client/gui/DrawContext;fillGradient(IIIIII)V", ordinal = 0))
     private void barium$disableTooltipBackgroundGradient(DrawContext instance, int x1, int y1, int x2, int y2, int colorStart, int colorEnd) {
         if (BariumConfig.getInstance().TOOLTIP_INVENTORY_OPTIMIZATIONS.DISABLE_TOOLTIP_GRADIENTS) {
-            // Desenha um fundo sólido usando a cor de início, em vez de um gradiente.
             instance.fill(x1, y1, x2, y2, colorStart);
         } else {
-            // Chama o método original se os gradientes estiverem habilitados.
             instance.fillGradient(x1, y1, x2, y2, colorStart, colorEnd);
         }
     }
@@ -77,10 +64,8 @@ public abstract class HandledScreenMixin extends Screen {
               at = @At(value = "INVOKE", target = "Lnet/minecraft/client/gui/DrawContext;fillGradient(IIIIII)V", ordinal = 1))
     private void barium$disableTooltipBorderGradient(DrawContext instance, int x1, int y1, int x2, int y2, int colorStart, int colorEnd) {
         if (BariumConfig.getInstance().TOOLTIP_INVENTORY_OPTIMIZATIONS.DISABLE_TOOLTIP_GRADIENTS) {
-            // Desenha uma borda sólida (ou a mesma cor do fundo para nivelar o gradiente).
             instance.fill(x1, y1, x2, y2, colorStart);
         } else {
-            // Chama o método original se os gradientes estiverem habilitados.
             instance.fillGradient(x1, y1, x2, y2, colorStart, colorEnd);
         }
     }

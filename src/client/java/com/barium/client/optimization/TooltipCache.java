@@ -2,7 +2,7 @@ package com.barium.client.optimization;
 
 import com.google.common.collect.Lists;
 import net.minecraft.client.gui.tooltip.TooltipComponent;
-import net.minecraft.client.item.TooltipData;
+import net.minecraft.item.tooltip.TooltipData;
 import net.minecraft.text.Text;
 
 import java.util.List;
