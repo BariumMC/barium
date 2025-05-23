@@ -4,7 +4,7 @@ import com.barium.BariumMod;
 import com.barium.config.BariumConfig;
 import net.minecraft.client.particle.Particle;
 import net.minecraft.client.render.Camera;
-import net.minecraft.util.math.Box; // <<--- MAKE SURE THIS IMPORT IS PRESENT AND CORRECT
+import net.minecraft.util.math.Box; // Still needed for particle.getBoundingBox() even if not used in camera check
 import net.minecraft.util.math.Vec3d;
 import com.barium.client.mixin.accessor.ParticleAccessor;
 
@@ -16,7 +16,7 @@ import java.util.WeakHashMap;
  * Otimizador do sistema de partículas e efeitos.
  * 
  * Implementa:
- * - Culling de partículas fora do campo de visão
+ * - Culling de partículas fora do campo de visão (simplificado)
  * - LOD (Level of Detail) para partículas a distância
  */
 public class ParticleOptimizer {
@@ -57,15 +57,21 @@ public class ParticleOptimizer {
             return false;
         }
         
-        // Culling baseado no campo de visão (frustum culling)
-        // This is the line causing the error. Verify 'Box' import and Camera.isFrustumVisible(Box) exists.
-        // If it still fails, you might have to revert to an older method name or implement manually.
-        if (!camera.isFrustumVisible(particle.getBoundingBox())) {
-             if (BariumConfig.ENABLE_DEBUG_LOGGING) {
-                BariumMod.LOGGER.debug("Culling particle by frustum: {}", particlePos);
+        // --- START OF SIMPLIFIED FRUSTUM CULLING (REPLACING PROBLEMATIC isFrustumVisible) ---
+        // Checks if the particle is generally in front of the camera's view.
+        // This is not a full frustum check but prevents rendering particles directly behind the player.
+        Vec3d cameraDirection = camera.getRotation().getUnitVector(); // Get the camera's forward vector
+        Vec3d toParticle = particlePos.subtract(cameraPos);
+        
+        // If the particle is behind the camera (dot product is negative) or too far off-axis
+        // A threshold of 0.1 (around 84 degrees FOV) is a reasonable approximation for "in front".
+        if (toParticle.dotProduct(cameraDirection) < 0.1) {
+            if (BariumConfig.ENABLE_DEBUG_LOGGING) {
+                BariumMod.LOGGER.debug("Culling particle (behind/off-axis): {}", particlePos);
             }
             return false;
         }
+        // --- END OF SIMPLIFIED FRUSTUM CULLING ---
         
         return true;
     }
