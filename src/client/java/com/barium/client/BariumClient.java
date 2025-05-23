@@ -4,6 +4,7 @@ import com.barium.BariumMod;
 import com.barium.client.optimization.HudOptimizer;
 import com.barium.client.optimization.ParticleOptimizer;
 import com.barium.client.optimization.SoundOptimizer;
+import com.barium.client.optimization.ClientTerrainOptimizer; // Import the new optimizer
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
@@ -18,5 +19,6 @@ public class BariumClient implements ClientModInitializer {
         HudOptimizer.init();
         ParticleOptimizer.init();
         SoundOptimizer.init();
+        ClientTerrainOptimizer.init(); // Initialize the client terrain optimizer
     }
 }

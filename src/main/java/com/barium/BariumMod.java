@@ -22,6 +22,7 @@ public class BariumMod implements ModInitializer {
         EntityTickOptimizer.init();
         InventoryOptimizer.init();
         ChunkSavingOptimizer.init();
+        ServerTerrainOptimizer.init(); // Initialize the server terrain optimizer
         
         LOGGER.info("Barium inicializado com sucesso!");
     }

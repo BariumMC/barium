@@ -5,7 +5,9 @@
 	"client": [
 		"particle.ParticleAccessor",
 		"particle.ParticleMixin",
-		"hud.DebugHudMixin"
+		"hud.DebugHudMixin",
+		"WorldRendererMixin",
+		"BuiltChunkMixin"
 	],
 	"injectors": {
 		"defaultRequire": 1
