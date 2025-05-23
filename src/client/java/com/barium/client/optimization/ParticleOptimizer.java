@@ -4,7 +4,7 @@ import com.barium.BariumMod;
 import com.barium.config.BariumConfig;
 import net.minecraft.client.particle.Particle;
 import net.minecraft.client.render.Camera;
-import net.minecraft.util.math.Box; // Still needed for particle.getBoundingBox() even if not used in camera check
+import net.minecraft.util.math.Box;
 import net.minecraft.util.math.Vec3d;
 import com.barium.client.mixin.accessor.ParticleAccessor;
 
@@ -57,10 +57,9 @@ public class ParticleOptimizer {
             return false;
         }
         
-        // --- START OF SIMPLIFIED FRUSTUM CULLING (REPLACING PROBLEMATIC isFrustumVisible) ---
-        // Checks if the particle is generally in front of the camera's view.
-        // This is not a full frustum check but prevents rendering particles directly behind the player.
-        Vec3d cameraDirection = camera.getRotation().getUnitVector(); // Get the camera's forward vector
+        // --- START OF SIMPLIFIED FRUSTUM CULLING ---
+        // Get the camera's forward view vector using pitch and yaw
+        Vec3d cameraDirection = Vec3d.fromPolar(camera.getPitch(), camera.getYaw());
         Vec3d toParticle = particlePos.subtract(cameraPos);
         
         // If the particle is behind the camera (dot product is negative) or too far off-axis
