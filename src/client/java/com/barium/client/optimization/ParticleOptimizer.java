@@ -4,9 +4,9 @@ import com.barium.BariumMod;
 import com.barium.config.BariumConfig;
 import net.minecraft.client.particle.Particle;
 import net.minecraft.client.render.Camera;
-import net.minecraft.util.math.Box; // Import Box
+import net.minecraft.util.math.Box; // <<--- MAKE SURE THIS IMPORT IS PRESENT AND CORRECT
 import net.minecraft.util.math.Vec3d;
-import com.barium.client.mixin.accessor.ParticleAccessor; // Import the accessor
+import com.barium.client.mixin.accessor.ParticleAccessor;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -58,6 +58,8 @@ public class ParticleOptimizer {
         }
         
         // Culling baseado no campo de visão (frustum culling)
+        // This is the line causing the error. Verify 'Box' import and Camera.isFrustumVisible(Box) exists.
+        // If it still fails, you might have to revert to an older method name or implement manually.
         if (!camera.isFrustumVisible(particle.getBoundingBox())) {
              if (BariumConfig.ENABLE_DEBUG_LOGGING) {
                 BariumMod.LOGGER.debug("Culling particle by frustum: {}", particlePos);
