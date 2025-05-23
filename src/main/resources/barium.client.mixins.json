@@ -7,7 +7,9 @@
 		"particle.ParticleMixin",
 		"hud.DebugHudMixin",
 		"WorldRendererMixin",
-		"BuiltChunkMixin"
+		"BuiltChunkMixin",
+		"accessor.ParticleAccessor",
+		"accessor.BuiltChunkAccessor"
 	],
 	"injectors": {
 		"defaultRequire": 1

@@ -6,6 +6,7 @@ import net.minecraft.client.particle.Particle;
 import net.minecraft.client.render.Camera;
 import net.minecraft.util.math.Box; // Import Box
 import net.minecraft.util.math.Vec3d;
+import com.barium.client.mixin.accessor.ParticleAccessor; // Import the accessor
 
 import java.util.HashMap;
 import java.util.Map;
@@ -23,7 +24,7 @@ public class ParticleOptimizer {
     private static final Map<Particle, Integer> PARTICLE_LOD_LEVELS = new WeakHashMap<>();
     
     // Mapa para armazenar contadores de ticks para partículas
-    private static final Map<Particle, Integer> PARTICLE_TICK_COUNTERS = new WeakHashMap<>(); // Corrected typo
+    private static final Map<Particle, Integer> PARTICLE_TICK_COUNTERS = new WeakHashMap<>();
     
     public static void init() {
         BariumMod.LOGGER.info("Inicializando otimizações do sistema de partículas e efeitos");
@@ -118,7 +119,7 @@ public class ParticleOptimizer {
         }
         
         // Incrementa o contador de ticks para esta partícula
-        int counter = PARTICLE_TICK_COUNTERS.getOrDefault(particle, 0) + 1; // Corrected typo
+        int counter = PARTICLE_TICK_COUNTERS.getOrDefault(particle, 0) + 1;
         PARTICLE_TICK_COUNTERS.put(particle, counter);
         
         // Com base no LOD, reduz a frequência de atualizações
@@ -143,8 +144,9 @@ public class ParticleOptimizer {
      * @return A posição da partícula como Vec3d
      */
     private static Vec3d getParticlePosition(Particle particle) {
-        // Particle has public fields x, y, z for its position
-        return new Vec3d(particle.x, particle.y, particle.z); // Direct field access
+        // Use the accessor to get protected fields
+        ParticleAccessor accessor = (ParticleAccessor) particle;
+        return new Vec3d(accessor.getX(), accessor.getY(), accessor.getZ());
     }
     
     /**

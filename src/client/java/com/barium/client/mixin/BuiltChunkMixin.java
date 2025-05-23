@@ -12,12 +12,13 @@ import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
+import com.barium.client.mixin.accessor.BuiltChunkAccessor; // Import the accessor
 
 @Mixin(BuiltChunk.class)
 public abstract class BuiltChunkMixin {
 
-    // Corrected shadow field name to 'origin' and access modifier to 'private'
-    @Shadow @Final private BlockPos origin;
+    // Removed the @Shadow field since we're using an Accessor now
+    // @Shadow @Final private BlockPos origin;
 
     @Inject(method = "rebuild", at = @At("HEAD"), cancellable = true)
     private void barium$onRebuild(CallbackInfoReturnable<Runnable> cir) {
@@ -26,8 +27,11 @@ public abstract class BuiltChunkMixin {
             return;
         }
 
-        // Use 'origin' instead of 'min'
-        ChunkPos chunkPos = new ChunkPos(origin.getX() >> 4, origin.getZ() >> 4);
+        // Use the accessor to get the origin BlockPos
+        BuiltChunkAccessor accessor = (BuiltChunkAccessor) this;
+        BlockPos originPos = accessor.getOriginPos();
+
+        ChunkPos chunkPos = new ChunkPos(originPos.getX() >> 4, originPos.getZ() >> 4);
 
         WorldChunk worldChunk = client.world.getChunk(chunkPos.x, chunkPos.z);
 
