@@ -11,10 +11,10 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 @Mixin(Particle.class)
 public abstract class ParticleMixin {
 
-    // Adicionado o descritor explícito "()V" para o método expire
-    @Inject(method = "expire()V", at = @At("HEAD"))
-    private void barium$onExpireHead(CallbackInfo ci) {
-        ParticleTracker.decrementParticleCount();
+    // Corrected method name from "expire" to "markDead" for 1.21.5 mappings
+    @Inject(method = "markDead", at = @At("HEAD"))
+    private void barium$onMarkDead(CallbackInfo ci) {
+        // When a particle is marked dead, remove it from the optimizer's caches
         ParticleOptimizer.removeParticle((Particle)(Object)this);
     }
 }

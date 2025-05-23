@@ -16,7 +16,8 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 @Mixin(BuiltChunk.class)
 public abstract class BuiltChunkMixin {
 
-    @Shadow @Final protected BlockPos origin;
+    // Corrected field name from "origin" to "min" for 1.21.5 mappings
+    @Shadow @Final protected BlockPos min;
 
     // Intercept the request to rebuild the chunk mesh
     // This is called by ChunkBatcher to get a Runnable task for rebuilding.
@@ -27,7 +28,8 @@ public abstract class BuiltChunkMixin {
             return;
         }
 
-        ChunkPos chunkPos = origin.toChunkPos();
+        // Use 'min' instead of 'origin'
+        ChunkPos chunkPos = min.toChunkPos();
         WorldChunk worldChunk = client.world.getChunk(chunkPos.x, chunkPos.z);
 
         if (worldChunk != null) {
