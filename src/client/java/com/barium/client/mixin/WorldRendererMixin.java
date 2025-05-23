@@ -25,24 +25,15 @@ public abstract class WorldRendererMixin {
     @Shadow
     private MinecraftClient client;
 
-    @Inject(method = "renderChunk", at = @At("HEAD"), cancellable = true)
-    private void barium$onRenderChunk(BuiltChunk chunk, RenderLayer renderLayer, MatrixStack matrices, double x, double y, double z, Matrix4f projectionMatrix, CallbackInfo ci) {
-        if (client.world == null || !com.barium.config.BariumConfig.ENABLE_TERRAIN_STREAMING) {
-            return;
-        }
-        
-        BlockPos origin = chunk.getOrigin(); // This method is correct for getting the origin BlockPos
-        ChunkPos chunkPos = new ChunkPos(origin.getX() >> 4, origin.getZ() >> 4);
-        
-        WorldChunk worldChunk = client.world.getChunk(chunkPos.x, chunkPos.z);
+    // A injeção em "renderBuiltChunk", "drawSection", "renderChunk" foi removida
+    // pois o nome do método é instável e causa erros de compilação.
+    // A lógica de culling de renderização será movida para BuiltChunkMixin.java
 
-        if (!ClientTerrainOptimizer.shouldRenderChunk(worldChunk, client.gameRenderer.getCamera())) {
-            ci.cancel();
-        }
-    }
-    
+    // Este mixin (setupTerrain) ainda é válido e não deve causar problemas.
     @ModifyVariable(method = "setupTerrain", at = @At(value = "STORE", ordinal = 0), name = "builtChunk", allow = 1)
     private BuiltChunk barium$modifyBuiltChunkForRebuild(BuiltChunk builtChunk) {
+        // Esta variável é um BuiltChunk, que será processado pelo BuiltChunkMixin
+        // para decidir se deve ser reconstruído.
         return builtChunk;
     }
 }

@@ -2,10 +2,12 @@ package com.barium.client.mixin;
 
 import com.barium.client.optimization.ClientTerrainOptimizer;
 import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.render.RenderLayer; // Import RenderLayer
 import net.minecraft.client.render.chunk.ChunkBuilder.BuiltChunk;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.ChunkPos;
 import net.minecraft.world.chunk.WorldChunk;
+import org.joml.Matrix4f; // Import Matrix4f
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -25,7 +27,6 @@ public abstract class BuiltChunkMixin {
         }
 
         // Get the BuiltChunk instance (this) and call its public getOrigin() method.
-        // The cast to BuiltChunk is often needed for the compiler when dealing with Mixin's `this`.
         BlockPos originPos = ((BuiltChunk)(Object)this).getOrigin();
 
         ChunkPos chunkPos = new ChunkPos(originPos.getX() >> 4, originPos.getZ() >> 4);
@@ -36,6 +37,30 @@ public abstract class BuiltChunkMixin {
             int lod = ClientTerrainOptimizer.getChunkLOD(worldChunk, client.gameRenderer.getCamera());
             if (!ClientTerrainOptimizer.shouldRebuildChunkMesh(chunkPos, lod, client.player)) {
                 cir.setReturnValue(null);
+            }
+        }
+    }
+
+    // --- NOVA INJEÇÃO PARA CULLING DE RENDERIZAÇÃO ---
+    // Injeta no método `shouldRender` do BuiltChunk para decidir se o chunk deve ser desenhado.
+    // A assinatura para `shouldRender` é: (RenderLayer renderLayer, MatrixStack matrices, double x, double y, double z, Matrix4f projectionMatrix)
+    @Inject(method = "shouldRender", at = @At("HEAD"), cancellable = true)
+    private void barium$onShouldRender(RenderLayer renderLayer, MatrixStack matrices, double x, double y, double z, Matrix4f projectionMatrix, CallbackInfoReturnable<Boolean> cir) {
+        MinecraftClient client = MinecraftClient.getInstance();
+        if (client.world == null || !com.barium.config.BariumConfig.ENABLE_TERRAIN_STREAMING) {
+            return;
+        }
+
+        // Obter a posição do chunk (já que estamos no BuiltChunk)
+        // O `getOrigin()` retorna a BlockPos do canto inferior/noroeste do chunk.
+        BlockPos originPos = ((BuiltChunk)(Object)this).getOrigin();
+        ChunkPos chunkPos = new ChunkPos(originPos.getX() >> 4, originPos.getZ() >> 4);
+        
+        WorldChunk worldChunk = client.world.getChunk(chunkPos.x, chunkPos.z);
+
+        if (worldChunk != null) {
+            if (!ClientTerrainOptimizer.shouldRenderChunk(worldChunk, client.gameRenderer.getCamera())) {
+                cir.setReturnValue(false); // Não renderiza este chunk
             }
         }
     }
