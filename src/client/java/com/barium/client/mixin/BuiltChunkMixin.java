@@ -16,11 +16,8 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 @Mixin(BuiltChunk.class)
 public abstract class BuiltChunkMixin {
 
-    // Corrected field name from "origin" to "min" for 1.21.5 mappings
-    @Shadow @Final protected BlockPos min;
+    @Shadow @Final protected BlockPos min; // 'min' is the correct shadow field name for the origin BlockPos in 1.21.5
 
-    // Intercept the request to rebuild the chunk mesh
-    // This is called by ChunkBatcher to get a Runnable task for rebuilding.
     @Inject(method = "rebuild", at = @At("HEAD"), cancellable = true)
     private void barium$onRebuild(CallbackInfoReturnable<Runnable> cir) {
         MinecraftClient client = MinecraftClient.getInstance();
@@ -28,16 +25,15 @@ public abstract class BuiltChunkMixin {
             return;
         }
 
-        // Use 'min' instead of 'origin'
-        ChunkPos chunkPos = min.toChunkPos();
+        // Corrected: Create ChunkPos from BlockPos
+        ChunkPos chunkPos = new ChunkPos(min.getX() >> 4, min.getZ() >> 4); // Use bit shift for chunk coordinates
+        // Or simply: ChunkPos chunkPos = new ChunkPos(min); // This constructor takes BlockPos directly
+
         WorldChunk worldChunk = client.world.getChunk(chunkPos.x, chunkPos.z);
 
         if (worldChunk != null) {
             int lod = ClientTerrainOptimizer.getChunkLOD(worldChunk, client.gameRenderer.getCamera());
             if (!ClientTerrainOptimizer.shouldRebuildChunkMesh(chunkPos, lod, client.player)) {
-                // If we shouldn't rebuild, cancel the original method.
-                // We return null as a Runnable, which means no rebuild task is submitted.
-                // This is a powerful cancellation.
                 cir.setReturnValue(null);
             }
         }

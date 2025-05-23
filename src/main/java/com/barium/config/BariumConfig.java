@@ -5,6 +5,10 @@ package com.barium.config;
  * Contém todas as configurações para os diferentes sistemas de otimização.
  */
 public class BariumConfig {
+    // General Mod Settings (new)
+    public static final boolean ENABLE_MOD_OPTIMIZATIONS = true; // Master switch for all Barium optimizations
+    public static final boolean ENABLE_DEBUG_LOGGING = false; // Enable/disable verbose debug logging
+
     // Configurações para PathfindingOptimizer
     public static final int PATH_CACHE_SIZE = 128;
     public static final int PATH_UPDATE_INTERVAL_TICKS = 10;
@@ -18,11 +22,16 @@ public class BariumConfig {
     public static final boolean ENABLE_SIGNAL_COMPRESSION = true;
     public static final int MAX_REDSTONE_UPDATES_PER_TICK = 1024;
     
-    // Configurações para ParticleOptimizer
+    // Configurações para ParticleOptimizer (UPDATED/ADDED)
     public static final boolean ENABLE_PARTICLE_CULLING = true;
     public static final boolean ENABLE_PARTICLE_LOD = true;
-    public static final int PARTICLE_LOD_DISTANCE = 32;
-    
+    public static final boolean ENABLE_PARTICLE_OPTIMIZATIONS = true; // General particle optimizations switch
+    public static final double PARTICLE_LOD_DISTANCE_START = 32.0; // Distance where LOD starts
+    public static final double PARTICLE_LOD_STEP_DISTANCE = 16.0; // Distance interval for next LOD level
+    public static final int MAX_PARTICLE_LOD_LEVELS = 3; // Max LOD levels
+    public static final double PARTICLE_CULLING_DISTANCE_SQ = 64.0 * 64.0; // Squared distance for culling (64 blocks)
+    public static final int MAX_TOTAL_PARTICLES = 10000; // Limit total particles rendered/ticked
+
     // Configurações para EntityTickOptimizer
     public static final int ENTITY_FREEZE_DISTANCE = 48;
     
