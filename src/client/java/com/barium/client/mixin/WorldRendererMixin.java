@@ -29,24 +29,17 @@ public abstract class WorldRendererMixin {
     // Inject before the main rendering loop of chunks to filter them
     @Inject(method = "render", at = @At(value = "INVOKE", target = "Lnet/minecraft/util/math/Vec3d;distanceToSqr(Lnet/minecraft/util/math/Vec3d;)D"), locals = LocalCapture.CAPTURE_FAILHARD)
     private void barium$onRenderIterateChunks(MatrixStack matrices, float tickDelta, long limitTime, boolean renderBlockOutline, Camera camera, WorldRenderer.LightingProvider lightingProvider, CallbackInfo ci, Iterator<BuiltChunk> iterator) {
-        if (!client.is  /// If the client is null, or not in a world. Or if the config is disabled
-            // No need to check client.isIntegratedServerRunning() as this is client-side code.
-            // Client.world can be null during startup or shutdown
-            client.world == null || !com.barium.config.BariumConfig.ENABLE_TERRAIN_STREAMING) {
-            return;
-        }
-
-        // We can't directly modify the iterator here, so we will filter within the loop
-        // The more effective way to apply culling and LOD on rendering is within the
-        // WorldRenderer.render method itself, by modifying the collection of BuiltChunks
-        // or by cancelling the rendering of individual chunks if they are not supposed to be rendered.
-        // We will modify the `canDraw` check for the chunk mesh.
+        // This inject point is not directly used for filtering in this implementation,
+        // but it's kept for potential future use or debugging the iteration process.
+        // The actual culling logic happens in barium$onRenderChunk.
     }
     
     // Inject at the point where a built chunk is checked if it can be drawn
     @Inject(method = "renderChunk", at = @At("HEAD"), cancellable = true)
     private void barium$onRenderChunk(BuiltChunk chunk, CallbackInfo ci) {
-        if (!com.barium.config.BariumConfig.ENABLE_TERRAIN_STREAMING || client.world == null) {
+        // If the client world is null (e.g., during startup/shutdown) or optimization is disabled,
+        // we don't apply culling and let Minecraft handle it normally.
+        if (client.world == null || !com.barium.config.BariumConfig.ENABLE_TERRAIN_STREAMING) {
             return;
         }
         
@@ -63,36 +56,12 @@ public abstract class WorldRendererMixin {
     
     // Modify the method that checks if a chunk should be rebuilt
     // This is the ideal place to inject LOD and directional preloading logic for meshing frequency.
+    // This mixin is specifically targeting the `builtChunk` local variable within `setupTerrain`.
+    // The actual suppression of rebuild will be handled by the `BuiltChunkMixin`.
     @ModifyVariable(method = "setupTerrain", at = @At(value = "STORE", ordinal = 0), name = "builtChunk", allow = 1)
     private BuiltChunk barium$modifyBuiltChunkForRebuild(BuiltChunk builtChunk) {
-        if (!com.barium.config.BariumConfig.ENABLE_CHUNK_LOD && !com.barium.config.BariumConfig.ENABLE_DIRECTIONAL_PRELOADING) {
-            return builtChunk; // No optimization applied
-        }
-
-        // Get the chunk's WorldChunk from its position
-        ChunkPos chunkPos = builtChunk.getOrigin().toChunkPos();
-        WorldChunk worldChunk = client.world.getChunk(chunkPos.x, chunkPos.z);
-        
-        if (worldChunk != null) {
-            // Determine LOD level for this chunk
-            int lod = ClientTerrainOptimizer.getChunkLOD(worldChunk, client.gameRenderer.getCamera());
-            
-            // Check if it should rebuild its mesh based on LOD and player movement
-            if (!ClientTerrainOptimizer.shouldRebuildChunkMesh(chunkPos, lod, client.player)) {
-                // If not, ensure it doesn't get added to the list of chunks to be rebuilt,
-                // effectively skipping the re-meshing process for this frame/tick.
-                // Returning null here could cause issues if the original code doesn't handle null.
-                // A safer way would be to modify the collection itself or use a different inject point.
-                // As a workaround, we can ensure the builtChunk does not have its pending rebuild flag set.
-                // However, there's no direct flag access here.
-                // The current BuiltChunkMixin will handle the actual rebuild suppression.
-            }
-        }
+        // The logic for whether a chunk should be rebuilt is now handled by the BuiltChunkMixin.
+        // This method serves as a pass-through to ensure the BuiltChunk is processed by the later mixin.
         return builtChunk;
     }
-
-    // Another entry point for modifying chunk rebuild priority or frequency
-    // This targets the iteration of `BuiltChunk` objects to be rebuilt.
-    // It's tricky to directly modify the `chunkBatcher.rebuildChunks` queue.
-    // A better approach is to let the `BuiltChunkMixin` decide if a chunk should rebuild.
 }
