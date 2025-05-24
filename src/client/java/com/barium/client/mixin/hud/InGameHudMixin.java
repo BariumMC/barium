@@ -45,14 +45,14 @@ public abstract class InGameHudMixin {
     // Injeções para cancelar a renderização se a flag de dirty não estiver ativa.
     // As flags são marcadas como "limpas" após a renderização.
 
-    @Inject(method = "renderHealth", at = @At("HEAD"), cancellable = true)
+    @Inject(method = "renderHealthBar", at = @At("HEAD"), cancellable = true)
     private void barium$cancellableRenderHealth(DrawContext context, PlayerEntity player, CallbackInfo ci) {
         if (BariumConfig.getInstance().HUD_OPTIMIZATIONS.ENABLE_DIRTY_FLAG_OPTIMIZATION && !HudStateTracker.healthDirty) {
             ci.cancel();
         }
     }
 
-    @Inject(method = "renderHealth", at = @At("TAIL"))
+    @Inject(method = "renderHealthBar", at = @At("TAIL"))
     private void barium$markHealthClean(DrawContext context, PlayerEntity player, CallbackInfo ci) {
         if (BariumConfig.getInstance().HUD_OPTIMIZATIONS.ENABLE_DIRTY_FLAG_OPTIMIZATION) {
             HudStateTracker.healthDirty = false;
