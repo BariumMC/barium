@@ -1,0 +1,9 @@
+{
+  "barium.config.category.rendering": "Rendering Optimizations",
+  "barium.config.category.chunk_building": "Chunk Building Optimizations",
+
+  "barium.config.tooltip.aggressiveFaceCulling": "Attempts to remove more hidden faces (e.g., leaves, fluids) for rendering. May cause minor visual artifacts.",
+  "barium.config.tooltip.optimizeFluidRendering": "Enables specialized optimizations for fluid rendering, reducing overdraw for internal fluid faces.",
+  "barium.config.tooltip.chunkBuilderThreads": "Sets the number of threads used for chunk re-meshing. Higher values may improve chunk loading but increase CPU usage.",
+  "barium.config.tooltip.enableQuadSorting": "Enables experimental quad sorting to reduce draw calls within chunks. May have unpredictable visual effects or crashes if not fully implemented."
+}
