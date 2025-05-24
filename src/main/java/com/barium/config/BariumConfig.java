@@ -24,22 +24,23 @@ public class BariumConfig implements ConfigData {
     public ChunkBuildingConfig chunkBuilding = new ChunkBuildingConfig();
 
     public static class RenderConfig implements ConfigData {
-        // CORRIGIDO: Usando 'value' em vez de 'key'
-        @ConfigEntry.Gui.Tooltip(value = "barium.config.tooltip.aggressiveFaceCulling")
+        // CORRIGIDO: Removendo 'value ='
+        @ConfigEntry.Gui.Tooltip("barium.config.tooltip.aggressiveFaceCulling")
         public boolean aggressiveFaceCulling = true; // Potentially removes more hidden faces (risks minor visual artifacts)
 
-        // CORRIGIDO: Usando 'value' em vez de 'key'
-        @ConfigEntry.Gui.Tooltip(value = "barium.config.tooltip.optimizeFluidRendering")
+        // CORRIGIDO: Removendo 'value ='
+        @ConfigEntry.Gui.Tooltip("barium.config.tooltip.optimizeFluidRendering")
         public boolean optimizeFluidRendering = true; // Specialized fluid rendering optimization
     }
 
     public static class ChunkBuildingConfig implements ConfigData {
-        // CORRIGIDO: Usando 'value' em vez de 'key'
-        @ConfigEntry.Gui.Tooltip(value = "barium.config.tooltip.chunkBuilderThreads")
+        // CORRIGIDO: Removendo 'value ='
+        @ConfigEntry.Gui.Tooltip("barium.config.tooltip.chunkBuilderThreads")
         @ConfigEntry.BoundedDiscrete(min = 1, max = 8) // Common range for CPU cores
         public int chunkBuilderThreads = Math.max(1, Runtime.getRuntime().availableProcessors() / 2); // Half available processors, min 1
     
-        @ConfigEntry.Gui.Tooltip(value = "barium.config.tooltip.enableQuadSorting")
+        // CORRIGIDO: Removendo 'value ='
+        @ConfigEntry.Gui.Tooltip("barium.config.tooltip.enableQuadSorting")
         public boolean enableQuadSorting = false; // Desativado por padrão devido à complexidade da implementação
     }
 
