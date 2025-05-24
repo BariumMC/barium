@@ -3,7 +3,7 @@ package com.barium.client.optimization;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.ItemStack; // Import para ItemStack
 // import net.minecraft.entity.player.PlayerInventory; // Geralmente não é necessário importar diretamente se você só acessa via PlayerEntity.getInventory()
-// import com.barium.client.mixin.accessor.PlayerInventoryAccessor; // APENAS SE NECESSÁRIO (ver nota acima)
+import com.barium.client.mixin.accessor.PlayerInventoryAccessor; // APENAS SE NECESSÁRIO (ver nota acima)
 
 /**
  * Utilitário para rastrear o estado do HUD para otimizações de dirty flag.
