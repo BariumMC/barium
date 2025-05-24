@@ -129,7 +129,7 @@ public abstract class InGameHudMixin {
     }
 
     // Injeta antes de uma chamada de `TextRenderer.draw` para iniciar uma seção no profiler.
-    @Inject(method = "render", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/font/TextRenderer;draw(Lnet/minecraft/text/Text;FFIZLorg/joml/Matrix4f;Lnet/minecraft/client/render/VertexConsumerProvider;Lnet/minecraft/client/font/TextRenderer$TextLayerType;II)I", shift = At.Shift.BEFORE)),
+    @Inject(method = "render", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/font/TextRenderer;draw(Lnet/minecraft/text/Text;FFIZLorg/joml/Matrix4f;Lnet/minecraft/client/render/VertexConsumerProvider;Lnet/minecraft/client/font/TextRenderer$TextLayerType;II)I", shift = At.Shift.BEFORE))
            // locals = {}) // CORREÇÃO: Usar array vazio para locals = {}
     private void barium$profileTextRenderStart(DrawContext context, float tickDelta, CallbackInfo ci) {
         if (BariumConfig.getInstance().TEXT_RENDERING_OPTIMIZATIONS.ENABLE_TEXT_PROFILING) {
@@ -139,7 +139,7 @@ public abstract class InGameHudMixin {
     }
 
     // Injeta depois de uma chamada de `TextRenderer.draw` para finalizar a seção do profiler.
-    @Inject(method = "render", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/font/TextRenderer;draw(Lnet/minecraft/text/Text;FFIZLorg/joml/Matrix4f;Lnet/minecraft/client/render/VertexConsumerProvider;Lnet/minecraft/client/font/TextRenderer$TextLayerType;II)I", shift = At.Shift.AFTER)),
+    @Inject(method = "render", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/font/TextRenderer;draw(Lnet/minecraft/text/Text;FFIZLorg/joml/Matrix4f;Lnet/minecraft/client/render/VertexConsumerProvider;Lnet/minecraft/client/font/TextRenderer$TextLayerType;II)I", shift = At.Shift.AFTER))
           //  locals = {}) // CORREÇÃO: Usar array vazio para locals = {}
     private void barium$profileTextRenderEnd(DrawContext context, float tickDelta, CallbackInfo ci) {
         if (BariumConfig.getInstance().TEXT_RENDERING_OPTIMIZATIONS.ENABLE_TEXT_PROFILING) {
