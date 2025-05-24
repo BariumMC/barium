@@ -4,6 +4,7 @@ import com.barium.BariumMod;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
+import com.barium.client.optimization.HudOptimizer;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents; // Import para eventos de desconexão
 
 @Environment(EnvType.CLIENT)
