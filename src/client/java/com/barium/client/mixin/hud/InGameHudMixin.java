@@ -1,7 +1,7 @@
 package com.barium.client.mixin.hud;
 
 import com.barium.config.BariumConfig;
-import com.barium.client.optimization.HudStateTracker;
+import com.barium.client.optimization.HudStateTracker; // Import adicionado
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.font.TextRenderer;
 import net.minecraft.client.gui.DrawContext;
@@ -16,7 +16,12 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.ModifyArg;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
-import org.spongepowered.asm.mixin.injection.callback.LocalVariablesCapture;
+// import org.spongepowered.asm.mixin.injection.callback.LocalVariablesCapture; // REMOVER ESTE IMPORT
+
+import com.barium.client.mixin.accessor.MinecraftClientAccessor; // Import para o Accessor de MinecraftClient
+
+// Import para PlayerInventoryAccessor (APENAS SE O ERRO EM HudStateTracker.java PERSISTIR)
+// import com.barium.client.mixin.accessor.PlayerInventoryAccessor; 
 
 @Mixin(InGameHud.class)
 public abstract class InGameHudMixin {
@@ -32,7 +37,10 @@ public abstract class InGameHudMixin {
     @Inject(method = "tick", at = @At("TAIL"))
     private void barium$onTickUpdateState(CallbackInfo ci) {
         if (BariumConfig.getInstance().HUD_OPTIMIZATIONS.ENABLE_DIRTY_FLAG_OPTIMIZATION && this.client.player != null) {
-            HudStateTracker.updatePlayerState(this.client.player);
+            // HudStateTracker.updatePlayerState lida com o acesso a player.getInventory().selectedSlot
+            // Se o erro 'selectedSlot has private access' persistir no HudStateTracker.java,
+            // a solução é fazer a correção lá usando PlayerInventoryAccessor.
+            HudStateTracker.updatePlayerState(this.client.player); 
         }
     }
 
@@ -125,19 +133,21 @@ public abstract class InGameHudMixin {
 
     // Injeta antes de uma chamada de `TextRenderer.draw` para iniciar uma seção no profiler.
     @Inject(method = "render", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/font/TextRenderer;draw(Lnet/minecraft/text/Text;FFIZLorg/joml/Matrix4f;Lnet/minecraft/client/render/VertexConsumerProvider;Lnet/minecraft/client/font/TextRenderer$TextLayerType;II)I", shift = At.Shift.BEFORE),
-            locals = LocalVariablesCapture.NO_CAPTURE)
+            locals = {}) // CORREÇÃO: Mudar para {}
     private void barium$profileTextRenderStart(DrawContext context, float tickDelta, CallbackInfo ci) {
         if (BariumConfig.getInstance().TEXT_RENDERING_OPTIMIZATIONS.ENABLE_TEXT_PROFILING) {
-            this.client.getProfiler().push("barium_ingame_hud_text_render");
+            // CORREÇÃO: Usar o accessor
+            ((MinecraftClientAccessor)this.client).getProfiler_().push("barium_ingame_hud_text_render");
         }
     }
 
     // Injeta depois de uma chamada de `TextRenderer.draw` para finalizar a seção do profiler.
     @Inject(method = "render", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/font/TextRenderer;draw(Lnet/minecraft/text/Text;FFIZLorg/joml/Matrix4f;Lnet/minecraft/client/render/VertexConsumerProvider;Lnet/minecraft/client/font/TextRenderer$TextLayerType;II)I", shift = At.Shift.AFTER),
-            locals = LocalVariablesCapture.NO_CAPTURE)
+            locals = {}) // CORREÇÃO: Mudar para {}
     private void barium$profileTextRenderEnd(DrawContext context, float tickDelta, CallbackInfo ci) {
         if (BariumConfig.getInstance().TEXT_RENDERING_OPTIMIZATIONS.ENABLE_TEXT_PROFILING) {
-            this.client.getProfiler().pop();
+            // CORREÇÃO: Usar o accessor
+            ((MinecraftClientAccessor)this.client).getProfiler_().pop();
         }
     }
 }

@@ -8,6 +8,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.barium.client.optimization.HudStateTracker;
 /**
  * Otimizador da HUD e textos (Overlay).
  * <p>
