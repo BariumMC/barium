@@ -3,12 +3,7 @@
 	"package": "com.barium.client.mixin",
 	"compatibilityLevel": "JAVA_21",
 	"client": [
-		"accesor.PlayerInventoryAccessor",
-		"accesor.MinecraftClientAcessor",
-		"hud.DebugHudMixin",
-        "hud.InGameHudMixin",
-        "screen.HandledScreenMixin",
-        "text.TextRendererMixin"
+		"render.EntityRenderDispatcherMixin"
 	],
 	"injectors": {
 		"defaultRequire": 1
