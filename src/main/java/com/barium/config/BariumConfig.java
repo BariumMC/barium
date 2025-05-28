@@ -1,50 +1,47 @@
-// src/main/java/com/barium/config/BariumConfig.java
 package com.barium.config;
 
 import me.shedaniel.autoconfig.AutoConfig;
 import me.shedaniel.autoconfig.ConfigData;
 import me.shedaniel.autoconfig.annotation.Config;
 import me.shedaniel.autoconfig.annotation.ConfigEntry;
-import me.shedaniel.autoconfig.serializer.JanksonConfigSerializer;
-import com.barium.BariumMod;
+import me.shedanian.autoconfig.serializer.JanksonConfigSerializer;
+import com.barium.BariumMod; // Importar BariumMod para o LOGGER (ainda necessário para o método getConfig)
 
+/**
+ * Configuração central para o mod Barium.
+ * Contém todas as configurações para os diferentes sistemas de otimização.
+ * Implementa ConfigData para ser reconhecido pelo AutoConfig/Cloth Config.
+ */
 @Config(name = "barium_optimization")
 public class BariumConfig implements ConfigData {
 
-    @ConfigEntry.Category("rendering")
+    @ConfigEntry.Category("client_optimizations")
     @ConfigEntry.Gui.TransitiveObject
-    public RenderConfig render = new RenderConfig();
+    public ClientOptimizations clientOptimizations = new ClientOptimizations();
 
-    @ConfigEntry.Category("chunk_building")
-    @ConfigEntry.Gui.TransitiveObject
-    public ChunkBuildingConfig chunkBuilding = new ChunkBuildingConfig();
+    public static class ClientOptimizations implements ConfigData {
+        @ConfigEntry.Category("entity_culling")
+        @ConfigEntry.Gui.TransitiveObject
+        public EntityCullingOptions entityCulling = new EntityCullingOptions();
 
-    public static class RenderConfig implements ConfigData {
-        // Sintaxe de array para Tooltip - esta DEVERIA funcionar com Cloth Config 18.x
-        @ConfigEntry.Gui.Tooltip({"barium.config.tooltip.aggressiveFaceCulling"})
-        public boolean aggressiveFaceCulling = true;
+        public static class EntityCullingOptions implements ConfigData {
+            @ConfigEntry.Gui.Tooltip
+            public boolean enableEntityCulling = true;
 
-        // Sintaxe de array para Tooltip
-        @ConfigEntry.Gui.Tooltip({"barium.config.tooltip.optimizeFluidRendering"})
-        public boolean optimizeFluidRendering = true;
+            @ConfigEntry.Gui.Tooltip(count = 2)
+            @ConfigEntry.BoundedDiscrete(min = 32, max = 256)
+            public int cullingDistance = 64; // Distância padrão para culling
+        }
     }
 
-    public static class ChunkBuildingConfig implements ConfigData {
-        // Sintaxe de array para Tooltip
-        @ConfigEntry.Gui.Tooltip({"barium.config.tooltip.chunkBuilderThreads"})
-        @ConfigEntry.BoundedDiscrete(min = 1, max = 8)
-        public int chunkBuilderThreads = Math.max(1, Runtime.getRuntime().availableProcessors() / 2);
-    
-        // Sintaxe de array para Tooltip
-        @ConfigEntry.Gui.Tooltip({"barium.config.tooltip.enableQuadSorting"})
-        public boolean enableQuadSorting = false;
-    }
-
-    public static void registerConfigs() {
-        AutoConfig.register(BariumConfig.class, JanksonConfigSerializer::new);
-    }
-
-    public static BariumConfig get() {
+    // Método de registro para a configuração (chamado em BariumMod)
+    public static BariumConfig getConfig() {
+        // Se a configuração ainda não foi registrada, registre-a.
+        // Isso é uma medida de segurança, idealmente já deve ter sido chamada em BariumMod.onInitialize()
+        if (AutoConfig.getConfigHolder(BariumConfig.class) == null) {
+            AutoConfig.register(BariumConfig.class, JanksonConfigSerializer::new);
+            BariumMod.LOGGER.info("Configuração do Barium registrada tardiamente (problema potencial, mas corrigido).");
+        }
         return AutoConfig.getConfigHolder(BariumConfig.class).getConfig();
     }
 }
