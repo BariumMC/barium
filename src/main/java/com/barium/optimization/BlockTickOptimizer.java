@@ -7,156 +7,162 @@ import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.block.entity.HopperBlockEntity;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
+import net.minecraft.world.chunk.WorldChunk;
 
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
-import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Otimizador de ticking de blocos e tile entities.
- * 
- * Implementa:
- * - Sistema de ticking sob demanda
- * - Otimizações específicas para hoppers
+ * Otimiza o ticking de blocos e tile entities, especialmente hoppers.
+ * Introduz um sistema de ticking sob demanda e otimizações específicas.
+ * Baseado nos mappings Yarn 1.21.5+build.1
+ * Corrigido flags de configuração.
  */
 public class BlockTickOptimizer {
-    // Conjunto de posições de blocos que precisam ser atualizados
-    private static final Map<World, Set<BlockPos>> BLOCKS_TO_UPDATE = new HashMap<>();
-    
-    // Mapa de blocos que foram modificados recentemente
-    private static final Map<BlockPos, Integer> RECENTLY_MODIFIED = new HashMap<>();
-    
-    // Contador para limitar verificações de hoppers
-    private static final Map<BlockPos, Integer> HOPPER_COUNTERS = new HashMap<>();
-    
-    public static void init() {
-        BariumMod.LOGGER.info("Inicializando otimizações de ticking de blocos e tile entities");
-    }
-    
+
+    // Cache para o estado de hoppers (ativo/inativo)
+    private static final Map<BlockPos, HopperState> HOPPER_STATE_CACHE = new ConcurrentHashMap<>();
+    private static final long HOPPER_CACHE_DURATION_MS = 2000; // Cache válido por 2 segundos
+
+    // Contador para ticking sob demanda
+    private static final Map<BlockPos, Integer> DEMAND_TICK_COUNTER = new ConcurrentHashMap<>();
+    private static final int DEMAND_TICK_THRESHOLD = 5; // Tick a cada 5 eventos de demanda
+
     /**
-     * Verifica se um bloco deve ser atualizado neste tick
-     * 
-     * @param world O mundo
-     * @param pos A posição do bloco
-     * @param state O estado do bloco
-     * @return true se o bloco deve ser atualizado, false caso contrário
+     * Verifica se um BlockEntity deve ter seu tick pulado com base no sistema sob demanda.
+     *
+     * @param blockEntity O BlockEntity.
+     * @param world O mundo.
+     * @return true se o tick deve ser pulado.
      */
-    public static boolean shouldTickBlock(World world, BlockPos pos, BlockState state) {
-        if (!BariumConfig.ENABLE_ON_DEMAND_TICKING) {
-            return true;
+    public static boolean shouldSkipTickDemandBased(BlockEntity blockEntity, World world) {
+        if (!BariumConfig.ENABLE_BLOCK_TICK_OPTIMIZATION || !BariumConfig.USE_ON_DEMAND_TICKING) { // Corrected flag
+            return false;
         }
-        
-        // Verifica se o bloco está na lista de atualizações pendentes
-        Set<BlockPos> worldBlocks = BLOCKS_TO_UPDATE.getOrDefault(world, new HashSet<>());
-        if (worldBlocks.contains(pos)) {
-            worldBlocks.remove(pos);
-            return true;
+
+        BlockPos pos = blockEntity.getPos();
+        int demandCount = DEMAND_TICK_COUNTER.getOrDefault(pos, 0);
+
+        // Só executa o tick se o contador atingir o limiar
+        if (demandCount >= DEMAND_TICK_THRESHOLD) {
+            DEMAND_TICK_COUNTER.put(pos, 0); // Reseta o contador
+            return false; // Executa o tick
+        } else {
+            // Incrementa o contador apenas se houver um evento real (ex: mudança de redstone, inventário)
+            // A lógica de incremento deve ser chamada externamente quando relevante
+            return true; // Pula o tick
         }
-        
-        // Verifica se o bloco foi modificado recentemente
-        if (RECENTLY_MODIFIED.containsKey(pos)) {
-            int ticksLeft = RECENTLY_MODIFIED.get(pos) - 1;
-            if (ticksLeft <= 0) {
-                RECENTLY_MODIFIED.remove(pos);
-            } else {
-                RECENTLY_MODIFIED.put(pos, ticksLeft);
-                return true;
-            }
-        }
-        
-        // Alguns blocos sempre precisam ser atualizados
-        if (state.hasRandomTicks()) {
-            return true;
-        }
-        
-        return false;
     }
-    
+
     /**
-     * Verifica se um hopper deve ser atualizado neste tick
-     * 
-     * @param hopper O hopper
-     * @param pos A posição do hopper
-     * @return true se o hopper deve ser atualizado, false caso contrário
+     * Registra um evento de demanda para um bloco, potencialmente ativando seu próximo tick.
+     *
+     * @param pos A posição do bloco.
      */
-    public static boolean shouldTickHopper(HopperBlockEntity hopper, BlockPos pos) {
-        if (BariumConfig.HOPPER_OPTIMIZATION_LEVEL <= 0) {
-            return true;
+    public static void registerDemandTickEvent(BlockPos pos) {
+        if (!BariumConfig.ENABLE_BLOCK_TICK_OPTIMIZATION || !BariumConfig.USE_ON_DEMAND_TICKING) { // Corrected flag
+            return;
         }
-        
-        // Nível 1: Reduz a frequência de verificações
-        if (BariumConfig.HOPPER_OPTIMIZATION_LEVEL == 1) {
-            int counter = HOPPER_COUNTERS.getOrDefault(pos, 0);
-            counter++;
-            
-            if (counter >= 2) { // Verifica a cada 2 ticks
-                HOPPER_COUNTERS.put(pos, 0);
+        DEMAND_TICK_COUNTER.compute(pos, (k, v) -> (v == null) ? 1 : v + 1);
+    }
+
+    /**
+     * Otimização específica para Hoppers: verifica se o hopper pode ser pulado.
+     *
+     * @param hopperEntity O HopperBlockEntity.
+     * @param world O mundo.
+     * @return true se o tick do hopper deve ser pulado.
+     */
+    public static boolean shouldSkipHopperTick(HopperBlockEntity hopperEntity, World world) {
+        if (!BariumConfig.ENABLE_BLOCK_TICK_OPTIMIZATION || !BariumConfig.OPTIMIZE_HOPPERS) { // Corrected flag
+            return false;
+        }
+
+        BlockPos pos = hopperEntity.getPos();
+        HopperState cachedState = HOPPER_STATE_CACHE.get(pos);
+
+        // Verifica o cache
+        if (cachedState != null && cachedState.isValid()) {
+            // Se o estado em cache indica inatividade, pula o tick
+            if (!cachedState.isActive) {
                 return true;
-            } else {
-                HOPPER_COUNTERS.put(pos, counter);
-                return false;
             }
         }
-        
-        // Nível 2: Verifica apenas quando há mudanças no inventário
-        if (BariumConfig.HOPPER_OPTIMIZATION_LEVEL >= 2) {
-            // Se o hopper foi marcado para atualização, permite o tick
-            Set<BlockPos> worldBlocks = BLOCKS_TO_UPDATE.getOrDefault(hopper.getWorld(), new HashSet<>());
-            if (worldBlocks.contains(pos)) {
-                worldBlocks.remove(pos);
-                return true;
-            }
-            
-            // Caso contrário, reduz a frequência drasticamente
-            int counter = HOPPER_COUNTERS.getOrDefault(pos, 0);
-            counter++;
-            
-            if (counter >= 10) { // Verifica a cada 10 ticks para garantir
-                HOPPER_COUNTERS.put(pos, 0);
-                return true;
-            } else {
-                HOPPER_COUNTERS.put(pos, counter);
-                return false;
+
+        // Verifica se o hopper está realmente ativo (tem itens para mover, espaço no destino, etc.)
+        // Esta é uma verificação simplificada. Uma implementação real seria mais detalhada.
+        boolean isActive = hopperNeedsProcessing(hopperEntity, world);
+
+        // Atualiza o cache
+        HOPPER_STATE_CACHE.put(pos, new HopperState(isActive));
+
+        // Pula o tick se estiver inativo
+        return !isActive;
+    }
+
+    /**
+     * Verifica se um hopper precisa ser processado (lógica simplificada).
+     *
+     * @param hopperEntity O HopperBlockEntity.
+     * @param world O mundo.
+     * @return true se o hopper provavelmente precisa ser processado.
+     */
+    private static boolean hopperNeedsProcessing(HopperBlockEntity hopperEntity, World world) {
+        // Verifica se está desligado por redstone
+        if (!hopperEntity.getCachedState().get(net.minecraft.block.HopperBlock.ENABLED)) {
+            return false;
+        }
+
+        // Verifica se tem itens para transferir
+        boolean hasItemsToTransfer = false;
+        for (int i = 0; i < hopperEntity.size(); ++i) {
+            if (!hopperEntity.getStack(i).isEmpty()) {
+                hasItemsToTransfer = true;
+                break;
             }
         }
-        
+        if (!hasItemsToTransfer && !canPickupItems(hopperEntity, world)) {
+             return false; // Não tem itens e não pode pegar
+        }
+
+        // Verifica se o inventário de destino tem espaço (simplificado)
+        // Uma verificação real envolveria obter o inventário de destino e checar espaço
+        boolean destinationHasSpace = true; // Assume que tem espaço por padrão
+
+        return destinationHasSpace; // Precisa processar se tem itens e destino tem espaço
+    }
+
+    /**
+     * Verifica se o hopper pode pegar itens de cima (lógica simplificada).
+     */
+    private static boolean canPickupItems(HopperBlockEntity hopperEntity, World world) {
+        // Verifica se há um inventário ou entidade com itens acima
+        // Lógica simplificada
         return true;
     }
-    
+
     /**
-     * Marca um bloco para ser atualizado no próximo tick
-     * 
-     * @param world O mundo
-     * @param pos A posição do bloco
+     * Limpa todo o estado do otimizador (ex: ao fechar o mundo).
      */
-    public static void scheduleBlockUpdate(World world, BlockPos pos) {
-        Set<BlockPos> worldBlocks = BLOCKS_TO_UPDATE.computeIfAbsent(world, k -> new HashSet<>());
-        worldBlocks.add(pos.toImmutable());
+    public static void clearAllStates() {
+        HOPPER_STATE_CACHE.clear();
+        DEMAND_TICK_COUNTER.clear();
     }
-    
-    /**
-     * Marca um bloco como modificado recentemente
-     * 
-     * @param pos A posição do bloco
-     * @param ticks Número de ticks para continuar atualizando
-     */
-    public static void markBlockModified(BlockPos pos, int ticks) {
-        RECENTLY_MODIFIED.put(pos.toImmutable(), ticks);
-    }
-    
-    /**
-     * Marca os blocos vizinhos para atualização
-     * 
-     * @param world O mundo
-     * @param pos A posição central
-     */
-    public static void scheduleNeighborUpdates(World world, BlockPos pos) {
-        scheduleBlockUpdate(world, pos.north());
-        scheduleBlockUpdate(world, pos.south());
-        scheduleBlockUpdate(world, pos.east());
-        scheduleBlockUpdate(world, pos.west());
-        scheduleBlockUpdate(world, pos.up());
-        scheduleBlockUpdate(world, pos.down());
+
+    // --- Classe interna para o Cache de Hopper ---
+
+    private static class HopperState {
+        final boolean isActive;
+        final long timestamp;
+
+        HopperState(boolean isActive) {
+            this.isActive = isActive;
+            this.timestamp = System.currentTimeMillis();
+        }
+
+        boolean isValid() {
+            return (System.currentTimeMillis() - timestamp) < HOPPER_CACHE_DURATION_MS;
+        }
     }
 }
+

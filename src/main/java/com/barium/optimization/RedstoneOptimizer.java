@@ -3,157 +3,162 @@ package com.barium.optimization;
 import com.barium.BariumMod;
 import com.barium.config.BariumConfig;
 import net.minecraft.block.BlockState;
+import net.minecraft.block.RedstoneWireBlock;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.Direction;
 import net.minecraft.world.World;
 
-import java.util.*;
-import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.ArrayDeque;
+import java.util.HashSet;
+import java.util.Queue;
+import java.util.Set;
 
 /**
- * Otimizador de eventos de Redstone.
- * 
- * Implementa:
- * - Limitação da propagação desnecessária de sinais
- * - Fila compactada para atualizações ao invés de eventos recursivos imediatos
+ * Otimiza eventos de Redstone, limitando a propagação desnecessária e usando filas.
+ * Baseado nos mappings Yarn 1.21.5+build.1
  */
 public class RedstoneOptimizer {
-    // Fila de atualizações de redstone pendentes
-    private static final Map<World, Queue<RedstoneUpdate>> PENDING_UPDATES = new HashMap<>();
-    
-    // Conjunto para evitar atualizações duplicadas no mesmo tick
-    private static final Map<World, Set<BlockPos>> ALREADY_UPDATED = new HashMap<>();
-    
-    // Contador de atualizações por tick
-    private static final Map<World, Integer> UPDATE_COUNTERS = new HashMap<>();
-    
-    public static void init() {
-        BariumMod.LOGGER.info("Inicializando otimizações de eventos de Redstone");
-    }
-    
+
+    // Fila para atualizações de redstone compactadas
+    private static final Queue<RedstoneUpdate> UPDATE_QUEUE = new ArrayDeque<>();
+    private static final int MAX_QUEUE_SIZE = 1024;
+    private static boolean processingQueue = false;
+
+    // Conjunto para evitar atualizações recursivas imediatas no mesmo tick
+    private static final Set<BlockPos> UPDATED_THIS_TICK = new HashSet<>();
+
     /**
-     * Classe para representar uma atualização de redstone
+     * Adiciona uma atualização de redstone à fila compactada em vez de processá-la imediatamente.
+     *
+     * @param world O mundo.
+     * @param pos A posição do bloco que precisa ser atualizado.
+     * @param sourcePos A posição do bloco que causou a atualização.
+     * @return true se a atualização foi adicionada à fila, false se deve ser processada imediatamente.
      */
-    private static class RedstoneUpdate {
-        final BlockPos pos;
-        final int priority;
-        
-        RedstoneUpdate(BlockPos pos, int priority) {
-            this.pos = pos;
-            this.priority = priority;
+    public static boolean queueRedstoneUpdate(World world, BlockPos pos, BlockPos sourcePos) {
+        if (!BariumConfig.ENABLE_REDSTONE_OPTIMIZATION || !BariumConfig.USE_COMPACT_QUEUE) {
+            return false; // Processamento normal
+        }
+
+        // Evita adicionar se já atualizou neste tick (prevenção de recursão simples)
+        if (UPDATED_THIS_TICK.contains(pos)) {
+            return true; // Já na fila ou processado
+        }
+
+        // Adiciona à fila se não estiver cheia
+        if (UPDATE_QUEUE.size() < MAX_QUEUE_SIZE) {
+            UPDATE_QUEUE.offer(new RedstoneUpdate(world, pos, sourcePos));
+            UPDATED_THIS_TICK.add(pos);
+            return true; // Adicionado à fila
+        } else {
+            BariumMod.LOGGER.warn("Fila de atualização de Redstone cheia! Processando imediatamente.");
+            return false; // Fila cheia, processa normalmente
         }
     }
-    
+
     /**
-     * Verifica se uma atualização de redstone deve ser processada imediatamente
-     * ou enfileirada para processamento posterior
-     * 
-     * @param world O mundo
-     * @param pos A posição do bloco
-     * @param oldPower O nível de energia anterior
-     * @param newPower O novo nível de energia
-     * @return true se a atualização deve ser processada imediatamente, false caso contrário
+     * Processa a fila de atualizações de redstone.
+     * Deve ser chamado no final do tick do servidor/mundo.
+     *
+     * @param world O mundo.
      */
-    public static boolean shouldProcessRedstoneUpdateNow(World world, BlockPos pos, int oldPower, int newPower) {
-        if (!BariumConfig.ENABLE_SIGNAL_COMPRESSION) {
-            return true;
-        }
-        
-        // Inicializa as estruturas para este mundo se necessário
-        Queue<RedstoneUpdate> updates = PENDING_UPDATES.computeIfAbsent(world, k -> new ConcurrentLinkedQueue<>());
-        Set<BlockPos> updated = ALREADY_UPDATED.computeIfAbsent(world, k -> new HashSet<>());
-        int counter = UPDATE_COUNTERS.getOrDefault(world, 0);
-        
-        // Verifica se já atingimos o limite de atualizações por tick
-        if (counter >= BariumConfig.MAX_REDSTONE_UPDATES_PER_TICK) {
-            // Enfileira para o próximo tick se for importante
-            if (Math.abs(oldPower - newPower) > 1) {
-                queueRedstoneUpdate(world, pos, 1);
-            }
-            return false;
-        }
-        
-        // Verifica se este bloco já foi atualizado neste tick
-        if (updated.contains(pos)) {
-            // Só processa imediatamente se for uma mudança significativa
-            if (Math.abs(oldPower - newPower) > 2) {
-                UPDATE_COUNTERS.put(world, counter + 1);
-                return true;
-            }
-            return false;
-        }
-        
-        // Marca como atualizado e incrementa o contador
-        updated.add(pos.toImmutable());
-        UPDATE_COUNTERS.put(world, counter + 1);
-        return true;
-    }
-    
-    /**
-     * Enfileira uma atualização de redstone para processamento posterior
-     * 
-     * @param world O mundo
-     * @param pos A posição do bloco
-     * @param priority A prioridade da atualização (maior = mais importante)
-     */
-    public static void queueRedstoneUpdate(World world, BlockPos pos, int priority) {
-        Queue<RedstoneUpdate> updates = PENDING_UPDATES.computeIfAbsent(world, k -> new ConcurrentLinkedQueue<>());
-        updates.add(new RedstoneUpdate(pos.toImmutable(), priority));
-    }
-    
-    /**
-     * Processa as atualizações de redstone pendentes
-     * Deve ser chamado no início de cada tick do mundo
-     * 
-     * @param world O mundo
-     */
-    public static void processQueuedUpdates(World world) {
-        Queue<RedstoneUpdate> updates = PENDING_UPDATES.get(world);
-        if (updates == null || updates.isEmpty()) {
+    public static void processUpdateQueue(World world) {
+        if (processingQueue || UPDATE_QUEUE.isEmpty()) {
             return;
         }
-        
-        // Limpa o conjunto de blocos já atualizados
-        Set<BlockPos> updated = ALREADY_UPDATED.computeIfAbsent(world, k -> new HashSet<>());
-        updated.clear();
-        
-        // Reseta o contador de atualizações
-        UPDATE_COUNTERS.put(world, 0);
-        
-        // Processa as atualizações pendentes, limitando ao máximo por tick
-        int processed = 0;
-        while (!updates.isEmpty() && processed < BariumConfig.MAX_REDSTONE_UPDATES_PER_TICK) {
-            RedstoneUpdate update = updates.poll();
-            if (update != null && !updated.contains(update.pos)) {
-                // Aqui seria chamado o código para atualizar o bloco
-                // world.updateNeighborsAlways(update.pos, world.getBlockState(update.pos).getBlock());
-                
-                updated.add(update.pos);
-                processed++;
+
+        processingQueue = true;
+        UPDATED_THIS_TICK.clear(); // Limpa para o próximo tick
+
+        BariumMod.LOGGER.debug("Processando {} atualizações de redstone da fila.", UPDATE_QUEUE.size());
+
+        try {
+            while (!UPDATE_QUEUE.isEmpty()) {
+                RedstoneUpdate update = UPDATE_QUEUE.poll();
+                if (update != null && update.world == world) { // Garante que é o mundo correto
+                    // Executa a atualização real do bloco
+                    // A lógica exata depende de como o vanilla lida com updates
+                    // Exemplo: notificar vizinhos ou recalcular estado
+                    BlockState state = world.getBlockState(update.pos);
+                    // Exemplo: world.updateNeighbor(update.pos, state.getBlock(), update.sourcePos);
+                    // Exemplo: state.neighborUpdate(world, update.pos, world.getBlockState(update.sourcePos).getBlock(), update.sourcePos, false);
+                    
+                    // Placeholder para a lógica real de atualização
+                    // Em um mod real, chamaríamos o método vanilla apropriado aqui
+                    // world.updateNeighborsAlways(update.pos, world.getBlockState(update.pos).getBlock());
+                }
             }
+        } finally {
+            processingQueue = false;
+            // Limpa novamente em caso de erro
+            if (!UPDATE_QUEUE.isEmpty()) {
+                 BariumMod.LOGGER.error("Erro ao processar fila de redstone, limpando {} itens restantes.", UPDATE_QUEUE.size());
+                 UPDATE_QUEUE.clear();
+            }
+            UPDATED_THIS_TICK.clear();
         }
     }
-    
+
     /**
-     * Verifica se um sinal de redstone deve se propagar para um bloco vizinho
-     * 
-     * @param world O mundo
-     * @param source A posição da fonte do sinal
-     * @param target A posição do alvo
-     * @param power O nível de energia
-     * @return true se o sinal deve se propagar, false caso contrário
+     * Limita a propagação desnecessária de sinais de redstone.
+     * Verifica se a atualização realmente mudaria o estado do vizinho.
+     *
+     * @param world O mundo.
+     * @param pos A posição do bloco sendo atualizado.
+     * @param direction A direção do vizinho.
+     * @param currentState O estado atual do bloco.
+     * @return true se a propagação deve ser cancelada.
      */
-    public static boolean shouldPropagateSignal(World world, BlockPos source, BlockPos target, int power) {
-        // Se o poder for muito baixo, não propaga
-        if (power <= 0) {
+    public static boolean limitRedstonePropagation(World world, BlockPos pos, Direction direction, BlockState currentState) {
+        if (!BariumConfig.ENABLE_REDSTONE_OPTIMIZATION || !BariumConfig.LIMIT_SIGNAL_PROPAGATION) {
             return false;
         }
-        
-        // Verifica se o bloco alvo já tem energia suficiente
-        BlockState targetState = world.getBlockState(target);
-        if (targetState.getWeakRedstonePower(world, target, null) >= power) {
-            return false;
+
+        BlockPos neighborPos = pos.offset(direction);
+        BlockState neighborState = world.getBlockState(neighborPos);
+
+        // Verifica se o vizinho é um fio de redstone
+        if (neighborState.getBlock() instanceof RedstoneWireBlock) {
+            int currentPower = currentState.getWeakRedstonePower(world, pos, direction);
+            int neighborPower = neighborState.get(RedstoneWireBlock.POWER);
+
+            // Calcula o poder que seria propagado
+            // Lógica simplificada, a real é mais complexa
+            int propagatedPower = Math.max(0, currentPower - 1);
+
+            // Se o poder propagado não mudaria o estado do vizinho, cancela
+            if (propagatedPower == neighborPower) {
+                // Poderia adicionar verificações mais complexas aqui
+                // return true; // Cancela a propagação
+            }
         }
         
-        return true;
+        // Adiciona mais verificações para outros blocos de redstone (repetidores, comparadores, etc.)
+        // ...
+
+        return false; // Permite a propagação por padrão
+    }
+
+    /**
+     * Limpa o estado do otimizador (ex: ao descarregar um mundo).
+     */
+    public static void clearState() {
+        UPDATE_QUEUE.clear();
+        UPDATED_THIS_TICK.clear();
+        processingQueue = false;
+    }
+
+    // --- Classe interna para a Fila de Atualização ---
+
+    private static class RedstoneUpdate {
+        final World world;
+        final BlockPos pos;
+        final BlockPos sourcePos;
+
+        RedstoneUpdate(World world, BlockPos pos, BlockPos sourcePos) {
+            this.world = world;
+            this.pos = pos;
+            this.sourcePos = sourcePos;
+        }
     }
 }

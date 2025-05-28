@@ -3,165 +3,116 @@ package com.barium.optimization;
 import com.barium.BariumMod;
 import com.barium.config.BariumConfig;
 import net.minecraft.entity.Entity;
-import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.util.math.Box;
+import net.minecraft.server.world.ServerWorld;
+import net.minecraft.util.math.ChunkPos;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.World;
 
-import java.util.HashMap;
 import java.util.Map;
-import java.util.UUID;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Otimizador de ticking de entidades distantes.
- * 
- * Implementa:
- * - Congelamento de entidades fora de uma zona de interesse
+ * Otimiza o ticking de entidades distantes, congelando-as ou reduzindo a frequência.
+ * Baseado nos mappings Yarn 1.21.5+build.1
+ * Corrigido para remover dependências do cliente.
  */
 public class EntityTickOptimizer {
-    // Mapa para controlar o estado de congelamento das entidades
-    private static final Map<UUID, Boolean> FROZEN_ENTITIES = new HashMap<>();
-    
-    // Último jogador mais próximo para cada entidade
-    private static final Map<UUID, UUID> NEAREST_PLAYER = new HashMap<>();
-    
-    public static void init() {
-        BariumMod.LOGGER.info("Inicializando otimizações de ticking de entidades distantes");
-    }
-    
+
+    // Distância quadrada para considerar uma entidade "distante"
+    private static final double FAR_ENTITY_DISTANCE_SQ = BariumConfig.ENTITY_REDUCED_TICK_DISTANCE * BariumConfig.ENTITY_REDUCED_TICK_DISTANCE; // Use config
+    // Distância quadrada para congelar completamente entidades (exceto jogadores)
+    private static final double FREEZE_ENTITY_DISTANCE_SQ = BariumConfig.ENTITY_FREEZE_DISTANCE * BariumConfig.ENTITY_FREEZE_DISTANCE; // Use config
+
+    // Frequência de tick para entidades distantes (1 tick a cada N ticks)
+    private static final int FAR_ENTITY_TICK_INTERVAL = 10; // Tick a cada 0.5 segundos (Pode ser configurável)
+    private static final int FROZEN_ENTITY_TICK_INTERVAL = 100; // Tick a cada 5 segundos para entidades congeladas
+
+    // Cache para o estado de tick das entidades
+    private static final Map<Entity, TickState> ENTITY_TICK_STATE = new ConcurrentHashMap<>();
+
     /**
-     * Verifica se uma entidade deve ser "congelada" (ticking reduzido)
-     * 
-     * @param entity A entidade
-     * @param world O mundo
-     * @return true se a entidade deve ser congelada, false caso contrário
+     * Verifica se o tick de uma entidade deve ser pulado com base na distância.
+     *
+     * @param entity A entidade.
+     * @param world O mundo (deve ser ServerWorld para esta lógica).
+     * @return true se o tick deve ser pulado.
      */
-    public static boolean shouldFreezeEntity(Entity entity, World world) {
-        // Jogadores nunca são congelados
-        if (entity instanceof PlayerEntity) {
-            return false;
-        }
-        
-        // Entidades com nomes específicos não são congeladas
-        if (entity.hasCustomName() && entity.getCustomName().getString().contains("no_freeze")) {
-            return false;
-        }
-        
-        UUID entityId = entity.getUuid();
-        
-        // Verifica a distância até o jogador mais próximo
-        PlayerEntity nearestPlayer = findNearestPlayer(entity, world);
-        if (nearestPlayer == null) {
-            // Se não houver jogadores, congela
-            FROZEN_ENTITIES.put(entityId, true);
-            return true;
-        }
-        
-        // Atualiza o jogador mais próximo
-        NEAREST_PLAYER.put(entityId, nearestPlayer.getUuid());
-        
-        // Calcula a distância
-        double distance = entity.squaredDistanceTo(nearestPlayer);
-        boolean shouldFreeze = distance > (BariumConfig.ENTITY_FREEZE_DISTANCE * BariumConfig.ENTITY_FREEZE_DISTANCE);
-        
-        // Atualiza o estado de congelamento
-        FROZEN_ENTITIES.put(entityId, shouldFreeze);
-        
-        return shouldFreeze;
-    }
-    
-    /**
-     * Determina o nível de ticking para uma entidade congelada
-     * 
-     * @param entity A entidade
-     * @return A frequência de ticking (1 = normal, maior = menos frequente)
-     */
-    public static int getFrozenTickRate(Entity entity) {
-        UUID entityId = entity.getUuid();
-        
-        // Se a entidade não está congelada, tick normal
-        if (!FROZEN_ENTITIES.getOrDefault(entityId, false)) {
-            return 1;
-        }
-        
-        // Entidades vivas têm um tick rate menor que outras entidades
-        if (entity instanceof LivingEntity) {
-            return 10; // Atualiza a cada 10 ticks
-        } else {
-            return 20; // Atualiza a cada 20 ticks
-        }
-    }
-    
-    /**
-     * Verifica se uma entidade congelada deve ser atualizada neste tick
-     * 
-     * @param entity A entidade
-     * @return true se a entidade deve ser atualizada, false caso contrário
-     */
-    public static boolean shouldTickFrozenEntity(Entity entity) {
-        UUID entityId = entity.getUuid();
-        
-        // Se a entidade não está congelada, sempre atualiza
-        if (!FROZEN_ENTITIES.getOrDefault(entityId, false)) {
-            return true;
-        }
-        
-        // Determina a frequência de atualização
-        int tickRate = getFrozenTickRate(entity);
-        
-        // Verifica se é hora de atualizar
-        return entity.age % tickRate == 0;
-    }
-    
-    /**
-     * Encontra o jogador mais próximo de uma entidade
-     * 
-     * @param entity A entidade
-     * @param world O mundo
-     * @return O jogador mais próximo, ou null se não houver jogadores
-     */
-    private static PlayerEntity findNearestPlayer(Entity entity, World world) {
-        UUID entityId = entity.getUuid();
-        
-        // Verifica se já temos um jogador mais próximo registrado
-        UUID lastPlayerId = NEAREST_PLAYER.get(entityId);
-        if (lastPlayerId != null) {
-            // Tenta encontrar o jogador pelo UUID
-            for (PlayerEntity player : world.getPlayers()) {
-                if (player.getUuid().equals(lastPlayerId)) {
-                    // Verifica se o jogador ainda está próximo o suficiente
-                    double distance = entity.squaredDistanceTo(player);
-                    if (distance <= (BariumConfig.ENTITY_FREEZE_DISTANCE * BariumConfig.ENTITY_FREEZE_DISTANCE * 1.5)) {
-                        return player;
-                    }
-                    break;
+    public static boolean shouldSkipEntityTick(Entity entity, World world) {
+        // Esta otimização só faz sentido no lado do servidor
+        if (!world.isClient() && BariumConfig.ENABLE_ENTITY_TICK_OPTIMIZATION && !(entity instanceof PlayerEntity)) {
+            // Obtém o estado de tick da entidade
+            // TickState state = ENTITY_TICK_STATE.computeIfAbsent(entity, k -> new TickState()); // Estado não usado atualmente
+
+            // Verifica se a entidade está muito longe para ser congelada
+            if (BariumConfig.FREEZE_FAR_ENTITIES && isEntityTooFarFromServer(entity, (ServerWorld) world, FREEZE_ENTITY_DISTANCE_SQ)) {
+                // Congela a entidade (pula a maioria dos ticks)
+                if ((world.getTime() + entity.getId()) % FROZEN_ENTITY_TICK_INTERVAL != 0) {
+                    // BariumMod.LOGGER.debug("Freezing entity {}", entity.getId());
+                    return true; // Pula o tick
+                }
+            }
+
+            // Verifica se a entidade está distante para reduzir a frequência de tick
+            if (BariumConfig.REDUCE_FAR_ENTITY_TICKS && isEntityTooFarFromServer(entity, (ServerWorld) world, FAR_ENTITY_DISTANCE_SQ)) {
+                // Reduz a frequência de tick
+                if ((world.getTime() + entity.getId()) % FAR_ENTITY_TICK_INTERVAL != 0) {
+                    // BariumMod.LOGGER.debug("Skipping tick for far entity {}", entity.getId());
+                    return true; // Pula o tick
                 }
             }
         }
-        
-        // Procura o jogador mais próximo
-        PlayerEntity nearest = null;
-        double minDistance = Double.MAX_VALUE;
-        
-        for (PlayerEntity player : world.getPlayers()) {
-            double distance = entity.squaredDistanceTo(player);
-            if (distance < minDistance) {
-                minDistance = distance;
-                nearest = player;
+
+        // Entidade próxima, jogador, otimização desligada ou tick permitido, executa normalmente
+        return false;
+    }
+
+    /**
+     * Verifica se uma entidade está além de uma certa distância quadrada de qualquer jogador no servidor.
+     *
+     * @param entity A entidade.
+     * @param serverWorld O mundo do servidor.
+     * @param distanceSq A distância quadrada limite.
+     * @return true se a entidade está muito longe de todos os jogadores.
+     */
+    private static boolean isEntityTooFarFromServer(Entity entity, ServerWorld serverWorld, double distanceSq) {
+        // Se não houver jogadores, considera longe por padrão?
+        if (serverWorld.getPlayers().isEmpty()) {
+            return true; 
+        }
+        for (PlayerEntity player : serverWorld.getPlayers()) {
+            // Ignora jogadores em modo espectador ou criativo para cálculo de distância?
+            // if (player.isSpectator() || player.isCreative()) continue;
+            if (entity.squaredDistanceTo(player) <= distanceSq) {
+                return false; // Perto de pelo menos um jogador
             }
         }
-        
-        return nearest;
+        return true; // Longe de todos os jogadores relevantes
     }
-    
+
     /**
-     * Remove uma entidade do sistema de congelamento
-     * 
-     * @param entityId UUID da entidade
+     * Limpa o estado de uma entidade (ex: quando descarregada).
+     *
+     * @param entity A entidade.
      */
-    public static void removeEntity(UUID entityId) {
-        FROZEN_ENTITIES.remove(entityId);
-        NEAREST_PLAYER.remove(entityId);
+    public static void clearEntityState(Entity entity) {
+        ENTITY_TICK_STATE.remove(entity);
+    }
+
+    /**
+     * Limpa todo o estado do otimizador (ex: ao fechar o mundo).
+     */
+    public static void clearAllStates() {
+        ENTITY_TICK_STATE.clear();
+    }
+
+    // --- Classe interna para o Estado de Tick ---
+
+    private static class TickState {
+        // Poderia armazenar informações adicionais aqui se necessário,
+        // como o último tick executado, etc.
+        // Por enquanto, a presença no mapa é suficiente.
     }
 }
+

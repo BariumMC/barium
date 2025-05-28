@@ -4,179 +4,126 @@ import com.barium.BariumMod;
 import com.barium.config.BariumConfig;
 import net.minecraft.inventory.Inventory;
 import net.minecraft.item.ItemStack;
-import net.minecraft.util.collection.DefaultedList;
+import net.minecraft.util.math.BlockPos;
 
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
-import java.util.Set;
+import java.util.WeakHashMap;
 
 /**
- * Otimizador de inventários e containers.
- * 
- * Implementa:
- * - Cache de slots vazios
- * - Otimização de verificação de inventários
+ * Otimiza verificações em inventários e containers, usando cache de slots vazios.
+ * Baseado nos mappings Yarn 1.21.5+build.1
  */
 public class InventoryOptimizer {
-    // Cache de slots vazios por inventário
-    private static final Map<Inventory, Set<Integer>> EMPTY_SLOTS_CACHE = new HashMap<>();
-    
-    // Hash do último estado conhecido do inventário
-    private static final Map<Inventory, Integer> INVENTORY_HASH = new HashMap<>();
-    
-    public static void init() {
-        BariumMod.LOGGER.info("Inicializando otimizações de inventários e containers");
-    }
-    
+
+    // Cache para informações sobre slots vazios em inventários
+    // Usamos WeakHashMap para permitir que os inventários sejam coletados pelo GC se não referenciados
+    private static final Map<Inventory, InventoryState> INVENTORY_STATE_CACHE = new WeakHashMap<>();
+    private static final long CACHE_DURATION_MS = 1000; // Cache válido por 1 segundo
+
     /**
-     * Atualiza o cache de slots vazios para um inventário
-     * 
-     * @param inventory O inventário
+     * Verifica se uma busca completa no inventário pode ser evitada.
+     * Útil para operações como `canInsert` ou `transfer`.
+     *
+     * @param inventory O inventário.
+     * @param stackToInsert O ItemStack que se deseja inserir (opcional, para verificações mais específicas).
+     * @return true se a busca completa pode ser pulada (ex: cache indica que está cheio).
      */
-    public static void updateEmptySlotsCache(Inventory inventory) {
-        if (!BariumConfig.ENABLE_SLOT_CACHING) {
-            return;
+    public static boolean canSkipFullInventoryCheck(Inventory inventory, ItemStack stackToInsert) {
+        if (!BariumConfig.ENABLE_INVENTORY_OPTIMIZATION || !BariumConfig.CACHE_EMPTY_SLOTS) {
+            return false;
         }
-        
-        // Calcula o hash atual do inventário
-        int currentHash = calculateInventoryHash(inventory);
-        
-        // Verifica se o inventário mudou desde a última verificação
-        Integer lastHash = INVENTORY_HASH.get(inventory);
-        if (lastHash != null && lastHash == currentHash) {
-            // Inventário não mudou, não precisa atualizar o cache
-            return;
-        }
-        
-        // Atualiza o hash
-        INVENTORY_HASH.put(inventory, currentHash);
-        
-        // Cria ou limpa o conjunto de slots vazios
-        Set<Integer> emptySlots = EMPTY_SLOTS_CACHE.computeIfAbsent(inventory, k -> new HashSet<>());
-        emptySlots.clear();
-        
-        // Identifica todos os slots vazios
-        for (int i = 0; i < inventory.size(); i++) {
-            if (inventory.getStack(i).isEmpty()) {
-                emptySlots.add(i);
-            }
-        }
-    }
-    
-    /**
-     * Verifica se um slot está vazio, usando o cache quando possível
-     * 
-     * @param inventory O inventário
-     * @param slot O índice do slot
-     * @return true se o slot está vazio, false caso contrário
-     */
-    public static boolean isSlotEmpty(Inventory inventory, int slot) {
-        if (!BariumConfig.ENABLE_SLOT_CACHING) {
-            return inventory.getStack(slot).isEmpty();
-        }
-        
-        // Obtém o cache de slots vazios
-        Set<Integer> emptySlots = EMPTY_SLOTS_CACHE.get(inventory);
-        if (emptySlots == null) {
-            // Cache não inicializado, atualiza e verifica novamente
-            updateEmptySlotsCache(inventory);
-            emptySlots = EMPTY_SLOTS_CACHE.get(inventory);
-        }
-        
-        return emptySlots.contains(slot);
-    }
-    
-    /**
-     * Encontra o primeiro slot vazio em um inventário
-     * 
-     * @param inventory O inventário
-     * @return O índice do primeiro slot vazio, ou -1 se não houver slots vazios
-     */
-    public static int findFirstEmptySlot(Inventory inventory) {
-        if (!BariumConfig.ENABLE_SLOT_CACHING) {
-            // Implementação padrão sem cache
-            for (int i = 0; i < inventory.size(); i++) {
-                if (inventory.getStack(i).isEmpty()) {
-                    return i;
+
+        InventoryState state = INVENTORY_STATE_CACHE.get(inventory);
+
+        // Verifica o cache
+        if (state != null && state.isValid()) {
+            // Se o cache indica que não há slots vazios, podemos pular a busca
+            if (state.firstEmptySlot == -1) {
+                // Se estamos tentando inserir um item, precisamos verificar se há stacks compatíveis para merge
+                // Se não estamos inserindo (apenas checando se está cheio), podemos pular.
+                if (stackToInsert == null || stackToInsert.isEmpty()) {
+                    // BariumMod.LOGGER.debug("Skipping full check: Cache indicates inventory is full.");
+                    return true; // Cache diz que está cheio
                 }
+                // Se stackToInsert não é nulo, ainda precisamos verificar merge, então não pulamos só com base nisso.
             }
-            return -1;
+            // Poderíamos adicionar mais lógica aqui, como pular se o item a inserir não pode empilhar
+            // e o cache indica que não há slots vazios.
         }
-        
-        // Obtém o cache de slots vazios
-        Set<Integer> emptySlots = EMPTY_SLOTS_CACHE.get(inventory);
-        if (emptySlots == null || emptySlots.isEmpty()) {
-            // Cache não inicializado ou vazio, atualiza e verifica novamente
-            updateEmptySlotsCache(inventory);
-            emptySlots = EMPTY_SLOTS_CACHE.get(inventory);
-            
-            if (emptySlots == null || emptySlots.isEmpty()) {
-                return -1;
-            }
-        }
-        
-        // Retorna o primeiro slot vazio (menor índice)
-        return emptySlots.stream().min(Integer::compare).orElse(-1);
+
+        return false; // Cache inválido ou não conclusivo, faça a verificação completa
     }
-    
+
     /**
-     * Notifica que um slot foi modificado
-     * 
-     * @param inventory O inventário
-     * @param slot O índice do slot
-     * @param stack O novo ItemStack
+     * Atualiza o cache do estado do inventário após uma modificação.
+     *
+     * @param inventory O inventário modificado.
      */
-    public static void notifySlotChange(Inventory inventory, int slot, ItemStack stack) {
-        if (!BariumConfig.ENABLE_SLOT_CACHING) {
+    public static void updateInventoryCache(Inventory inventory) {
+        if (!BariumConfig.ENABLE_INVENTORY_OPTIMIZATION || !BariumConfig.CACHE_EMPTY_SLOTS) {
             return;
         }
-        
-        // Obtém o cache de slots vazios
-        Set<Integer> emptySlots = EMPTY_SLOTS_CACHE.get(inventory);
-        if (emptySlots == null) {
-            return;
-        }
-        
-        // Atualiza o cache para este slot
-        if (stack.isEmpty()) {
-            emptySlots.add(slot);
-        } else {
-            emptySlots.remove(slot);
-        }
-        
-        // Invalida o hash para forçar uma atualização completa na próxima verificação
-        INVENTORY_HASH.remove(inventory);
-    }
-    
-    /**
-     * Calcula um hash simples do estado atual do inventário
-     * 
-     * @param inventory O inventário
-     * @return Um valor de hash representando o estado atual
-     */
-    private static int calculateInventoryHash(Inventory inventory) {
-        int hash = 0;
-        
-        for (int i = 0; i < inventory.size(); i++) {
-            ItemStack stack = inventory.getStack(i);
-            if (!stack.isEmpty()) {
-                hash = 31 * hash + (i + 1);
-                hash = 31 * hash + stack.getItem().hashCode();
-                hash = 31 * hash + stack.getCount();
+
+        int firstEmpty = -1;
+        int size = inventory.size();
+        for (int i = 0; i < size; ++i) {
+            if (inventory.getStack(i).isEmpty()) {
+                firstEmpty = i;
+                break;
             }
         }
-        
-        return hash;
+
+        INVENTORY_STATE_CACHE.put(inventory, new InventoryState(firstEmpty));
+        // BariumMod.LOGGER.debug("Inventory cache updated. First empty slot: {}", firstEmpty);
+    }
+
+    /**
+     * Obtém o índice do primeiro slot vazio do cache, se disponível.
+     *
+     * @param inventory O inventário.
+     * @return O índice do primeiro slot vazio, ou -1 se cheio ou cache inválido.
+     */
+    public static int getFirstEmptySlotFromCache(Inventory inventory) {
+        if (!BariumConfig.ENABLE_INVENTORY_OPTIMIZATION || !BariumConfig.CACHE_EMPTY_SLOTS) {
+            return -1; // Retorna -1 para indicar que a busca normal deve ser feita
+        }
+
+        InventoryState state = INVENTORY_STATE_CACHE.get(inventory);
+        if (state != null && state.isValid()) {
+            return state.firstEmptySlot;
+        }
+        return -1; // Cache inválido
     }
     
     /**
-     * Remove um inventário do sistema de cache
+     * Limpa o cache de um inventário específico.
      * 
-     * @param inventory O inventário a remover
+     * @param inventory O inventário.
      */
-    public static void removeInventory(Inventory inventory) {
-        EMPTY_SLOTS_CACHE.remove(inventory);
-        INVENTORY_HASH.remove(inventory);
+    public static void invalidateInventoryCache(Inventory inventory) {
+        INVENTORY_STATE_CACHE.remove(inventory);
+    }
+
+    /**
+     * Limpa todo o cache (ex: ao fechar o mundo).
+     */
+    public static void clearAllCaches() {
+        INVENTORY_STATE_CACHE.clear();
+    }
+
+    // --- Classe interna para o Estado do Inventário ---
+
+    private static class InventoryState {
+        final int firstEmptySlot; // -1 se não houver slots vazios
+        final long timestamp;
+
+        InventoryState(int firstEmptySlot) {
+            this.firstEmptySlot = firstEmptySlot;
+            this.timestamp = System.currentTimeMillis();
+        }
+
+        boolean isValid() {
+            return (System.currentTimeMillis() - timestamp) < CACHE_DURATION_MS;
+        }
     }
 }

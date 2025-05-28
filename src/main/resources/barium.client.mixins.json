@@ -1,0 +1,20 @@
+{
+	"required": true,
+	"package": "com.barium.client.mixin",
+	"compatibilityLevel": "JAVA_21",
+	"client": [
+	    "ParticleMixin",
+        "SoundSystemMixin",
+        "DebugHudMixin",
+        "InGameHudMixin",
+        "ChunkOcclusionMixin",
+        "TransparentBlockMixin",
+        "TileEntityMixin",
+        "AnimationCullingMixin",
+        "ChunkMeshPriorityMixin",
+        "AdvancedOcclusionCullingMixin"
+	],
+	"injectors": {
+		"defaultRequire": 1
+	}
+}
