@@ -6,7 +6,7 @@ import com.terraformersmc.modmenu.api.ConfigScreenFactory;
 import com.terraformersmc.modmenu.api.ModMenuApi;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
-import net.minecraft.client.gui.screens.Screen; // Certifique-se de que este import está correto para sua versão do Minecraft
+import net.minecraft.client.gui.screen.Screen; // Certifique-se de que este import está correto para sua versão do Minecraft
 
 @Environment(EnvType.CLIENT)
 public class BariumModMenuIntegration implements ModMenuApi {

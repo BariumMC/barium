@@ -3,9 +3,9 @@ package com.barium.client.optimizations;
 import com.barium.config.BariumConfig;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
-import net.minecraft.client.renderer.culling.Frustum; // Importação da Frustum para culling (opcional, mas bom ter)
-import net.minecraft.world.entity.Entity;
-import net.minecraft.client.Camera; // Importe a classe Camera
+import net.minecraft.client.render.Frustum; // Importação da Frustum para culling (opcional, mas bom ter)
+import net.minecraft.entity.Entity;
+import net.minecraft.client.render.Camera; // Importe a classe Camera
 
 @Environment(EnvType.CLIENT)
 public class BariumClientOptimizations {
@@ -31,9 +31,9 @@ public class BariumClientOptimizations {
         // Calcula a distância ao quadrado da entidade para a câmera.
         // Usamos distância ao quadrado para evitar a operação de raiz quadrada, que é custosa.
         double distanceSqr = entity.distanceToSqr(
-            camera.getPosition().x,
-            camera.getPosition().y,
-            camera.getPosition().z
+            camera.getPos().x,
+            camera.getPos().y,
+            camera.getPos().z
         );
 
         // Se a entidade estiver mais distante do que a distância de culling configurada (ao quadrado),
