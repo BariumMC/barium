@@ -4,7 +4,7 @@ import com.barium.client.optimizations.BariumClientOptimizations; // Importe a n
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.minecraft.client.render.entity.EntityRenderDispatcher;
-import net.minecraft.entity.Entity:
+import net.minecraft.entity.Entity;
 import net.minecraft.client.render.Camera; // Importe a classe Camera, se ainda não estiver
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow; // Importe Shadow para acessar campos privados/protegidos
