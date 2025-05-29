@@ -12,7 +12,8 @@
         "TileEntityMixin",
         "AnimationCullingMixin",
         "ChunkMeshPriorityMixin",
-        "AdvancedOcclusionCullingMixin"
+        "AdvancedOcclusionCullingMixin",
+        "EntityRenderDispatcherMixin"
 	],
 	"injectors": {
 		"defaultRequire": 1

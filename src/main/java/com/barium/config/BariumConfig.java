@@ -65,6 +65,13 @@ public class BariumConfig {
     public static final boolean ENABLE_FONT_CACHING = true;
     public static final int HUD_UPDATE_INTERVAL_TICKS = 5;
 
+    // --- NEW: Entity Rendering Optimizer (Client-side) --- //
+    public static final boolean ENABLE_ENTITY_RENDERING_OPTIMIZATION = true;
+    public static final boolean ENABLE_ENTITY_RENDER_LOD = true; // Habilita o Level of Detail para renderização
+    public static final int ENTITY_RENDER_LOD_DISTANCE_MEDIUM = 48; // Distância para renderização LOD média
+    public static final int ENTITY_RENDER_LOD_DISTANCE_HIGH = 64;   // Distância para renderização LOD alta (mais simplificada)
+    public static final int ENTITY_RENDER_MAX_DISTANCE = 96;       // Distância máxima para renderizar entidades (culling)
+
     // --- Advanced Client Optimizations --- //
     // Flag geral para otimizações avançadas (usada em alguns otimizadores)
     public static final boolean ENABLE_ADVANCED_CULLING = true; // Adicionado para consistência

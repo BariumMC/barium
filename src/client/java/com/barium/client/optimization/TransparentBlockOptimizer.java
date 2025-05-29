@@ -8,6 +8,8 @@ import net.minecraft.client.render.VertexConsumerProvider;
 import net.minecraft.client.render.chunk.ChunkBuilder;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.util.math.Vec3d;
+import net.minecraft.client.render.WorldRenderer; // Adicionado para parâmetro optimizeTranslucentRendering
+import net.minecraft.client.render.Camera; // Adicionado para parâmetro optimizeTranslucentRendering
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -78,6 +80,35 @@ public class TransparentBlockOptimizer {
         // quads.sort(Comparator.comparingDouble(quad -> quad.center.squaredDistanceTo(cameraPos)).reversed());
         // writeQuadsToBuffer(bufferData, quads);
     }
+
+    /**
+     * Método chamado pelo mixin para otimizar a renderização translúcida.
+     * Este método pode coordenar sorting e instancing.
+     *
+     * @param worldRenderer A instância do WorldRenderer.
+     * @param matrices A pilha de matrizes.
+     * @param camera A câmera atual.
+     * @param cameraX Posição X da câmera.
+     * @param cameraY Posição Y da câmera.
+     * @param cameraZ Posição Z da câmera.
+     */
+    public static void optimizeTranslucentRendering(WorldRenderer worldRenderer, MatrixStack matrices, Camera camera, double cameraX, double cameraY, double cameraZ) {
+        if (!BariumConfig.ENABLE_ADVANCED_CULLING || !BariumConfig.ENABLE_TRANSPARENT_BLOCK_OPTIMIZATION) {
+            return;
+        }
+
+        // Aqui você coordenaria as diferentes otimizações
+        // 1. Sorting: Idealmente, o sorting de quads transparentes deveria acontecer durante a fase de rebuild do chunk.
+        // Se não for possível, o sorting teria que ser feito em tempo real antes de desenhar, o que é caro.
+        // A `sortTransparentBuffers` acima é um placeholder para isso.
+        
+        // 2. Instancing: Coletar geometrias transparentes que podem ser instanciadas.
+        // `tryRenderTransparentLayerWithInstancing` é um placeholder.
+        
+        // BariumMod.LOGGER.debug("Applying transparent block optimizations...");
+        // Este método é principalmente um coordenador; o trabalho real requer integração profunda.
+    }
+
 
     /**
      * Otimiza a renderização agrupando meshes transparentes similares (Instancing).

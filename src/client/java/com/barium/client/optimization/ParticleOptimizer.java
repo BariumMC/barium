@@ -34,7 +34,7 @@ public class ParticleOptimizer {
      *
      * @param particle A partícula.
      * @param camera A câmera do jogo.
-     * @param world O mundo do cliente.
+     * @param world O mundo do cliente (world da partícula, passado pelo mixin).
      * @return true se a partícula deve ser renderizada.
      */
     public static boolean shouldRenderParticle(Particle particle, Camera camera, ClientWorld world) {
@@ -44,7 +44,7 @@ public class ParticleOptimizer {
 
         Vec3d cameraPos = camera.getPos();
         
-        // Usa getBoundingBox() para obter a posição da partícula, que é um método público
+        // Usa getBoundingBox() para obter a posição da partícula
         Box boundingBox = particle.getBoundingBox();
         if (boundingBox == null) {
             return true; // Se não tem bounding box, renderiza por segurança
@@ -61,7 +61,7 @@ public class ParticleOptimizer {
         }
 
         // Culling por frustum (verificação básica)
-        if (!isBoxInFrustum(boundingBox, camera)) {
+        if (!camera.getFrustum().isVisible(boundingBox)) { // Usando o frustum real da câmera
              // BariumMod.LOGGER.debug("Particle culled by frustum");
              return false;
         }
@@ -72,24 +72,13 @@ public class ParticleOptimizer {
             // Exemplo: pular o tick da partícula em frames alternados
             if ((world.getTime() + particle.hashCode()) % 2 != 0) { 
                 // Pula o tick neste frame (não impede a renderização, mas reduz a carga da atualização)
+                // Para renderização, isso significa que o buildGeometry não será chamado.
+                // Mas, o mixin já cancela a renderização acima, então essa parte da LOD
+                // é mais relevante para shouldSkipParticleTick (abaixo).
             }
         }
 
         return true; // Renderiza a partícula
-    }
-
-    /**
-     * Verifica se um Bounding Box está dentro do frustum da câmera.
-     * Implementação simplificada.
-     *
-     * @param box O Bounding Box.
-     * @param camera A câmera.
-     * @return true se a caixa está (potencialmente) no frustum.
-     */
-    private static boolean isBoxInFrustum(Box box, Camera camera) {
-        // Placeholder: Assume que está no frustum
-        // Uma verificação real seria: return MinecraftClient.getInstance().gameRenderer.getCamera().getFrustum().isVisible(box);
-        return true; 
     }
 
     /**

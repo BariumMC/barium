@@ -22,6 +22,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
  * Modifica a lógica de determinação de visibilidade dos chunks.
  * Revisado para compatibilidade com mappings Yarn 1.21.5+build.1.
  * Corrigido import de MatrixStack e assinatura do método render.
+ * Corrigido: Alvo do Redirect para `ChunkBuilder.BuiltChunk.shouldNotCull` para melhor acesso ao chunk.
  */
 @Mixin(WorldRenderer.class)
 public abstract class AdvancedOcclusionCullingMixin {
@@ -29,31 +30,34 @@ public abstract class AdvancedOcclusionCullingMixin {
     /**
      * Redireciona a verificação de visibilidade do frustum para incluir a verificação de oclusão avançada.
      *
-     * Target Class: net.minecraft.client.render.WorldRenderer
-     * Target Method: setupTerrain(Lnet/minecraft/client/render/Camera;Lnet/minecraft/client/render/Frustum;ZZ)V
-     * Target Signature (Yarn 1.21.5+build.1 - Needs Verification): Lnet/minecraft/client/render/Frustum;isVisible(Lnet/minecraft/util/math/Box;)Z
-     * AVISO: A obtenção do BuiltChunk neste ponto é complexa. A lógica de oclusão pode precisar ser movida ou adaptada.
+     * Target Class: net.minecraft.client.render.chunk.ChunkBuilder$BuiltChunk
+     * Target Method: shouldNotCull(Lnet/minecraft/client/render/Frustum;)Z
+     * Isso permite acesso direto à instância BuiltChunk (`this` do método original) e ao argumento Frustum.
      */
     @Redirect(
         method = "setupTerrain(Lnet/minecraft/client/render/Camera;Lnet/minecraft/client/render/Frustum;ZZ)V",
         at = @At(
             value = "INVOKE",
-            target = "Lnet/minecraft/client/render/Frustum;isVisible(Lnet/minecraft/util/math/Box;)Z" // Target the frustum visibility check
+            target = "Lnet/minecraft/client/render/chunk/ChunkBuilder$BuiltChunk;shouldNotCull(Lnet/minecraft/client/render/Frustum;)Z"
         )
     )
-    private boolean barium$advancedOcclusionCheckRedirect(Frustum instance, Box box, Camera camera, Frustum frustum, boolean hasForcedFrustum, boolean spectator) {
+    private boolean barium$advancedOcclusionCheckRedirect(ChunkBuilder.BuiltChunk builtChunk, Frustum frustum, Camera camera, Frustum frustum_original, boolean hasForcedFrustum, boolean spectator) {
+        // O método original `shouldNotCull` internamente chama `frustum.isVisible(chunk.getBounds())`.
+        // Capturamos aqui, então `builtChunk` é a instância de `BuiltChunk` sendo processada.
+
         // 1. Verificação original do Frustum
-        boolean frustumVisible = instance.isVisible(box);
-        if (!frustumVisible) {
+        // A lógica do método `shouldNotCull` do Minecraft já faz isso. Se o nosso redirecionamento
+        // retornar 'false' no final, a verificação original será efetivamente cancelada.
+        // Para uma verificação explícita do frustum, podemos usar:
+        boolean vanillaFrustumVisible = frustum.isVisible(builtChunk.getBounds());
+
+        if (!vanillaFrustumVisible) {
             return false; // Se não está no frustum, está definitivamente ocluído.
         }
 
         // 2. Verificação de Oclusão Avançada (ex: HZB)
-        // TODO: Implementar forma de obter o BuiltChunk correspondente ao Box aqui.
-        ChunkBuilder.BuiltChunk chunk = null; // Placeholder
-
-        // Se o chunk puder ser obtido e o otimizador disser que está ocluído...
-        if (chunk != null && AdvancedOcclusionCulling.isChunkOccluded(chunk, camera)) {
+        // Agora temos acesso direto ao `builtChunk`
+        if (AdvancedOcclusionCulling.isChunkOccluded(builtChunk, camera)) {
             return false; // Ocluído pelo sistema avançado.
         }
 
@@ -66,7 +70,6 @@ public abstract class AdvancedOcclusionCullingMixin {
      *
      * Target Class: net.minecraft.client.render.WorldRenderer
      * Target Method Signature (Yarn 1.21.5+build.1): render(Lnet/minecraft/client/render/RenderTickCounter;ZLnet/minecraft/client/render/Camera;Lnet/minecraft/client/render/GameRenderer;Lnet/minecraft/client/render/LightmapTextureManager;Lorg/joml/Matrix4f;Lorg/joml/Matrix4f;)V
-     * (Assinatura verificada na documentação Yarn 1.21+build.2)
      */
     @Inject(
         method = "render(Lnet/minecraft/client/render/RenderTickCounter;ZLnet/minecraft/client/render/Camera;Lnet/minecraft/client/render/GameRenderer;Lnet/minecraft/client/render/LightmapTextureManager;Lorg/joml/Matrix4f;Lorg/joml/Matrix4f;)V",
@@ -76,9 +79,4 @@ public abstract class AdvancedOcclusionCullingMixin {
         // Atualiza as estruturas de dados de oclusão (ex: HZB) após o frame ser renderizado.
         AdvancedOcclusionCulling.updateOcclusionData(camera);
     }
-
-    // TODO: Confirmar assinatura do método setupTerrain e Frustum.isVisible em Yarn 1.21.5+build.1.
-    // TODO: Implementar a lógica detalhada em AdvancedOcclusionCulling (isChunkOccluded, updateOcclusionData).
-    // TODO: Resolver como obter a instância `BuiltChunk` correta no ponto de injeção do Redirect.
 }
-

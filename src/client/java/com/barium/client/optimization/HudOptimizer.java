@@ -20,11 +20,12 @@ import java.util.function.Supplier;
  * Utiliza cache para elementos estáticos ou que mudam com menos frequência.
  * Baseado nos mappings Yarn 1.21.5+build.1
  * Corrigido: Adicionado método init() e sobrecarga para shouldUpdateHudElement().
+ * Corrigido: Lógica de cache do DebugHud melhorada para Left/Right texts.
  */
 public class HudOptimizer {
 
     // Cache para linhas de texto da HUD (ex: DebugHud)
-    private static final Map<String, CachedHudLine> DEBUG_HUD_CACHE = new ConcurrentHashMap<>();
+    private static final Map<String, List<String>> DEBUG_HUD_TEXT_CACHE = new ConcurrentHashMap<>(); // Armazena listas para "left" e "right"
     private static long lastDebugUpdateTime = 0;
     private static final long DEBUG_UPDATE_INTERVAL_MS = 200; // Atualiza cache do debug a cada 200ms
 
@@ -42,51 +43,34 @@ public class HudOptimizer {
     }
 
     /**
-     * Verifica se a renderização de uma linha específica do DebugHud pode usar o cache.
-     *
-     * @param lineContent O conteúdo da linha.
-     * @param drawContext O contexto de desenho.
-     * @param textRenderer O renderizador de texto.
-     * @param x A posição X.
-     * @param y A posição Y.
-     * @param color A cor.
-     * @return true se a linha foi renderizada do cache, false caso contrário.
+     * Este método não é mais o ponto de injeção primário para cache de linha individual,
+     * mas sim um auxiliar se a renderização por linha for otimizada.
+     * Mantido para compatibilidade, mas a lógica principal de cache de DebugHud mudou para getCachedDebugHudText.
      */
+    @Deprecated // Substituído por getCachedDebugHudText e updateDebugHudCache
     public static boolean tryRenderDebugLineFromCache(String lineContent, DrawContext drawContext, TextRenderer textRenderer, int x, int y, int color) {
         if (!BariumConfig.ENABLE_HUD_OPTIMIZATION || !BariumConfig.CACHE_DEBUG_HUD) {
             return false;
         }
-
-        long currentTime = System.currentTimeMillis();
-        // Limpa o cache periodicamente para evitar acúmulo de linhas antigas
-        if (currentTime - lastDebugUpdateTime > DEBUG_UPDATE_INTERVAL_MS * 5) {
-            DEBUG_HUD_CACHE.clear();
-            lastDebugUpdateTime = currentTime;
-        }
-
-        CachedHudLine cachedLine = DEBUG_HUD_CACHE.get(lineContent);
-
-        // Verifica se o cache é válido e corresponde à linha atual
-        if (cachedLine != null && cachedLine.isValid(lineContent)) {
-            // Indica que o conteúdo está em cache
-            return true;
-        }
-
-        return false; // Cache inválido ou inexistente
+        // A lógica de otimização agora foca em cachear a lista inteira de linhas do DebugHud.
+        // Este método não é mais o ponto principal para isso.
+        return false;
     }
 
     /**
-     * Atualiza o cache para uma linha do DebugHud.
+     * Atualiza o cache para a lista de linhas do DebugHud.
+     * Este método seria chamado após o método original DebugHud.getLeftText() ou getRightText() ter gerado o texto.
      *
-     * @param lineContent O conteúdo da linha.
+     * @param side Esquerda ("left") ou Direita ("right").
+     * @param textLines A lista de strings gerada.
      */
-    public static void cacheDebugLine(String lineContent) {
+    public static void updateDebugHudCache(String side, List<String> textLines) {
         if (!BariumConfig.ENABLE_HUD_OPTIMIZATION || !BariumConfig.CACHE_DEBUG_HUD) {
             return;
         }
-        // Atualiza ou adiciona a linha ao cache
-        DEBUG_HUD_CACHE.put(lineContent, new CachedHudLine(lineContent));
+        DEBUG_HUD_TEXT_CACHE.put(side, new ArrayList<>(textLines)); // Armazena uma cópia
         lastDebugUpdateTime = System.currentTimeMillis();
+        // BariumMod.LOGGER.debug("DebugHud cache updated for side '{}', lines: {}", side, textLines.size());
     }
 
     /**
@@ -95,7 +79,7 @@ public class HudOptimizer {
      *
      * @param debugHud A instância do DebugHud.
      * @param side Esquerda ("left") ou Direita ("right").
-     * @return A lista de strings para a HUD.
+     * @return A lista de strings para a HUD se o cache for válido e deve ser usado; null para indicar que o original deve ser chamado.
      */
     public static List<String> getCachedDebugHudText(DebugHud debugHud, String side) {
         if (!BariumConfig.ENABLE_HUD_OPTIMIZATION || !BariumConfig.CACHE_DEBUG_HUD) {
@@ -104,12 +88,16 @@ public class HudOptimizer {
 
         long currentTime = System.currentTimeMillis();
         if (currentTime - lastDebugUpdateTime > DEBUG_UPDATE_INTERVAL_MS) {
-            // Indica que o cache precisa ser atualizado chamando o original
+            // O cache está desatualizado, indica que o original deve ser chamado para atualizar
             return null;
         } else {
-            // Retorna as chaves do cache como a lista de linhas (aproximação)
-            // TODO: Manter listas separadas para esquerda/direita no cache.
-            return new ArrayList<>(DEBUG_HUD_CACHE.keySet());
+            // Retorna o cache se estiver válido
+            List<String> cached = DEBUG_HUD_TEXT_CACHE.get(side);
+            if (cached != null) {
+                // BariumMod.LOGGER.debug("DebugHud cache hit for side '{}'", side);
+                return cached;
+            }
+            return null; // Cache não existe para este lado, chama o original
         }
     }
 
@@ -167,14 +155,14 @@ public class HudOptimizer {
      * Limpa todos os caches da HUD.
      */
     public static void clearAllCaches() {
-        DEBUG_HUD_CACHE.clear();
+        DEBUG_HUD_TEXT_CACHE.clear();
         HUD_STATE_CACHE.clear();
         HUD_UPDATE_TIMESTAMPS.clear();
         lastDebugUpdateTime = 0;
     }
 
     // --- Classe interna para o Cache de Linha da HUD ---
-
+    // (Esta classe não é mais usada diretamente para o cache de DebugHud, mas pode ser mantida para outros fins)
     private static class CachedHudLine {
         final String content;
         final long timestamp;
@@ -190,4 +178,3 @@ public class HudOptimizer {
         }
     }
 }
-

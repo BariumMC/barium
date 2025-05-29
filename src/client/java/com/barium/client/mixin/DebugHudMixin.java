@@ -12,13 +12,13 @@ import java.util.List;
 /**
  * Mixin para DebugHud para otimizar a obtenção e renderização das informações de debug (F3).
  * Revisado para compatibilidade com mappings Yarn 1.21.5+build.1.
+ * Corrigido: Habilita o cache de texto do DebugHud.
  */
 @Mixin(DebugHud.class)
 public abstract class DebugHudMixin {
 
     /**
      * Injeta no início do método getLeftText para potencialmente retornar texto do cache.
-     * A lógica de otimização real depende da implementação em HudOptimizer.
      *
      * Target Class: net.minecraft.client.gui.hud.DebugHud
      * Target Method Signature (Yarn 1.21.5+build.1): getLeftText()Ljava/util/List;
@@ -29,24 +29,31 @@ public abstract class DebugHudMixin {
         cancellable = true
     )
     private void barium$getLeftText(CallbackInfoReturnable<List<String>> cir) {
-        DebugHud self = (DebugHud)(Object)this;
-        // Tenta obter o texto do cache do HudOptimizer
-        List<String> cachedText = HudOptimizer.getCachedDebugHudText(self, "left");
+        List<String> cachedText = HudOptimizer.getCachedDebugHudText((DebugHud)(Object)this, "left");
 
-        // Se o cache estiver válido (não vazio), retorna o cache.
-        // A implementação atual do HudOptimizer pode precisar de revisão para funcionar corretamente.
         if (cachedText != null && !cachedText.isEmpty()) {
-            // TODO: Validar e refinar a lógica de cache em HudOptimizer.
-            // Se o cache for confiável, descomentar a linha abaixo:
-            // cir.setReturnValue(cachedText);
+            cir.setReturnValue(cachedText); // Use o cache se for válido
         }
-        // Se o cache estiver vazio ou nulo, permite que o método original execute para gerar o texto.
-        // O HudOptimizer deve ser responsável por atualizar o cache em outro ponto (ex: no final do método original).
     }
 
     /**
+     * Injeta no final do método getLeftText para atualizar o cache.
+     *
+     * Target Class: net.minecraft.client.gui.hud.DebugHud
+     * Target Method Signature (Yarn 1.21.5+build.1): getLeftText()Ljava/util/List;
+     */
+    @Inject(
+        method = "getLeftText()Ljava/util/List;",
+        at = @At("RETURN")
+    )
+    private void barium$cacheLeftText(CallbackInfoReturnable<List<String>> cir) {
+        // Captura o valor de retorno e atualiza o cache
+        HudOptimizer.updateDebugHudCache("left", cir.getReturnValue());
+    }
+
+
+    /**
      * Injeta no início do método getRightText para potencialmente retornar texto do cache.
-     * A lógica de otimização real depende da implementação em HudOptimizer.
      *
      * Target Class: net.minecraft.client.gui.hud.DebugHud
      * Target Method Signature (Yarn 1.21.5+build.1): getRightText()Ljava/util/List;
@@ -57,20 +64,25 @@ public abstract class DebugHudMixin {
         cancellable = true
     )
     private void barium$getRightText(CallbackInfoReturnable<List<String>> cir) {
-        DebugHud self = (DebugHud)(Object)this;
-        // Tenta obter o texto do cache do HudOptimizer
-        List<String> cachedText = HudOptimizer.getCachedDebugHudText(self, "right");
+        List<String> cachedText = HudOptimizer.getCachedDebugHudText((DebugHud)(Object)this, "right");
 
-        // Mesma lógica do getLeftText
         if (cachedText != null && !cachedText.isEmpty()) {
-            // TODO: Validar e refinar a lógica de cache em HudOptimizer.
-            // Se o cache for confiável, descomentar a linha abaixo:
-            // cir.setReturnValue(cachedText);
+            cir.setReturnValue(cachedText); // Use o cache se for válido
         }
-        // Se o cache estiver vazio ou nulo, permite que o método original execute.
     }
 
-    // TODO: Considerar injeções adicionais (ex: @Inject no final de getLeftText/getRightText)
-    //       para atualizar o cache no HudOptimizer após o texto ser gerado pelo método original.
+    /**
+     * Injeta no final do método getRightText para atualizar o cache.
+     *
+     * Target Class: net.minecraft.client.gui.hud.DebugHud
+     * Target Method Signature (Yarn 1.21.5+build.1): getRightText()Ljava/util/List;
+     */
+    @Inject(
+        method = "getRightText()Ljava/util/List;",
+        at = @At("RETURN")
+    )
+    private void barium$cacheRightText(CallbackInfoReturnable<List<String>> cir) {
+        // Captura o valor de retorno e atualiza o cache
+        HudOptimizer.updateDebugHudCache("right", cir.getReturnValue());
+    }
 }
-
