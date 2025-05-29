@@ -1,0 +1,4 @@
+# Makes the private static inner class RenderInfo public
+# Full Yarn name: net.minecraft.client.render.block.entity.BlockEntityRenderDispatcher$RenderInfo
+# Obfuscated name for 1.21.5 (Yarn): class_277$class_1639
+public class class_277$class_1639
