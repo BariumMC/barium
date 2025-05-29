@@ -28,8 +28,6 @@ loom {
 		}
 	}
 
-	    accessWidenerPath = file("src/main/resources/barium.accesswidener")
-
 }
 
 dependencies {
