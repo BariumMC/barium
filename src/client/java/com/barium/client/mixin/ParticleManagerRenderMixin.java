@@ -45,7 +45,7 @@ public abstract class ParticleManagerRenderMixin { // Renomeado para especificar
     private void barium$beforeBuildGeometry(MatrixStack matrices, VertexConsumerProvider.Immediate consumers, LightmapTextureManager lightmap, Camera camera, float tickDelta, CallbackInfo ci, /* Captured Locals start here: */ Particle particle) {
         // 'particle' é capturada como uma variável local do loop do ParticleManager.
         // A própria instância de Particle (`particle`) contém seu mundo (`particle.world`), que pode ser acessado.
-        if (!ParticleOptimizer.shouldRenderParticle(particle, camera, particle.world)) { // Use particle.world diretamente
+        if (!ParticleOptimizer.shouldRenderParticle(particle, camera, particle.setWorld)) { // Use particle.world diretamente
             ci.cancel(); // Cancela a chamada a buildGeometry para esta partícula
         }
     }

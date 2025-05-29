@@ -5,11 +5,12 @@ import net.minecraft.client.render.Camera;
 import net.minecraft.client.render.WorldRenderer;
 import net.minecraft.client.render.Frustum;
 import net.minecraft.client.render.chunk.ChunkBuilder;
-import net.minecraft.client.util.math.MatrixStack; // Import correto para MatrixStack
+import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.client.render.GameRenderer;
 import net.minecraft.client.render.LightmapTextureManager;
 import net.minecraft.client.render.RenderTickCounter;
-import net.minecraft.util.math.Box;
+import net.minecraft.util.math.Box; // Import necessário
+import net.minecraft.util.math.BlockPos; // Import necessário
 import org.joml.Matrix4f;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
@@ -23,6 +24,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
  * Revisado para compatibilidade com mappings Yarn 1.21.5+build.1.
  * Corrigido import de MatrixStack e assinatura do método render.
  * Corrigido: Alvo do Redirect para `ChunkBuilder.BuiltChunk.shouldNotCull` para melhor acesso ao chunk.
+ * Corrigido: Uso de getOrigin() para obter o Bounding Box do BuiltChunk.
  */
 @Mixin(WorldRenderer.class)
 public abstract class AdvancedOcclusionCullingMixin {
@@ -42,15 +44,16 @@ public abstract class AdvancedOcclusionCullingMixin {
         )
     )
     private boolean barium$advancedOcclusionCheckRedirect(ChunkBuilder.BuiltChunk builtChunk, Frustum frustum, Camera camera, Frustum frustum_original, boolean hasForcedFrustum, boolean spectator) {
-        // O método original `shouldNotCull` internamente chama `frustum.isVisible(chunk.getBounds())`.
+        // O método original `shouldNotCull` internamente chama `frustum.isVisible(this.boundingBox)`.
         // Capturamos aqui, então `builtChunk` é a instância de `BuiltChunk` sendo processada.
 
         // 1. Verificação original do Frustum
-        // A lógica do método `shouldNotCull` do Minecraft já faz isso. Se o nosso redirecionamento
-        // retornar 'false' no final, a verificação original será efetivamente cancelada.
-        // Para uma verificação explícita do frustum, podemos usar:
-        boolean vanillaFrustumVisible = frustum.isVisible(builtChunk.getBounds());
+        // builtChunk.getOrigin() retorna a BlockPos do canto (0,0,0) da seção do chunk.
+        // Uma seção de chunk tem 16x16x16 blocos.
+        BlockPos origin = builtChunk.getOrigin();
+        Box builtChunkBox = new Box(origin, origin.add(16, 16, 16));
 
+        boolean vanillaFrustumVisible = frustum.isVisible(builtChunkBox);
         if (!vanillaFrustumVisible) {
             return false; // Se não está no frustum, está definitivamente ocluído.
         }

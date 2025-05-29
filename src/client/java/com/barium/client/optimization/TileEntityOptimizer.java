@@ -8,10 +8,11 @@ import net.minecraft.client.render.VertexConsumerProvider;
 import net.minecraft.client.render.block.entity.BlockEntityRenderDispatcher;
 import net.minecraft.client.render.block.entity.BlockEntityRenderer;
 import net.minecraft.client.util.math.MatrixStack;
-import net.minecraft.client.render.Camera; // Import para Camera
+import net.minecraft.client.render.Camera;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Vec3d;
-import net.minecraft.world.World;
+import org.joml.Matrix3f; // Import para Matrix3f
+import org.joml.Matrix4f; // Import para Matrix4f
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -23,6 +24,8 @@ import java.util.Map;
  * Tenta usar instancing para modelos similares e aplica culling.
  * Baseado nos mappings Yarn 1.21.5+build.1
  * Corrigido: Ajustado para nova injeção em TileEntityMixin e uso de JOML Matrix4f.
+ * Corrigido: Chamada a render() em BlockEntityRenderer com Vec3d modelOffset.
+ * Corrigido: Uso correto de matrices.multiply(Matrix4f, Matrix3f).
  */
 public class TileEntityOptimizer {
 
@@ -30,7 +33,6 @@ public class TileEntityOptimizer {
     private static final double MAX_RENDER_DISTANCE_SQ = 64 * 64;
 
     // Cache para agrupar Block Entities por tipo para instancing
-    // A chave seria a classe do renderer, o valor seria uma lista de Block Entities desse tipo.
     private static final Map<Class<?>, List<BlockEntityInstanceData>> INSTANCE_GROUPS = new HashMap<>();
 
     /**
@@ -55,21 +57,12 @@ public class TileEntityOptimizer {
             return false;
         }
 
-        // Frustum Culling (geralmente feito pelo WorldRenderer antes de chamar o dispatcher)
-        // Mas podemos adicionar uma verificação se necessário.
-        // Frustum frustum = camera.getFrustum(); // Precisa garantir que o frustum esteja configurado para o frame atual
-        // if (frustum != null && !frustum.isVisible(new Box(pos))) { return false; }
-
-        // Verifica se o renderer existe para este tipo de BlockEntity
-        // O método `get` do dispatcher retorna o renderer apropriado.
         @SuppressWarnings("unchecked")
         BlockEntityRenderer<BlockEntity> renderer = (BlockEntityRenderer<BlockEntity>) dispatcher.get(blockEntity);
         if (renderer == null) {
             return false; // Não há como renderizar
         }
         
-        // Verifica se o renderer considera a distância (alguns renderers podem ter sua própria lógica)
-        // O método `isInRenderDistance` existe no BlockEntityRenderer.
         if (!renderer.isInRenderDistance(blockEntity, cameraPos)) {
              return false;
         }
@@ -91,7 +84,6 @@ public class TileEntityOptimizer {
             return false;
         }
 
-        // Aplica culling por distância também aqui, se não foi feito pelo WorldRenderer (redundante mas seguro)
         Camera camera = MinecraftClient.getInstance().gameRenderer.getCamera();
         if (!shouldRenderBlockEntity(blockEntity, dispatcher, camera)) {
             return true; // Já culled, então marca como "tratado"
@@ -103,24 +95,13 @@ public class TileEntityOptimizer {
             return false;
         }
 
-        // Verifica se este tipo de renderer suporta instancing (precisaria de uma interface/flag)
-        // if (!(renderer instanceof InstancedBlockEntityRenderer)) { return false; }
-
-        // Adiciona os dados da instância (posição, estado, etc.) ao grupo apropriado
         List<BlockEntityInstanceData> group = INSTANCE_GROUPS.computeIfAbsent(renderer.getClass(), k -> new ArrayList<>());
         
-        // Copia a matriz de posição da entidade. O ideal seria obtê-la do RenderInfo,
-        // mas para um exemplo, podemos simular.
-        // A matriz real é a combinação da matriz de vista do mundo com a matriz de modelo da entidade.
-        // Para uma implementação real de instancing, você coletaria as transformações `per-instance`.
-        // Aqui, criamos uma matriz de identidade e a multiplicamos pela translação do BlockEntity.
         org.joml.Matrix4f instanceModelMatrix = new org.joml.Matrix4f();
         BlockPos pos = blockEntity.getPos();
         instanceModelMatrix.translate(pos.getX(), pos.getY(), pos.getZ());
         
         group.add(new BlockEntityInstanceData(blockEntity, instanceModelMatrix));
-
-        // BariumMod.LOGGER.debug("Grouped {} for instancing ({} instances)", blockEntity.getType(), group.size());
 
         return true; // Indica que foi agrupado e não deve ser renderizado individualmente agora
     }
@@ -140,42 +121,37 @@ public class TileEntityOptimizer {
             return;
         }
 
-        // BariumMod.LOGGER.debug("Rendering {} instanced groups.", INSTANCE_GROUPS.size());
-
         for (Map.Entry<Class<?>, List<BlockEntityInstanceData>> entry : INSTANCE_GROUPS.entrySet()) {
             Class<?> rendererClass = entry.getKey();
             List<BlockEntityInstanceData> instances = entry.getValue();
 
             if (instances.isEmpty()) continue;
 
-            // Obtém o renderer para este tipo (precisa de uma instância, pega a primeira)
             BlockEntity firstEntity = instances.get(0).blockEntity;
             @SuppressWarnings("unchecked")
             BlockEntityRenderer<BlockEntity> renderer = (BlockEntityRenderer<BlockEntity>) dispatcher.get(firstEntity);
 
-            if (renderer != null /* && renderer instanceof InstancedBlockEntityRenderer */) {
-                // A implementação real de instancing é complexa e requeraria OpenGL/RenderSystem.
-                // Aqui, como placeholder, ainda renderizamos individualmente, mas a lógica de agrupamento está pronta.
+            if (renderer != null) {
                 BariumMod.LOGGER.warn("Instancing for {} not fully implemented, rendering individually.", rendererClass.getSimpleName());
                  for (BlockEntityInstanceData instanceData : instances) {
-                     matrices.push(); // Salva o estado da matriz global
+                     matrices.push();
                      
-                     // Aplica a transformação específica da instância
-                     // A matriz de instância é relativa ao mundo, então combine-a com a matriz global.
-                     // CUIDADO: esta linha multiplicará a matriz global pela matriz da instância.
-                     // Dependendo da implementação do renderer, você pode precisar ajustar.
-                     matrices.multiply(instanceData.positionMatrix);
+                     // Multiplica a matriz global atual pela matriz de posição da instância.
+                     // A BlockEntityRenderer.render espera a matriz de modelo-visão correta.
+                     // Em 1.21.5, o método é multiply(Matrix4f, Matrix3f)
+                     matrices.multiply(instanceData.positionMatrix, new Matrix3f()); // Use Matrix3f de identidade
 
-                     // Renderiza a entidade individualmente. tickDelta é 0.0f pois estamos renderizando agrupado.
-                     renderer.render(instanceData.blockEntity, 0.0f, matrices, vertexConsumers, light, overlay);
-                     matrices.pop(); // Restaura o estado da matriz global
+                     // Renderiza a entidade individualmente.
+                     // Assinatura em 1.21.5: render(T blockEntity, float tickDelta, MatrixStack matrices, VertexConsumerProvider vertexConsumers, int light, int overlay, Vec3d modelOffset)
+                     renderer.render(instanceData.blockEntity, 0.0f, matrices, vertexConsumers, light, overlay, Vec3d.ZERO); // Adiciona Vec3d.ZERO
+
+                     matrices.pop();
                  }
             } else {
                  BariumMod.LOGGER.error("Renderer not found or doesn't support instancing for group: {}", rendererClass.getSimpleName());
             }
         }
 
-        // Limpa os grupos para o próximo frame
         INSTANCE_GROUPS.clear();
     }
 
@@ -187,21 +163,13 @@ public class TileEntityOptimizer {
     }
 
     // --- Classe interna para Dados de Instância ---
-    // Contém as informações necessárias para renderizar uma instância (entidade, matriz de posição).
     private static class BlockEntityInstanceData {
         final BlockEntity blockEntity;
-        final org.joml.Matrix4f positionMatrix; // Usando JOML como o Minecraft
+        final Matrix4f positionMatrix; // Usando JOML como o Minecraft
 
-        BlockEntityInstanceData(BlockEntity blockEntity, org.joml.Matrix4f positionMatrix) {
+        BlockEntityInstanceData(BlockEntity blockEntity, Matrix4f positionMatrix) {
             this.blockEntity = blockEntity;
             this.positionMatrix = positionMatrix;
         }
     }
-
-    // Interface hipotética para renderers que suportam instancing (para futura expansão)
-    /*
-    public interface InstancedBlockEntityRenderer<T extends BlockEntity> {
-        void renderInstanced(List<BlockEntityInstanceData> instances, MatrixStack matrices, VertexConsumerProvider vertexConsumers, int light, int overlay);
-    }
-    */
 }

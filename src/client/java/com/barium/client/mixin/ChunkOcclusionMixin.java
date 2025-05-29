@@ -5,7 +5,8 @@ import net.minecraft.client.render.WorldRenderer;
 import net.minecraft.client.render.chunk.ChunkBuilder;
 import net.minecraft.client.render.Camera;
 import net.minecraft.client.render.Frustum;
-import net.minecraft.util.math.Box;
+import net.minecraft.util.math.Box; // Necessário para criar Box
+import net.minecraft.util.math.BlockPos; // Necessário para getOrigin().add(16,16,16)
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Redirect;
@@ -16,6 +17,7 @@ import org.spongepowered.asm.mixin.injection.Redirect;
  * Nota: O ponto de injeção exato para occlusion culling pode variar e precisar de ajustes.
  * Esta implementação tenta redirecionar uma verificação de visibilidade.
  * Corrigido: Alvo do Redirect para `ChunkBuilder.BuiltChunk.shouldNotCull` para melhor acesso ao chunk.
+ * Corrigido: Uso de getOrigin() para obter o Bounding Box do BuiltChunk.
  */
 @Mixin(WorldRenderer.class)
 public abstract class ChunkOcclusionMixin {
@@ -36,11 +38,16 @@ public abstract class ChunkOcclusionMixin {
         )
     )
     private boolean barium$advancedOcclusionCheck(ChunkBuilder.BuiltChunk builtChunk, Frustum frustum, Camera camera, Frustum frustum_original, boolean hasForcedFrustum, boolean spectator) {
-        // O método original `shouldNotCull` internamente chama `frustum.isVisible(chunk.getBounds())`.
+        // O método original `shouldNotCull` internamente chama `frustum.isVisible(this.boundingBox)`.
         // Capturamos aqui, então `builtChunk` é a instância de `BuiltChunk` sendo processada.
 
         // Primeiro, executa a verificação original do frustum
-        boolean vanillaFrustumVisible = frustum.isVisible(builtChunk.getBounds());
+        // builtChunk.getOrigin() retorna a BlockPos do canto (0,0,0) da seção do chunk.
+        // Uma seção de chunk tem 16x16x16 blocos.
+        BlockPos origin = builtChunk.getOrigin();
+        Box builtChunkBox = new Box(origin, origin.add(16, 16, 16));
+
+        boolean vanillaFrustumVisible = frustum.isVisible(builtChunkBox);
         if (!vanillaFrustumVisible) {
             return false; // Se não está no frustum, definitivamente não é visível
         }
