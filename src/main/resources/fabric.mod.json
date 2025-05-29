@@ -23,7 +23,8 @@
     ]
   },
   "mixins": [
-    "barium.mixins.json"
+    "barium.mixins.json",
+    "barium.client.mixins.json"
   ],
   "depends": {
     "fabricloader": ">=0.14.0",
