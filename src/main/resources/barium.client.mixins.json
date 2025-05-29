@@ -10,7 +10,6 @@
         "InGameHudMixin",
         "ChunkOcclusionMixin",
         "TransparentBlockMixin",
-        "TileEntityMixin",
         "AnimationCullingMixin",
         "ChunkMeshPriorityMixin",
         "AdvancedOcclusionCullingMixin",
