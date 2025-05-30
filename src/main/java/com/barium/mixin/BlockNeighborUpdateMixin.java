@@ -18,7 +18,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
  * aplicando a lógica apenas a RedstoneWireBlock.
  * Baseado nos mappings Yarn 1.21.5+build.1
  */
-@Mixin(Block.class) // ALVO ALTERADO DE RedstoneWireBlock.class PARA Block.class
+@Mixin(Block.class) // ALVO: Block.class
 public abstract class BlockNeighborUpdateMixin { // Nome da classe alterado
 
     // O método neighborUpdate existe em Block e é herdado/implementado por RedstoneWireBlock
@@ -28,8 +28,8 @@ public abstract class BlockNeighborUpdateMixin { // Nome da classe alterado
         cancellable = true
     )
     private void barium$onNeighborUpdate(BlockState state, World world, BlockPos pos, net.minecraft.block.Block sourceBlock, BlockPos sourcePos, boolean notify, CallbackInfo ci) {
-        // VERIFICAÇÃO ADICIONADA: Só aplica a otimização se o bloco for um RedstoneWireBlock
-        if (!(this instanceof RedstoneWireBlock)) {
+        // CORREÇÃO: Cast 'this' para Block para que o instanceof funcione corretamente
+        if (!( (Block)(Object)this instanceof RedstoneWireBlock) ) {
             return; // Sai se não for um RedstoneWireBlock
         }
 
