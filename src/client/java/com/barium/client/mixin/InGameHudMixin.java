@@ -23,7 +23,6 @@ public abstract class InGameHudMixin {
      * Target Method Signature (Yarn 1.21.5+build.1): renderStatusEffectOverlay(Lnet/minecraft/client/gui/DrawContext;)V
      * Note: Method signature changed from MatrixStack to DrawContext in 1.20+
      */
-    )
     @Inject(
         method = "renderStatusEffectOverlay", // Simplificado: Mixin tentará encontrar o método pelo nome
         at = @At("HEAD"),
@@ -35,7 +34,6 @@ public abstract class InGameHudMixin {
             ci.cancel();
         }
         // Se deve atualizar, o método original continua.
-    }
 
     /**
      * Injeta no início do método renderStatusBars para potencialmente pular a renderização se o cache estiver válido.
@@ -56,8 +54,6 @@ public abstract class InGameHudMixin {
         }
         // Se deve atualizar, o método original continua.
     }
-
     // TODO: Adicionar mais injeções para outros elementos da HUD (hotbar, crosshair, etc.) se necessário.
     // TODO: Implementar a lógica de cache e renderização no HudOptimizer.
-}
 
