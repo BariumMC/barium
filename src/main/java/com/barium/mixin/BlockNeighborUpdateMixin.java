@@ -1,8 +1,9 @@
 package com.barium.mixin;
 
 import com.barium.optimization.RedstoneOptimizer;
+import net.minecraft.block.Block; // Importe a classe Block
 import net.minecraft.block.BlockState;
-import net.minecraft.block.RedstoneWireBlock;
+import net.minecraft.block.RedstoneWireBlock; // Mantenha este import para a verificação de tipo
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
 import net.minecraft.world.World;
@@ -12,8 +13,13 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
-@Mixin(RedstoneWireBlock.class)
-public abstract class RedstoneWireMixin {
+/**
+ * Mixin para Block para otimizar a propagação de sinais de redstone,
+ * aplicando a lógica apenas a RedstoneWireBlock.
+ * Baseado nos mappings Yarn 1.21.5+build.1
+ */
+@Mixin(Block.class) // ALVO ALTERADO DE RedstoneWireBlock.class PARA Block.class
+public abstract class BlockNeighborUpdateMixin { // Nome da classe alterado
 
     // O método neighborUpdate existe em Block e é herdado/implementado por RedstoneWireBlock
     @Inject(
@@ -22,6 +28,11 @@ public abstract class RedstoneWireMixin {
         cancellable = true
     )
     private void barium$onNeighborUpdate(BlockState state, World world, BlockPos pos, net.minecraft.block.Block sourceBlock, BlockPos sourcePos, boolean notify, CallbackInfo ci) {
+        // VERIFICAÇÃO ADICIONADA: Só aplica a otimização se o bloco for um RedstoneWireBlock
+        if (!(this instanceof RedstoneWireBlock)) {
+            return; // Sai se não for um RedstoneWireBlock
+        }
+
         if (RedstoneOptimizer.queueRedstoneUpdate(world, pos, sourcePos)) {
              ci.cancel();
         }
