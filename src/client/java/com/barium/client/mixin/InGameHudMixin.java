@@ -28,7 +28,7 @@ public abstract class InGameHudMixin {
         at = @At("HEAD"),
         cancellable = true
     )
-    private void barium$onRenderStatusEffects(DrawContext context, CallbackInfo ci) { // Use DrawContext
+    private void barium$onRenderStatusEffectsOverlay(DrawContext context, CallbackInfo ci) { // Use DrawContext
         // Verifica se os efeitos de status devem ser atualizados neste frame
         // A lógica de chave e provedor de estado em HudOptimizer precisa ser robusta.
         if (!HudOptimizer.shouldUpdateHudElement("status_effects", () -> "effects_placeholder_state")) { // Placeholder state provider
