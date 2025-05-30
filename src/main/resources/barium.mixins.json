@@ -10,10 +10,8 @@
     "ServerWorldMixin",
     "HopperBlockEntityMixin"
   ],
-  "client": [
-  ],
   "injectors": {
     "defaultRequire": 1
-  }
+	},
+      "refmap": "barium-refmap.json"
 }
-
