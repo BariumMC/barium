@@ -23,15 +23,13 @@ public abstract class InGameHudMixin {
      * Target Method Signature (Yarn 1.21.5+build.1): renderStatusEffectOverlay(Lnet/minecraft/client/gui/DrawContext;)V
      * Note: Method signature changed from MatrixStack to DrawContext in 1.20+
      */
+    )
     @Inject(
-        method = "renderStatusEffectOverlay(Lnet/minecraft/client/gui/DrawContext;)V", // Updated signature for 1.21.5
+        method = "renderStatusEffectOverlay", // Simplificado: Mixin tentará encontrar o método pelo nome
         at = @At("HEAD"),
         cancellable = true
     )
-    private void barium$onRenderStatusEffectsOverlay(DrawContext context, CallbackInfo ci) { // Use DrawContext
-        // Verifica se os efeitos de status devem ser atualizados neste frame
-        // A lógica de chave e provedor de estado em HudOptimizer precisa ser robusta.
-        if (!HudOptimizer.shouldUpdateHudElement("status_effects", () -> "effects_placeholder_state")) { // Placeholder state provider
+    private void barium$onRenderStatusEffectsOverlay(DrawContext context, CallbackInfo ci) { // Use DrawContext // Placeholder state provider
             // Se não deve atualizar, cancela a renderização original (assumindo que o cache será desenhado em outro lugar ou não mudou)
             // TODO: Refinar a lógica de cache e renderização no HudOptimizer.
             ci.cancel();
@@ -47,13 +45,11 @@ public abstract class InGameHudMixin {
      * Note: Method signature changed from MatrixStack to DrawContext in 1.20+
      */
     @Inject(
-        method = "renderStatusBars(Lnet/minecraft/client/gui/DrawContext;)V", // Updated signature for 1.21.5
+        method = "renderStatusBars", // Simplificado
         at = @At("HEAD"),
         cancellable = true
     )
-    private void barium$onRenderStatusBars(DrawContext context, CallbackInfo ci) { // Use DrawContext
-        // Verifica se as barras de status devem ser atualizadas neste frame
-        if (!HudOptimizer.shouldUpdateHudElement("status_bars", () -> "bars_placeholder_state")) { // Placeholder state provider
+    private void barium$onRenderStatusBars(DrawContext context, CallbackInfo ci) { // Use DrawContext // Placeholder state provider
             // Se não deve atualizar, cancela a renderização original.
             // TODO: Refinar a lógica de cache e renderização no HudOptimizer.
             ci.cancel();

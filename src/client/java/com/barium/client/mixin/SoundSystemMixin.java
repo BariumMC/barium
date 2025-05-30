@@ -24,7 +24,7 @@ public abstract class SoundSystemMixin { // Made abstract as it doesn't implemen
      * Target Method Signature (Yarn 1.21.5): Lnet/minecraft/client/sound/SoundSystem;play(Lnet/minecraft/client/sound/SoundInstance;)V
      */
     @Inject(
-        method = "play(Lnet/minecraft/client/sound/SoundInstance;)V", // Assuming signature is correct for Yarn 1.21.5
+        method = "play", // Simplificado
         at = @At("HEAD"),
         cancellable = true
     )
