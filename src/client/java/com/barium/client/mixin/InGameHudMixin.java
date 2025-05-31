@@ -24,7 +24,7 @@ public abstract class InGameHudMixin {
      */
     @Inject(
         // Esta assinatura é a mais provável para 1.21.5, conforme verificado anteriormente.
-        method = "renderStatusEffectOverlay(Lnet/minecraft/client/render/RenderTickCounter;Lnet/minecraft/client/gui/DrawContext;)V",
+        method = "renderStatusEffectOverlay",
         at = @At("HEAD"),
         cancellable = true
     )
@@ -41,7 +41,7 @@ public abstract class InGameHudMixin {
      */
     @Inject(
         // CORREÇÃO AQUI: Removido o 'F' (float) da assinatura do método target
-        method = "renderStatusBars(Lnet/minecraft/client/render/RenderTickCounter;Lnet/minecraft/client/gui/DrawContext;)V",
+        method = "renderStatusBars",
         at = @At("HEAD"),
         cancellable = true
     )

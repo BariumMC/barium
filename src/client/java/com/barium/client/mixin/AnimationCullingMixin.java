@@ -28,7 +28,7 @@ public abstract class AnimationCullingMixin {
      */
     @Inject(
         // O MÉTODO A SER INJETADO NO DISPATCHER
-        method = "render(Lnet/minecraft/block/entity/BlockEntity;FLnet/minecraft/client/util/math/MatrixStack;Lnet/minecraft/client/render/VertexConsumerProvider;II)V",
+        method = "render"
         at = @At(
             value = "INVOKE",
             // O MÉTODO QUE É CHAMADO DENTRO DO DISPATCHER (O RENDERER REAL)

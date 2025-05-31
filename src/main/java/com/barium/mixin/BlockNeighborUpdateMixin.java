@@ -23,7 +23,7 @@ public abstract class BlockNeighborUpdateMixin { // Nome da classe alterado
 
     // O método neighborUpdate existe em Block e é herdado/implementado por RedstoneWireBlock
     @Inject(
-        method = "neighborUpdate(Lnet/minecraft/block/BlockState;Lnet/minecraft/world/World;Lnet/minecraft/util/math/BlockPos;Lnet/minecraft/block/Block;Lnet/minecraft/util/math/BlockPos;Z)V",
+        method = "neighborUpdater"
         at = @At("HEAD"),
         cancellable = true
     )

@@ -17,7 +17,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 public abstract class TransparentBlockMixin {
 
     @Inject(
-        method = "renderLayer(Lnet/minecraft/client/render/RenderLayer;Lnet/minecraft/client/util/math/MatrixStack;DDDLorg/joml/Matrix4f;)V",
+        method = "renderLayer"
         at = @At(
             value = "INVOKE",
             target = "Lnet/minecraft/client/render/RenderLayer;startDrawing()V",
