@@ -1,57 +1,46 @@
 package com.barium.client.mixin;
 
-import com.barium.BariumMod;
 import com.barium.client.optimization.ParticleOptimizer;
 import net.minecraft.client.particle.Particle;
 import net.minecraft.client.particle.ParticleManager;
 import net.minecraft.client.render.Camera;
+import net.minecraft.client.render.VertexConsumer; // Novo import necessário
 import net.minecraft.client.world.ClientWorld;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
-import org.spongepowered.asm.mixin.injection.Inject;
-import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
-// import org.spongepowered.asm.mixin.injection.callback.LocalCapture; // COMENTE ou REMOVA
+import org.spongepowered.asm.mixin.injection.Redirect; // Mude de Inject para Redirect
 
-@Mixin(ParticleManager.class) // <-- Mantenha ParticleManager como alvo
+@Mixin(ParticleManager.class)
 public abstract class ParticleManagerMixin {
 
-    // Se você não for usar 'world' neste método de teste, pode comentar/remover também.
-    // Mas para o objetivo final, você precisará dele.
-    @Shadow @Final protected ClientWorld world;
+    @Shadow @Final protected ClientWorld world; // Mantenha isso se ainda precisar acessar 'world'
 
-    // Método de teste - Injeta no HEAD sem locals ou parâmetros complexos
-    @Inject(
-        method="render(Lnet/minecraft/client/util/math/MatrixStack;Lnet/minecraft/client/render/VertexConsumerProvider$Immediate;Lnet/minecraft/client/render/LightmapTextureManager;Lnet/minecraft/client/render/Camera;F)V",
-        at = @At("HEAD"), // Injeta no início do método
-        cancellable = true // Ainda pode ser cancelável, mas não vamos cancelar neste teste
-    )
-    private void barium$onRenderHead(CallbackInfo ci) { // Apenas CallbackInfo ci
-        BariumMod.LOGGER.info("barium$onRenderHead injetado com sucesso no ParticleManager!");
-        // Não adicione lógica que precise de 'camera' ou 'particle' aqui.
-        // ci.cancel(); // Não cancele para não quebrar o jogo no teste
-    }
-
-    /*
-     * O método original com a lógica de otimização de renderização que estava causando problemas
-     * Comente-o completamente por enquanto, para que não seja um alvo do Mixin.
-     * Nós o reativaremos depois que o teste acima funcionar.
-    @Inject(
+    /**
+     * Redireciona a chamada para Particle.buildGeometry() para aplicar otimização de renderização.
+     */
+    @Redirect(
         method = "render(Lnet/minecraft/client/util/math/MatrixStack;Lnet/minecraft/client/render/VertexConsumerProvider$Immediate;Lnet/minecraft/client/render/LightmapTextureManager;Lnet/minecraft/client/render/Camera;F)V",
         at = @At(
             value = "INVOKE",
-            target = "Lnet/minecraft/client/particle/Particle;buildGeometry(Lnet/minecraft/client/render/VertexConsumer;Lnet/minecraft/client/render/Camera;F)V",
-            shift = At.Shift.BEFORE
-        ),
-        cancellable = true,
-        locals = LocalCapture.CAPTURE_FAILHARD // Este é o provável culpado
+            target = "Lnet/minecraft/client/particle/Particle;buildGeometry(Lnet/minecraft/client/render/VertexConsumer;Lnet/minecraft/client/render/Camera;F)V"
+        )
     )
-    private void barium$beforeParticleRender(
-        CallbackInfo ci, Camera camera, Particle particle) {
-        if (!ParticleOptimizer.shouldRenderParticle(particle, camera, this.world)) {
-            ci.cancel();
+    private void barium$redirectBuildGeometry(
+        Particle instance, // A instância da partícula na qual buildGeometry() foi chamado
+        VertexConsumer consumer, // Parâmetro 1 de buildGeometry
+        Camera camera, // Parâmetro 2 de buildGeometry
+        float tickDelta // Parâmetro 3 de buildGeometry
+    ) {
+        // 'instance' é a própria partícula (o 'this' da chamada original Particle.buildGeometry)
+        // 'consumer', 'camera', 'tickDelta' são os argumentos passados para buildGeometry
+
+        // Verifica se a partícula deve ser renderizada usando sua lógica otimizada
+        if (ParticleOptimizer.shouldRenderParticle(instance, camera, this.world)) {
+            // Se deve renderizar, chama o método original
+            instance.buildGeometry(consumer, camera, tickDelta);
         }
+        // Se não deve renderizar, simplesmente não fazemos nada (pulando a chamada original)
     }
-    */
 }
