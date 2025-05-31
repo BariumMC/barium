@@ -23,7 +23,7 @@ public abstract class ParticleManagerMixin {
 
     // Método de teste - Injeta no HEAD sem locals ou parâmetros complexos
     @Inject(
-        method = "render(Lnet/minecraft/client/util/math/MatrixStack;Lnet/minecraft/client/render/VertexConsumerProvider$Immediate;Lnet/minecraft/client/render/LightmapTextureManager;Lnet/minecraft/client/render/Camera;F)V",
+        method="render(Lnet/minecraft/client/util/math/MatrixStack;Lnet/minecraft/client/render/VertexConsumerProvider$Immediate;Lnet/minecraft/client/render/LightmapTextureManager;Lnet/minecraft/client/render/Camera;F)V",
         at = @At("HEAD"), // Injeta no início do método
         cancellable = true // Ainda pode ser cancelável, mas não vamos cancelar neste teste
     )
