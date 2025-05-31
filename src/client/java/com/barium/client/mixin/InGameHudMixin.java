@@ -22,9 +22,9 @@ public abstract class InGameHudMixin {
         at = @At("HEAD"),
         cancellable = true
     )
-    private void barium$onRenderStatusEffectsOverlay(RenderTickCounter tickCounter, DrawContext context, CallbackInfo ci) { // Removido float tickDelta para corresponder à assinatura mais provável
+    //private void barium$onRenderStatusEffectsOverlay(RenderTickCounter tickCounter, DrawContext context, CallbackInfo ci) { // Removido float tickDelta para corresponder à assinatura mais provável
     // TENTE ESTA SE A ACIMA FALHAR:
-    // private void barium$onRenderStatusEffectsOverlay(RenderTickCounter tickCounter, float tickDelta, DrawContext context, CallbackInfo ci) { // Adicionado float tickDelta
+    private void barium$onRenderStatusEffectsOverlay(RenderTickCounter tickCounter, float tickDelta, DrawContext context, CallbackInfo ci) { // Adicionado float tickDelta
         if (!HudOptimizer.shouldUpdateHudElement("status_effects", () -> "effects_placeholder_state")) {
             ci.cancel();
         }
@@ -34,15 +34,15 @@ public abstract class InGameHudMixin {
     // Nova Assinatura Tentativa para 1.21.5: renderStatusBars(Lnet/minecraft/client/render/RenderTickCounter;Lnet/minecraft/client/gui/DrawContext;)V
     // Se o erro persistir, pode ser: renderStatusBars(Lnet/minecraft/client/render/RenderTickCounter;FLnet/minecraft/client/gui/DrawContext;)V
     @Inject(
-        method = "renderStatusBars(Lnet/minecraft/client/render/RenderTickCounter;Lnet/minecraft/client/gui/DrawContext;)V", // Mantenha esta por enquanto se a abaixo der erro
+        //method = "renderStatusBars(Lnet/minecraft/client/render/RenderTickCounter;Lnet/minecraft/client/gui/DrawContext;)V", // Mantenha esta por enquanto se a abaixo der erro
         // TENTE ESTA SE A ACIMA FALHAR:
-        // method = "renderStatusBars(Lnet/minecraft/client/render/RenderTickCounter;FLnet/minecraft/client/gui/DrawContext;)V",
+        method = "renderStatusBars(Lnet/minecraft/client/render/RenderTickCounter;FLnet/minecraft/client/gui/DrawContext;)V",
         at = @At("HEAD"),
         cancellable = true
     )
-    private void barium$onRenderStatusBars(RenderTickCounter tickCounter, DrawContext context, CallbackInfo ci) { // Removido float tickDelta para corresponder à assinatura mais provável
+    //private void barium$onRenderStatusBars(RenderTickCounter tickCounter, DrawContext context, CallbackInfo ci) { // Removido float tickDelta para corresponder à assinatura mais provável
     // TENTE ESTA SE A ACIMA FALHAR:
-    // private void barium$onRenderStatusBars(RenderTickCounter tickCounter, float tickDelta, DrawContext context, CallbackInfo ci) { // Adicionado float tickDelta
+    private void barium$onRenderStatusBars(RenderTickCounter tickCounter, float tickDelta, DrawContext context, CallbackInfo ci) { // Adicionado float tickDelta
         if (!HudOptimizer.shouldUpdateHudElement("status_bars", () -> "bars_placeholder_state")) {
             ci.cancel();
         }
