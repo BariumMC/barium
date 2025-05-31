@@ -4,7 +4,8 @@
 	"compatibilityLevel": "JAVA_21",
 	"client": [
 	  "ParticleMixin",
-        "DebugHudMixin"
+        "DebugHudMixin",
+        "ParticleManagerMixin"
 	],
 	"injectors": {
 		"defaultRequire": 1
