@@ -42,7 +42,7 @@ public abstract class TitleScreenMixin extends Screen {
     private void barium$onRenderHead(DrawContext context, int mouseX, int mouseY, float delta, CallbackInfo ci) {
         // Assegura que o cache de UI estática está atualizado se necessário
         if (BariumConfig.ENABLE_MENU_OPTIMIZATION && BariumConfig.CACHE_MENU_STATIC_UI) {
-            // CORRIGIDO: Não passar 'context' para updateStaticUiCache
+            // Não passar 'context' para updateStaticUiCache, pois ele opera em nível de OpenGL e MinecraftClient
             MenuHudOptimizer.updateStaticUiCache(this.width, this.height);
         }
     }
@@ -51,7 +51,7 @@ public abstract class TitleScreenMixin extends Screen {
      * Injeta no método render da TitleScreen para pular a renderização do panorama
      * se o otimizador indicar que um novo frame não é necessário.
      *
-     * Target: Injeção ANTES da chamada a `net.minecraft.client.gui.screen.TitleScreen$BackgroundRenderer.render(Lnet/minecraft/client/gui/DrawContext;F)V`
+     * Target: Injeção ANTES da chamada a `net.minecraft.client.gui.screen.TitleScreen$BackgroundRenderer;render(Lnet/minecraft/client/gui/DrawContext;F)V`
      * A classe interna BackgroundRenderer é responsável pelo panorama de fundo.
      *
      * @param context O DrawContext.
@@ -99,13 +99,14 @@ public abstract class TitleScreenMixin extends Screen {
     }
 
     /**
-     * Injeta no método close() da TitleScreen (chamado ao sair da tela)
-     * para limpar o cache e liberar os recursos do framebuffer.
+     * Injeta no método removed() da Screen (superclasse de TitleScreen)
+     * para limpar o cache e liberar os recursos do framebuffer ao sair da tela.
      *
      * @param ci CallbackInfo.
      */
-    @Inject(method = "close", at = @At("HEAD"))
-    private void barium$onClose(CallbackInfo ci) {
+    // CORRIGIDO: Mudar o método alvo para "removed" da classe Screen
+    @Inject(method = "removed", at = @At("HEAD"))
+    private void barium$onRemoved(CallbackInfo ci) {
         MenuHudOptimizer.clearCache();
     }
 }
