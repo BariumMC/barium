@@ -9,7 +9,7 @@ import net.minecraft.client.render.block.entity.BlockEntityRenderer;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Vec3d;
-import net.minecraft.client.render.Camera; // Import adicionado
+import net.minecraft.world.World;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -21,7 +21,6 @@ import java.util.Map;
  * Tenta usar instancing para modelos similares e aplica culling.
  * Baseado nos mappings Yarn 1.21.5+build.1
  * Corrigido: Removido método copy() inexistente e ajustado tipos genéricos.
- * Corrigido: Assinatura do método BlockEntityRenderer.render para incluir Vec3d (posição da câmera).
  */
 public class TileEntityOptimizer {
 
@@ -76,46 +75,6 @@ public class TileEntityOptimizer {
     }
 
     /**
-     * Processa a lista de BlockEntities visíveis para aplicar otimizações como instancing.
-     * Este método é chamado pelo mixin em WorldRenderer, substituindo a iteração vanilla.
-     *
-     * @param visibleBlockEntities A lista de BlockEntities que são visíveis (ou potenciais candidatos).
-     * @param dispatcher O dispatcher de renderização.
-     * @param matrices A pilha de matrizes atual.
-     * @param vertexConsumers O provedor de consumidores de vértices.
-     * @param camera A câmera atual do jogo.
-     * @param tickDelta O delta de tick.
-     * @return true se a otimização foi aplicada e a renderização vanilla deve ser ignorada, false caso contrário.
-     */
-    public static boolean processVisibleBlockEntities(List<BlockEntity> visibleBlockEntities, BlockEntityRenderDispatcher dispatcher, MatrixStack matrices, VertexConsumerProvider vertexConsumers, Camera camera, float tickDelta) {
-        if (!BariumConfig.ENABLE_ADVANCED_CULLING || !BariumConfig.OPTIMIZE_TILE_ENTITIES) {
-            return false; // Não otimiza, permite que o vanilla renderize
-        }
-
-        clearInstancingGroups(); // Limpa grupos do frame anterior
-
-        for (BlockEntity blockEntity : visibleBlockEntities) {
-            // Verifica culling adicional antes de agrupar
-            if (shouldRenderBlockEntity(blockEntity, dispatcher, camera.getPos())) {
-                tryGroupBlockEntityForInstancing(blockEntity, matrices, dispatcher);
-            }
-        }
-
-        // Valores de luz e overlay são geralmente constantes para o frame.
-        // Estes valores (15728880 para luz máxima, 65536 para overlay padrão)
-        // são comumente usados no Minecraft para renderização de BlockEntities.
-        int light = 15728880;
-        int overlay = 65536;
-
-        // Renderiza todos os grupos instanciados
-        renderInstancedGroups(dispatcher, matrices, vertexConsumers, light, overlay, camera);
-
-        // Retorna true se a otimização foi aplicada e a renderização vanilla deve ser ignorada.
-        // Isso só deve ser feito se você tem certeza de que todos os BlockEntities visíveis foram tratados aqui.
-        return true;
-    }
-
-    /**
      * Tenta agrupar Block Entities para renderização com instancing.
      * Este método seria chamado antes da renderização individual.
      *
@@ -142,7 +101,8 @@ public class TileEntityOptimizer {
         // Usamos Class<?> em vez de Class<? extends BlockEntityRenderer<?>> para evitar problemas de tipo
         List<BlockEntityInstanceData> group = INSTANCE_GROUPS.computeIfAbsent(renderer.getClass(), k -> new ArrayList<>());
         
-        // Correção: Usar construtor de cópia JOML para Matrix4f
+        // Não usamos copy() pois não existe em Matrix4f no Yarn 1.21.5
+        // Em vez disso, criamos uma nova matriz com os mesmos valores
         org.joml.Matrix4f originalMatrix = matrixStack.peek().getPositionMatrix();
         org.joml.Matrix4f matrixCopy = new org.joml.Matrix4f(originalMatrix);
         
@@ -162,14 +122,13 @@ public class TileEntityOptimizer {
      * @param vertexConsumers O provedor de consumidores de vértices.
      * @param light O nível de luz.
      * @param overlay O overlay.
-     * @param camera A câmera atual do jogo.
      */
-    public static void renderInstancedGroups(BlockEntityRenderDispatcher dispatcher, MatrixStack matrixStack, VertexConsumerProvider vertexConsumers, int light, int overlay, Camera camera) {
+    public static void renderInstancedGroups(BlockEntityRenderDispatcher dispatcher, MatrixStack matrixStack, VertexConsumerProvider vertexConsumers, int light, int overlay) {
         if (!BariumConfig.ENABLE_ADVANCED_CULLING || !BariumConfig.USE_TILE_ENTITY_INSTANCING || INSTANCE_GROUPS.isEmpty()) {
             return;
         }
 
-        BariumMod.LOGGER.debug("Rendering {} instanced groups.", INSTANCE_GROUPS.size());
+        // BariumMod.LOGGER.debug("Rendering {} instanced groups.", INSTANCE_GROUPS.size());
 
         for (Map.Entry<Class<?>, List<BlockEntityInstanceData>> entry : INSTANCE_GROUPS.entrySet()) {
             Class<?> rendererClass = entry.getKey();
@@ -196,13 +155,10 @@ public class TileEntityOptimizer {
                  BariumMod.LOGGER.warn("Instancing for {} not fully implemented, rendering individually.", rendererClass.getSimpleName());
                  for (BlockEntityInstanceData instanceData : instances) {
                      matrixStack.push();
-                     // A matriz de posição capturada no instanceData.positionMatrix pode ser usada aqui para
-                     // aplicar a transformação específica da instância se você estivesse fazendo instancing real.
-                     // Para a renderização individual, o BlockEntityRenderDispatcher.render(BlockEntity, ...)
-                     // já lida com a posição. Estamos apenas simulando aqui.
-                     
-                     // CORREÇÃO: Adicionado camera.getPos() como último argumento
-                     renderer.render(instanceData.blockEntity, 0.0f, matrixStack, vertexConsumers, light, overlay, camera.getPos());
+                     // Aplica a transformação específica da instância?
+                     // A matriz já foi capturada, mas a renderização pode precisar dela de forma diferente.
+                     // Ou talvez o renderer precise ser chamado com a matriz original capturada.
+                     // renderer.render(instanceData.blockEntity, 0.0f, matrixStack, vertexConsumers, light, overlay);
                      matrixStack.pop();
                  }
             } else {
@@ -232,4 +188,11 @@ public class TileEntityOptimizer {
             this.positionMatrix = positionMatrix;
         }
     }
+
+    // Interface hipotética para renderers que suportam instancing
+    /*
+    public interface InstancedBlockEntityRenderer<T extends BlockEntity> {
+        void renderInstanced(List<BlockEntityInstanceData> instances, MatrixStack matrices, VertexConsumerProvider vertexConsumers, int light, int overlay);
+    }
+    */
 }

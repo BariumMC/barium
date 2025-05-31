@@ -4,6 +4,7 @@ import com.barium.client.optimization.AnimationCullingOptimizer;
 import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.client.render.VertexConsumerProvider;
 import net.minecraft.client.render.block.entity.BlockEntityRenderDispatcher;
+import net.minecraft.client.render.block.entity.BlockEntityRenderer;
 import net.minecraft.client.util.math.MatrixStack;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
@@ -23,16 +24,14 @@ public abstract class AnimationCullingMixin {
      * Verifica se a animação desta entidade deve ser renderizada/atualizada.
      *
      * Target Class: net.minecraft.client.render.block.entity.BlockEntityRenderDispatcher
-     * Target Method Signature (Yarn 1.21.5+build.1 - ATUALIZADO): render(Lnet/minecraft/block/entity/BlockEntity;FLnet/minecraft/client/util/math/MatrixStack;Lnet/minecraft/client/render/VertexConsumerProvider;II)V
-     * Target INVOKE (Yarn 1.21.5+build.1 - ATUALIZADO): Lnet/minecraft/client/render/block/entity/BlockEntityRenderer;render(Lnet/minecraft/block/entity/BlockEntity;FLnet/minecraft/client/util/math/MatrixStack;Lnet/minecraft/client/render/VertexConsumerProvider;IILnet/minecraft/util/math/Vec3d;)V
+     * Target Method Signature (Yarn 1.21.5+build.1): render(Lnet/minecraft/block/entity/BlockEntity;FLnet/minecraft/client/util/math/MatrixStack;Lnet/minecraft/client/render/VertexConsumerProvider;)V
      */
     @Inject(
-        // O MÉTODO A SER INJETADO NO DISPATCHER
-        method = "render",
+        method = "render(Lnet/minecraft/block/entity/BlockEntity;FLnet/minecraft/client/util/math/MatrixStack;Lnet/minecraft/client/render/VertexConsumerProvider;)V",
         at = @At(
             value = "INVOKE",
-            // O MÉTODO QUE É CHAMADO DENTRO DO DISPATCHER (O RENDERER REAL)
-            target = "Lnet/minecraft/client/render/block/entity/BlockEntityRenderer;render(Lnet/minecraft/block/entity/BlockEntity;FLnet/minecraft/client/util/math/MatrixStack;Lnet/minecraft/client/render/VertexConsumerProvider;IILnet/minecraft/util/math/Vec3d;)V",
+            // Target the call to the specific BlockEntityRenderer's render method
+            target = "Lnet/minecraft/client/render/block/entity/BlockEntityRenderer;render(Lnet/minecraft/block/entity/BlockEntity;FLnet/minecraft/client/util/math/MatrixStack;Lnet/minecraft/client/render/VertexConsumerProvider;II)V",
             shift = At.Shift.BEFORE
         ),
         cancellable = true
@@ -42,16 +41,26 @@ public abstract class AnimationCullingMixin {
             float tickDelta,
             MatrixStack matrices,
             VertexConsumerProvider vertexConsumers,
-            int light,   // Capturado do método do dispatcher
-            int overlay, // Capturado do método do dispatcher
-            CallbackInfo ci) {
+            CallbackInfo ci,
+            // Locals captured by the INVOKE target (adjust based on actual signature)
+            BlockEntityRenderer<E> blockEntityRenderer,
+            int light,
+            int overlay) {
 
         // Verifica se a animação desta entidade deve ser processada/renderizada
         if (!AnimationCullingOptimizer.shouldAnimateBlockEntity(blockEntity, tickDelta)) {
-            // Se shouldAnimateBlockEntity retornar false, cancela a renderização original.
-            // Para "pausar" a animação ou renderizá-la de forma diferente, você precisaria
-            // chamar o renderizador original com parâmetros modificados (ex: tickDelta = 0)
-            // e depois cancelar. Por simplicidade, estamos apenas cancelando aqui.
+            // Opção 1: Cancelar completamente a renderização (pode causar pop-in)
+            // ci.cancel();
+
+            // Opção 2: Renderizar, mas com um tickDelta modificado (ex: 0 ou um valor fixo)
+            // Isso pode congelar a animação no último estado visível.
+            // A implementação exata dependeria de como o AnimationCullingOptimizer funciona.
+            // Exemplo: Chamar o renderizador original com tickDelta modificado.
+            // blockEntityRenderer.render(blockEntity, AnimationCullingOptimizer.getFrozenTickDelta(blockEntity), matrices, vertexConsumers, light, overlay);
+            // ci.cancel(); // Cancelar a chamada original após a nossa chamada modificada
+
+            // Por enquanto, vamos apenas cancelar para simplificar. A lógica real precisa ser definida no Optimizer.
+            // TODO: Implementar a lógica de culling/pausa no AnimationCullingOptimizer.
             ci.cancel();
         }
         // Se shouldAnimateBlockEntity retornar true, a renderização original continua.
@@ -61,3 +70,4 @@ public abstract class AnimationCullingMixin {
     // específicos (como PistonBlockEntity, BellBlockEntity) para pausar a lógica de animação interna
     // quando não visível, em vez de apenas afetar a renderização.
 }
+

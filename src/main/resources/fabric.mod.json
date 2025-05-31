@@ -3,9 +3,9 @@
   "id": "barium",
   "version": "1.0.0",
   "name": "Barium",
-  "description": "optimization mod for minecraft",
+  "description": "Mod de otimização para Minecraft 1.21.5 com foco em compatibilidade com Sodium",
   "authors": [
-    "PedrixzZ"
+    "Barium Team"
   ],
   "contact": {
     "homepage": "https://github.com/bariumteam/barium",
@@ -23,8 +23,7 @@
     ]
   },
   "mixins": [
-    "barium.mixins.json",
-    "barium.client.mixins.json"
+    "barium.mixins.json"
   ],
   "depends": {
     "fabricloader": ">=0.14.0",

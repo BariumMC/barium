@@ -6,11 +6,12 @@
   "mixins": [
     "EntityMixin",
     "BlockEntityMixin",
+    "RedstoneWireMixin",
     "ServerWorldMixin",
     "HopperBlockEntityMixin"
   ],
   "injectors": {
     "defaultRequire": 1
-	},
-      "refmap": "barium-refmap.json"
+  }
 }
+
