@@ -30,9 +30,4 @@ public class BariumConfig {
     public static final boolean REDUCE_HUD_UPDATES = true; // Adicionado (usado em HudOptimizer)
     public static final boolean ENABLE_FONT_CACHING = true;
     public static final int HUD_UPDATE_INTERVAL_TICKS = 5;
-
-    // --- Menu HUD Optimization (Client-side) --- //
-    public static final boolean ENABLE_MENU_OPTIMIZATION = true;
-    public static final int MENU_PANORAMA_FPS = 30; // FPS alvo para o panorama do menu (0 para desativar)
-    public static final boolean CACHE_MENU_STATIC_UI = true; // Cacheia elementos estáticos como logo, versão, copyright
 }
