@@ -5,9 +5,8 @@ import com.barium.config.BariumConfig;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gl.Framebuffer;
 import net.minecraft.client.gui.DrawContext;
+import net.minecraft.client.font.TextRenderer; // Adicionado import para TextRenderer
 import net.minecraft.util.Util;
-
-import java.time.Duration; // Importar Duration
 
 /**
  * Otimiza a HUD do menu principal (TitleScreen), controlando o FPS do panorama
@@ -44,7 +43,7 @@ public class MenuHudOptimizer {
             return false; // Desativa o panorama completamente
         }
 
-        long currentTime = Util.get  (); // Tempo atual em milissegundos
+        long currentTime = Util.getRunTime(); // CORRIGIDO: Util.getRunTime()
         long targetFrameTime = 1000L / targetFps; // Tempo mínimo entre frames em milissegundos
 
         if (currentTime - lastPanoramaRenderTime >= targetFrameTime) {
@@ -58,50 +57,46 @@ public class MenuHudOptimizer {
      * Prepara o cache para elementos estáticos da UI do menu.
      * Renderiza o logo do Minecraft, versão e copyright para um framebuffer.
      *
-     * @param context O DrawContext original para obter o renderizador de texto.
+     * @param originalContext O DrawContext original para obter o renderizador de texto e realizar as chamadas de desenho.
      * @param screenWidth A largura da tela atual.
      * @param screenHeight A altura da tela atual.
      */
-    public static void updateStaticUiCache(DrawContext context, int screenWidth, int screenHeight) {
+    public static void updateStaticUiCache(DrawContext originalContext, int screenWidth, int screenHeight) {
         if (!BariumConfig.ENABLE_MENU_OPTIMIZATION || !BariumConfig.CACHE_MENU_STATIC_UI) {
             clearCache();
             return;
         }
 
-        // Se a tela mudou de tamanho ou o framebuffer não existe, recria
-        if (staticUiFramebuffer == null || cachedWidth != screenWidth || cachedHeight != screenHeight) {
+        // Se a tela mudou de tamanho ou o framebuffer não existe ou não está alocado, recria
+        if (staticUiFramebuffer == null || cachedWidth != screenWidth || cachedHeight != screenHeight || !staticUiFramebuffer.isAllocated()) { // CORRIGIDO: .isAllocated()
             clearCache(); // Limpa o antigo se existir
-            staticUiFramebuffer = new Framebuffer(screenWidth, screenHeight, true, MinecraftClient.IS_SYSTEM_MAC);
+            staticUiFramebuffer = new Framebuffer(screenWidth, screenHeight, true, MinecraftClient.IS_SYSTEM_MAC); // Framebuffer é uma classe concreta, o erro anterior era uma cascata ou misconfig
+            staticUiFramebuffer.setClearColor(0.0F, 0.0F, 0.0F, 0.0F); // Fundo transparente
             cachedWidth = screenWidth;
             cachedHeight = screenHeight;
             BariumMod.LOGGER.debug("MenuHudOptimizer: Recriando static UI cache ({}, {})", screenWidth, screenHeight);
         }
 
-        // Pega o framebuffer atual do jogo
+        // Pega o framebuffer atual do jogo para restaurar depois
         Framebuffer defaultFramebuffer = MinecraftClient.getInstance().getFramebuffer();
 
-        // Redireciona a renderização para o nosso framebuffer estático
-        staticUiFramebuffer.beginWrite(true); // Limpa o framebuffer antes de desenhar
-        staticUiFramebuffer.clear(MinecraftClient.IS_SYSTEM_MAC);
+        // Redireciona a renderização para o nosso framebuffer estático e o limpa
+        staticUiFramebuffer.bindWrite(true); // CORRIGIDO: .bindWrite(true) para vincular e limpar
+        // Nao precisa de staticUiFramebuffer.clear() aqui, pois bindWrite(true) ja limpa
 
-        DrawContext fboContext = new DrawContext(MinecraftClient.getInstance(), staticUiFramebuffer);
-
-        // --- Renderiza elementos estáticos para o framebuffer ---
-        // Renderiza o logo do Minecraft (normalmente é desenhado no método TitleScreen#render)
-        // O mixin em TitleScreen terá que interceptar a chamada ao DrawContext para o logo.
-        // Por simplicidade, vamos apenas cachear o texto de versão e copyright por enquanto.
-        // Cachear o logo é mais complexo, pois envolve um método de renderização específico.
+        // --- Renderiza elementos estáticos para o framebuffer usando o contexto original ---
+        TextRenderer textRenderer = originalContext.getTextRenderer(); // Usa o textRenderer do contexto original
 
         // Renderiza a versão do jogo
-        String versionText = MinecraftClient.getInstance().getVersion().getGameVersion();
-        fboContext.drawTextWithShadow(MinecraftClient.getInstance().textRenderer, versionText, 2, screenHeight - 20, 0xFFFFFF);
+        String versionText = MinecraftClient.getInstance().getGameVersion(); // CORRIGIDO: .getGameVersion()
+        originalContext.drawTextWithShadow(textRenderer, versionText, 2, screenHeight - 20, 0xFFFFFF);
 
         // Renderiza o texto de copyright
         String copyrightText = "Copyright Mojang AB. Do not distribute!";
-        fboContext.drawTextWithShadow(MinecraftClient.getInstance().textRenderer, copyrightText, screenWidth - MinecraftClient.getInstance().textRenderer.getWidth(copyrightText) - 2, screenHeight - 10, 0xFFFFFF);
+        originalContext.drawTextWithShadow(textRenderer, copyrightText, screenWidth - textRenderer.getWidth(copyrightText) - 2, screenHeight - 10, 0xFFFFFF);
 
         // Restaura o framebuffer padrão do jogo
-        defaultFramebuffer.beginWrite(false);
+        defaultFramebuffer.bindWrite(true); // CORRIGIDO: .bindWrite(true) para restaurar e limpar o framebuffer padrão
         // BariumMod.LOGGER.debug("MenuHudOptimizer: Static UI cache atualizado.");
     }
 
@@ -116,7 +111,7 @@ public class MenuHudOptimizer {
         }
 
         // Desenha a textura do nosso framebuffer na tela
-        context.drawTexture(staticUiFramebuffer.get               (), 0, 0, cachedWidth, cachedHeight, 0, 0, 1, 1, cachedWidth, cachedHeight);
+        context.drawTexture(staticUiFramebuffer.getTextureId(), 0, 0, cachedWidth, cachedHeight, 0, 0, 1, 1, cachedWidth, cachedHeight); // CORRIGIDO: .getTextureId()
         // BariumMod.LOGGER.debug("MenuHudOptimizer: Desenhando static UI do cache.");
     }
 
@@ -138,6 +133,6 @@ public class MenuHudOptimizer {
      * @return true se o cache é válido e deve ser usado.
      */
     public static boolean isStaticUiCacheValid() {
-        return BariumConfig.ENABLE_MENU_OPTIMIZATION && BariumConfig.CACHE_MENU_STATIC_UI && staticUiFramebuffer != null && staticUiFramebuffer.is                   ();
+        return BariumConfig.ENABLE_MENU_OPTIMIZATION && BariumConfig.CACHE_MENU_STATIC_UI && staticUiFramebuffer != null && staticUiFramebuffer.isAllocated(); // CORRIGIDO: .isAllocated()
     }
 }

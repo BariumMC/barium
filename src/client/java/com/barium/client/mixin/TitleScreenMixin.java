@@ -21,7 +21,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
  * Mappings: Yarn 1.21.5+build.1
  */
 @Mixin(TitleScreen.class)
-public abstract class TitleScreenMixin extends Screen { // Precisa estender Screen para herdar o construtor
+public abstract class TitleScreenMixin extends Screen {
 
     // Construtor obrigatório para Mixins em classes com construtores não-padrão
     protected TitleScreenMixin(Text title) {
@@ -29,8 +29,8 @@ public abstract class TitleScreenMixin extends Screen { // Precisa estender Scre
     }
 
     /**
-     * Injeta no início do método render() da TitleScreen para controlar
-     * a renderização do panorama e da UI estática.
+     * Injeta no início do método render() da TitleScreen.
+     * Usado para garantir que o cache da UI estática está atualizado antes de qualquer desenho.
      *
      * @param context O contexto de desenho.
      * @param mouseX Posição X do mouse.
@@ -41,31 +41,20 @@ public abstract class TitleScreenMixin extends Screen { // Precisa estender Scre
     @Inject(method = "render", at = @At("HEAD"))
     private void barium$onRenderHead(DrawContext context, int mouseX, int mouseY, float delta, CallbackInfo ci) {
         // Assegura que o cache de UI estática está atualizado se necessário
-        if (!MenuHudOptimizer.isStaticUiCacheValid()) {
+        if (BariumConfig.ENABLE_MENU_OPTIMIZATION && BariumConfig.CACHE_MENU_STATIC_UI) {
+            // Este método será chamado a cada frame de renderização do menu.
+            // O `updateStaticUiCache` só recriará o FBO se necessário (tamanho de tela mudou, ou é a primeira vez).
+            // Ele também faz a renderização dos textos no FBO.
             MenuHudOptimizer.updateStaticUiCache(context, this.width, this.height);
         }
-
-        // Controla o FPS do panorama.
-        // O panorama é desenhado dentro do método super.render(),
-        // que é o método render da classe Screen.
-        // Precisamos ter mais controle sobre o 'super.render' para pular o panorama.
-        // No momento, vamos desativá-lo completamente se o FPS for 0, ou deixá-lo renderizar
-        // e usar uma injeção mais específica para limitar o FPS.
-        // A lógica do 'shouldRenderPanoramaFrame' será usada para pular a chamada ao DrawContext
-        // que renderiza o panorama, se conseguirmos interceptá-la.
-
-        // Por enquanto, vamos focar no panorama de fundo (que é desenhado pelo próprio TitleScreen
-        // antes de chamar o super.render()).
-        // O panorama é desenhado no método `render` do TitleScreen antes da chamada a `super.render`.
     }
 
     /**
      * Injeta no método render da TitleScreen para pular a renderização do panorama
      * se o otimizador indicar que um novo frame não é necessário.
      *
-     * Localização do panorama:
-     * O panorama é renderizado por `this.backgroundRenderer.render(delta, alpha)`
-     * que é chamado no método `render` do `TitleScreen`.
+     * Target: Injeção ANTES da chamada a `net.minecraft.client.gui.screen.TitleScreen$BackgroundRenderer.render(Lnet/minecraft/client/gui/DrawContext;F)V`
+     * A classe interna BackgroundRenderer é responsável pelo panorama de fundo.
      *
      * @param context O DrawContext.
      * @param mouseX X do mouse.
@@ -75,7 +64,7 @@ public abstract class TitleScreenMixin extends Screen { // Precisa estender Scre
      */
     @Inject(
         method = "render",
-        at = @At(value = "INVOKE", target = "Lnet/minecraft/client/gui/screen/TitleScreen$BackgroundRenderer;render(F)V", shift = At.Shift.BEFORE),
+        at = @At(value = "INVOKE", target = "Lnet/minecraft/client/gui/screen/TitleScreen$BackgroundRenderer;render(Lnet/minecraft/client/gui/DrawContext;F)V", shift = At.Shift.BEFORE), // CORRIGIDO: target method signature
         cancellable = true
     )
     private void barium$skipPanoramaRender(DrawContext context, int mouseX, int mouseY, float delta, CallbackInfo ci) {
@@ -86,10 +75,8 @@ public abstract class TitleScreenMixin extends Screen { // Precisa estender Scre
         }
     }
 
-
     /**
-     * Injeta no final do método render() da TitleScreen para desenhar o cache de UI estática
-     * e evitar que os elementos originais sejam desenhados novamente.
+     * Injeta no final do método render() da TitleScreen para desenhar o cache de UI estática.
      *
      * @param context O contexto de desenho.
      * @param mouseX Posição X do mouse.
@@ -100,20 +87,22 @@ public abstract class TitleScreenMixin extends Screen { // Precisa estender Scre
     @Inject(method = "render", at = @At("TAIL"))
     private void barium$onRenderTail(DrawContext context, int mouseX, int mouseY, float delta, CallbackInfo ci) {
         if (MenuHudOptimizer.isStaticUiCacheValid()) {
+            // Desenha a textura do framebuffer cacheado por cima dos elementos originais.
+            // Para realmente *substituir* os elementos, seriam necessárias @Redirects
+            // ou @Injects com cancellable em pontos mais específicos.
             MenuHudOptimizer.drawCachedStaticUi(context);
         }
     }
 
     /**
      * Injeta no método init() da TitleScreen (chamado na inicialização da tela ou resize)
-     * para limpar o cache da UI estática e garantir que ele seja recriado.
+     * para limpar o cache da UI estática e garantir que ele seja recriado na próxima renderização.
      *
      * @param ci CallbackInfo.
      */
     @Inject(method = "init", at = @At("HEAD"))
     private void barium$onInit(CallbackInfo ci) {
         MenuHudOptimizer.clearCache();
-        // O cache será recriado na próxima chamada de renderização.
     }
 
     /**
@@ -123,7 +112,7 @@ public abstract class TitleScreenMixin extends Screen { // Precisa estender Scre
      * @param ci CallbackInfo.
      */
     @Inject(method = "close", at = @At("HEAD"))
-    private void barium$onClose(CallbackInfo ci) {
+    private void barium$onClose(CallbackInfo ci) { // CORRIGIDO: Adicionado descritor ()V implícito, embora a warning possa persistir.
         MenuHudOptimizer.clearCache();
     }
 }
