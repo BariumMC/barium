@@ -38,6 +38,5 @@ public abstract class ParticleManagerMixin {
     private void barium$beforeParticleRender(
         CallbackInfo ci, Camera camera, Particle particle) {
             ci.cancel(); // Se não deve renderizar, cancela a chamada ao buildGeometry da partícula atual
-        }
     }
 }
