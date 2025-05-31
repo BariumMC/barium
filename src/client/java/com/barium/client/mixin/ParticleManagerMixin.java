@@ -26,22 +26,17 @@ public abstract class ParticleManagerMixin {
      * Target INVOKE: Lnet/minecraft/client/particle/Particle;buildGeometry(Lnet/minecraft/client/render/VertexConsumer;Lnet/minecraft/client/render/Camera;F)V
      */
     @Inject(
-        method = "renderParticles(Lnet/minecraft/client/util/math/MatrixStack;Lnet/minecraft/client/render/VertexConsumerProvider$Immediate;Lnet/minecraft/client/render/LightmapTextureManager;Lnet/minecraft/client/render/Camera;F)V",
+        method = "render(Lnet/minecraft/client/util/math/MatrixStack;Lnet/minecraft/client/render/VertexConsumerProvider$Immediate;Lnet/minecraft/client/render/LightmapTextureManager;Lnet/minecraft/client/render/Camera;F)V", // <--- MUDANÇA AQUI
         at = @At(
             value = "INVOKE",
             target = "Lnet/minecraft/client/particle/Particle;buildGeometry(Lnet/minecraft/client/render/VertexConsumer;Lnet/minecraft/client/render/Camera;F)V",
-            shift = At.Shift.BEFORE // Executa antes de chamar buildGeometry
+            shift = At.Shift.BEFORE
         ),
         cancellable = true,
-        locals = LocalCapture.CAPTURE_FAILHARD // Captura variáveis locais, incluindo a instância de Particle
+        locals = LocalCapture.CAPTURE_FAILHARD
     )
     private void barium$beforeParticleRender(
-        // Os parâmetros do método original
-        // MatrixStack matrices, VertexConsumerProvider.Immediate consumers, LightmapTextureManager lightmap, Camera camera, float tickDelta, CallbackInfo ci,
-        // As variáveis locais que precisamos capturar, como a partícula atual no loop
-        CallbackInfo ci, Camera camera, Particle particle) { // Ordem pode variar, verificar com o IDE/mapping viewer
-        
-        if (!ParticleOptimizer.shouldRenderParticle(particle, camera, this.world)) {
+        CallbackInfo ci, Camera camera, Particle particle) {
             ci.cancel(); // Se não deve renderizar, cancela a chamada ao buildGeometry da partícula atual
         }
     }
