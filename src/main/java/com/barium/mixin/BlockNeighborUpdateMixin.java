@@ -23,7 +23,7 @@ public abstract class BlockNeighborUpdateMixin { // Nome da classe alterado
 
     // O método neighborUpdate existe em Block e é herdado/implementado por RedstoneWireBlock
     @Inject(
-        method = "neighborUpdater"
+        method = "neighborUpdater",
         at = @At("HEAD"),
         cancellable = true
     )
