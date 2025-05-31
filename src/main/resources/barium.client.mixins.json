@@ -4,15 +4,7 @@
 	"compatibilityLevel": "JAVA_21",
 	"client": [
 	  "ParticleMixin",
-        "SoundSystemMixin",
-        "DebugHudMixin",
-        "InGameHudMixin",
-        "ChunkOcclusionMixin",
-        "TransparentBlockMixin",
-        "TileEntityMixin",
-        "AnimationCullingMixin",
-        "ChunkMeshPriorityMixin",
-        "AdvancedOcclusionCullingMixin"
+        "DebugHudMixin"
 	],
 	"injectors": {
 		"defaultRequire": 1

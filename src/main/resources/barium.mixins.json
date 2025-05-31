@@ -4,11 +4,6 @@
   "package": "com.barium.mixin",
   "compatibilityLevel": "JAVA_21",
   "mixins": [
-    "EntityMixin",
-    "BlockEntityMixin",
-    "RedstoneWireMixin",
-    "ServerWorldMixin",
-    "HopperBlockEntityMixin"
   ],
   "injectors": {
     "defaultRequire": 1
