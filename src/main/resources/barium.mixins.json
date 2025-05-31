@@ -6,7 +6,6 @@
   "mixins": [
     "EntityMixin",
     "BlockEntityMixin",
-    "BlockNeighborUpdateMixin",
     "ServerWorldMixin",
     "HopperBlockEntityMixin"
   ],
