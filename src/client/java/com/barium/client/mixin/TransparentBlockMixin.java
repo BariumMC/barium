@@ -35,7 +35,7 @@ public abstract class TransparentBlockMixin {
      * shouldDrawSide(Lnet/minecraft/world/BlockView;Lnet/minecraft/util/math/BlockPos;Lnet/minecraft/util/math/Direction;)Z
      */
         @Inject(
-        method = "isOpaque(Lnet/minecraft/world/BlockView;Lnet/minecraft/util/math/BlockPos;)Z",
+        method = "isOpaque",
         at = @At("HEAD"),
         cancellable = true
     )
