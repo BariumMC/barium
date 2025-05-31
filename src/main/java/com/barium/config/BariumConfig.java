@@ -18,7 +18,6 @@ public class BariumConfig {
     public static final int PATH_CACHE_SIZE = 128;
     public static final int PATH_UPDATE_INTERVAL_TICKS = 10;
     public static final int PATH_UPDATE_DISTANCE = 32;
-k
 
     // --- ParticleOptimizer (Client-side) --- //
     public static final boolean ENABLE_PARTICLE_OPTIMIZATION = true; // Renomeado de ENABLE_PARTICLE_CULLING para consistência
