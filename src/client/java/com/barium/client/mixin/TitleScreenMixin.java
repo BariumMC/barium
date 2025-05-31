@@ -42,10 +42,8 @@ public abstract class TitleScreenMixin extends Screen {
     private void barium$onRenderHead(DrawContext context, int mouseX, int mouseY, float delta, CallbackInfo ci) {
         // Assegura que o cache de UI estática está atualizado se necessário
         if (BariumConfig.ENABLE_MENU_OPTIMIZATION && BariumConfig.CACHE_MENU_STATIC_UI) {
-            // Este método será chamado a cada frame de renderização do menu.
-            // O `updateStaticUiCache` só recriará o FBO se necessário (tamanho de tela mudou, ou é a primeira vez).
-            // Ele também faz a renderização dos textos no FBO.
-            MenuHudOptimizer.updateStaticUiCache(context, this.width, this.height);
+            // CORRIGIDO: Não passar 'context' para updateStaticUiCache
+            MenuHudOptimizer.updateStaticUiCache(this.width, this.height);
         }
     }
 
@@ -64,14 +62,12 @@ public abstract class TitleScreenMixin extends Screen {
      */
     @Inject(
         method = "render",
-        at = @At(value = "INVOKE", target = "Lnet/minecraft/client/gui/screen/TitleScreen$BackgroundRenderer;render(Lnet/minecraft/client/gui/DrawContext;F)V", shift = At.Shift.BEFORE), // CORRIGIDO: target method signature
+        at = @At(value = "INVOKE", target = "Lnet/minecraft/client/gui/screen/TitleScreen$BackgroundRenderer;render(Lnet/minecraft/client/gui/DrawContext;F)V", shift = At.Shift.BEFORE),
         cancellable = true
     )
     private void barium$skipPanoramaRender(DrawContext context, int mouseX, int mouseY, float delta, CallbackInfo ci) {
         if (!MenuHudOptimizer.shouldRenderPanoramaFrame()) {
-            // Se o otimizador disser para pular o frame do panorama, cancela a chamada original.
             ci.cancel();
-            // BariumMod.LOGGER.debug("TitleScreenMixin: Pulando renderização do panorama.");
         }
     }
 
@@ -87,9 +83,6 @@ public abstract class TitleScreenMixin extends Screen {
     @Inject(method = "render", at = @At("TAIL"))
     private void barium$onRenderTail(DrawContext context, int mouseX, int mouseY, float delta, CallbackInfo ci) {
         if (MenuHudOptimizer.isStaticUiCacheValid()) {
-            // Desenha a textura do framebuffer cacheado por cima dos elementos originais.
-            // Para realmente *substituir* os elementos, seriam necessárias @Redirects
-            // ou @Injects com cancellable em pontos mais específicos.
             MenuHudOptimizer.drawCachedStaticUi(context);
         }
     }
@@ -112,7 +105,7 @@ public abstract class TitleScreenMixin extends Screen {
      * @param ci CallbackInfo.
      */
     @Inject(method = "close", at = @At("HEAD"))
-    private void barium$onClose(CallbackInfo ci) { // CORRIGIDO: Adicionado descritor ()V implícito, embora a warning possa persistir.
+    private void barium$onClose(CallbackInfo ci) {
         MenuHudOptimizer.clearCache();
     }
 }
