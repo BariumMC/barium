@@ -104,7 +104,6 @@ public abstract class TitleScreenMixin extends Screen {
      *
      * @param ci CallbackInfo.
      */
-    // CORRIGIDO: Mudar o método alvo para "removed" da classe Screen
     @Inject(method = "removed", at = @At("HEAD"))
     private void barium$onRemoved(CallbackInfo ci) {
         MenuHudOptimizer.clearCache();

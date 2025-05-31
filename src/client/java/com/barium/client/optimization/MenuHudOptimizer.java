@@ -2,11 +2,13 @@ package com.barium.client.optimization;
 
 import com.barium.BariumMod;
 import com.barium.config.BariumConfig;
+import com.mojang.blaze3d.systems.RenderSystem; // Importar para chamadas OpenGL como RenderSystem.clearColor
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gl.Framebuffer;
 import net.minecraft.client.gui.DrawContext;
-import net.minecraft.client.render.VertexConsumerProvider; // Não é estritamente necessário se usar DrawContext
-// import org.joml.Matrix4f; // Não é estritamente necessário se usar DrawContext
+import net.minecraft.client.render.VertexConsumerProvider; // Para desenhar texto no FBO
+import net.minecraft.client.util.math.MatrixStack; // Para manipular a pilha de matrizes do RenderSystem
+import org.joml.Matrix4f; // Para criar matriz ortográfica
 
 /**
  * Otimiza a HUD do menu principal (TitleScreen), controlando o FPS do panorama
@@ -15,7 +17,8 @@ import net.minecraft.client.render.VertexConsumerProvider; // Não é estritamen
 public class MenuHudOptimizer {
 
     private static long lastPanoramaRenderTime = 0; // Tempo do último frame do panorama
-    // Tipo da variável permanece Framebuffer
+    // Declaração do Framebuffer. Framebuffer é uma classe concreta em 1.21.5 (não é mais abstrata como no passado).
+    // Ou seja, 'new Framebuffer(...)` DEVE funcionar.
     private static Framebuffer staticUiFramebuffer;
     private static int cachedWidth = 0;
     private static int cachedHeight = 0;
@@ -44,8 +47,7 @@ public class MenuHudOptimizer {
             return false; // Desativa o panorama completamente
         }
 
-        // CORRIGIDO: Usar System.nanoTime() para obter tempo em milissegundos
-        long currentTime = System.nanoTime() / 1_000_000L;
+        long currentTime = System.nanoTime() / 1_000_000L; // Tempo atual em milissegundos
         long targetFrameTime = 1000L / targetFps; // Tempo mínimo entre frames em milissegundos
 
         if (currentTime - lastPanoramaRenderTime >= targetFrameTime) {
@@ -70,13 +72,12 @@ public class MenuHudOptimizer {
 
         MinecraftClient client = MinecraftClient.getInstance();
 
-        // Se a tela mudou de tamanho ou o framebuffer não existe ou não está alocado (getInternalId() == 0), recria
-        // CORRIGIDO: Usar getInternalId() para verificar a alocação do FBO
-        if (staticUiFramebuffer == null || cachedWidth != screenWidth || cachedHeight != screenHeight || staticUiFramebuffer.getInternalId() == 0) {
+        // Se a tela mudou de tamanho ou o framebuffer não existe ou não está alocado (getGlId() == 0), recria
+        // CORRIGIDO: getGlId() para verificar a alocação do FBO
+        if (staticUiFramebuffer == null || cachedWidth != screenWidth || cachedHeight != screenHeight || staticUiFramebuffer.getGlId() == 0) {
             clearCache(); // Limpa o antigo se existir
-            // CORRIGIDO FINALMENTE: Usar FramebufferFactory.create()
-            staticUiFramebuffer = client.getFramebufferFactory().create(screenWidth, screenHeight, true, MinecraftClient.IS_SYSTEM_MAC);
-            staticUiFramebuffer.setClearColor(0.0F, 0.0F, 0.0F, 0.0F); // Definir cor de clear (transparente)
+            // CORRIGIDO: new Framebuffer() para instanciar (é concreta em 1.21.5)
+            staticUiFramebuffer = new Framebuffer(screenWidth, screenHeight, true, MinecraftClient.IS_SYSTEM_MAC);
             cachedWidth = screenWidth;
             cachedHeight = screenHeight;
             BariumMod.LOGGER.debug("MenuHudOptimizer: Recriando static UI cache ({}, {})", screenWidth, screenHeight);
@@ -84,22 +85,43 @@ public class MenuHudOptimizer {
 
         Framebuffer defaultFramebuffer = client.getFramebuffer();
 
-        // 1. Vincula nosso FBO para escrita e limpa.
-        staticUiFramebuffer.beginWrite(true);
+        // --- INICIAR RENDERIZAÇÃO NO NOSSO FBO ---
+        // 1. Define a cor de clear e vincula nosso FBO para escrita, e limpa.
+        RenderSystem.clearColor(0.0F, 0.0F, 0.0F, 0.0F); // Definir cor de clear (transparente)
+        staticUiFramebuffer.beginWrite(true); // Vincula e limpa cor e profundidade
         
-        // 2. O DrawContext para renderizar no nosso FBO.
-        // Este construtor de DrawContext (client, framebuffer) configura a projeção corretamente.
-        DrawContext fboDrawContext = new DrawContext(client, staticUiFramebuffer);
+        // 2. Configura o estado de renderização 2D (matrizes de projeção/modelo)
+        // Isso é crucial para que o texto seja desenhado corretamente no FBO.
+        MatrixStack matrixStack = RenderSystem.getModelViewStack(); // Pega a pilha de matrizes atual
+        matrixStack.push(); // Salva a matriz atual
+        matrixStack.loadIdentity(); // Carrega uma matriz identidade
+        RenderSystem.applyModelViewMatrix(); // Aplica a nova matriz
+        
+        // Define a matriz de projeção para o FBO (ortográfica 2D)
+        Matrix4f projectionMatrix = new Matrix4f().setOrtho(0.0F, (float)screenWidth, (float)screenHeight, 0.0F, 1000.0F, 3000.0F);
+        RenderSystem.setProjectionMatrix(projectionMatrix); // Aplica a matriz de projeção
 
-        // --- Renderiza elementos estáticos para o framebuffer usando o DrawContext do FBO ---
+        // 3. Obtém o VertexConsumerProvider para desenhar texto
+        VertexConsumerProvider.Immediate immediate = client.getBufferBuilders().getEntityVertexConsumers();
+
+        // --- Renderiza elementos estáticos para o framebuffer ---
         String versionText = client.getGameVersion();
-        fboDrawContext.drawTextWithShadow(versionText, 2, screenHeight - 20, 0xFFFFFF);
+        // CORRIGIDO: drawWithShadow(VertexConsumerProvider, String, ...)
+        client.textRenderer.drawWithShadow(immediate, versionText, 2, screenHeight - 20, 0xFFFFFF);
 
         String copyrightText = "Copyright Mojang AB. Do not distribute!";
-        fboDrawContext.drawTextWithShadow(copyrightText, screenWidth - client.textRenderer.getWidth(copyrightText) - 2, screenHeight - 10, 0xFFFFFF);
+        client.textRenderer.drawWithShadow(immediate, copyrightText, screenWidth - client.textRenderer.getWidth(copyrightText) - 2, screenHeight - 10, 0xFFFFFF);
         
-        // 3. Restaurar o framebuffer padrão do jogo
-        defaultFramebuffer.beginWrite(true);
+        // Finaliza a renderização para o immediate VertexConsumerProvider
+        immediate.draw();
+
+        // --- RESTAURAR ESTADO DE RENDERIZAÇÃO E FBO ---
+        matrixStack.pop(); // Restaura a matriz de modelo-visão anterior
+        RenderSystem.applyModelViewMatrix(); // Aplica a matriz restaurada
+
+        // Restaurar o framebuffer padrão do jogo
+        RenderSystem.clearColor(0.0F, 0.0F, 0.0F, 1.0F); // Opcional: Define a cor de clear do FBO padrão para o padrão
+        defaultFramebuffer.beginWrite(true); // Restaura e limpa o framebuffer padrão (cor e profundidade)
 
         BariumMod.LOGGER.debug("MenuHudOptimizer: Static UI cache atualizado.");
     }
@@ -110,11 +132,12 @@ public class MenuHudOptimizer {
      * @param context O DrawContext atual.
      */
     public static void drawCachedStaticUi(DrawContext context) {
-        if (!BariumConfig.ENABLE_MENU_OPTIMIZATION || !BariumConfig.CACHE_MENU_STATIC_UI || staticUiFramebuffer == null) {
+        if (!BariumConfig.ENABLE_MENU_OPTIMIZATION || !BariumConfig.CACHE_MENU_STATIC_UI || staticUiFramebuffer == null || staticUiFramebuffer.getGlId() == 0) {
             return;
         }
 
         // Desenha a textura do nosso framebuffer usando seu ID OpenGL
+        // CORRIGIDO: getColorAttachment().getGlId() - Este é o método correto
         context.drawTexture(
             staticUiFramebuffer.getColorAttachment().getGlId(),
             0, 0, // Posição X, Y
@@ -144,7 +167,7 @@ public class MenuHudOptimizer {
      * @return true se o cache é válido e deve ser usado.
      */
     public static boolean isStaticUiCacheValid() {
-        // CORRIGIDO: Usar getInternalId() para verificar a alocação do FBO
-        return BariumConfig.ENABLE_MENU_OPTIMIZATION && BariumConfig.CACHE_MENU_STATIC_UI && staticUiFramebuffer != null && staticUiFramebuffer.getInternalId() != 0;
+        // CORRIGIDO: Usar getGlId() para verificar a alocação do FBO
+        return BariumConfig.ENABLE_MENU_OPTIMIZATION && BariumConfig.CACHE_MENU_STATIC_UI && staticUiFramebuffer != null && staticUiFramebuffer.getGlId() != 0;
     }
 }
