@@ -3,8 +3,9 @@
 	"package": "com.barium.client.mixin",
 	"compatibilityLevel": "JAVA_21",
 	"client": [
-	  "ParticleMixin",
-        "DebugHudMixin"
+	    "ParticleMixin",
+        "DebugHudMixin",
+		"TitleScreenMixin"
 	],
 	"injectors": {
 		"defaultRequire": 1
