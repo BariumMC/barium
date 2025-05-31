@@ -5,7 +5,7 @@
 	"client": [
 	    "ParticleMixin",
         "DebugHudMixin",
-		"TransparentBlockMixin"
+		"TransparentBlockModelRendererMixin"
 	],
 	"injectors": {
 		"defaultRequire": 1
