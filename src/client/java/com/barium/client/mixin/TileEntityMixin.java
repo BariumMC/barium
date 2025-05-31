@@ -26,7 +26,7 @@ public abstract class TileEntityMixin {
     @Shadow private BlockEntityRenderDispatcher blockEntityRenderDispatcher;
 
     @Inject(
-        method = "renderBlockEntities"
+        method = "renderBlockEntities",
         at = @At(
             value = "INVOKE",
             target = "Lnet/minecraft/client/render/block/entity/BlockEntityRenderDispatcher;render(Lnet/minecraft/block/entity/BlockEntity;FLnet/minecraft/client/util/math/MatrixStack;Lnet/minecraft/client/render/VertexConsumerProvider;II)V",
