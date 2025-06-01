@@ -25,6 +25,10 @@ public abstract class HandledScreenMixin extends Screen {
 
     @Shadow protected ScreenHandler handler;
 
+    // ADICIONE ESTA LINHA: Declaração de um método shadow para drawSlot.
+    // Isso permite que o Mixin chame o método protegido original.
+    @Shadow protected abstract void drawSlot(DrawContext context, Slot slot);
+
     // O construtor Screen requer um Text, pode ser null para mixins
     protected HandledScreenMixin() {
         super(null);
@@ -46,14 +50,15 @@ public abstract class HandledScreenMixin extends Screen {
         at = @At(value = "INVOKE", target = "Lnet/minecraft/client/gui/screen/ingame/HandledScreen;drawSlot(Lnet/minecraft/client/gui/DrawContext;Lnet/minecraft/screen/slot/Slot;)V")
     )
     private void barium$redirectDrawSlot(HandledScreen<?> instance, DrawContext context, Slot slot) {
-        // 'instance' é a instância de HandledScreen em que 'drawSlot' foi chamado (ou seja, 'this' HandledScreen)
-        // 'context' é o DrawContext
-        // 'slot' é o Slot sendo processado
+        // 'instance' é a instância de HandledScreen em que 'drawSlot' foi chamado.
+        // O Mixin transforma esta classe para ser essencialmente o HandledScreen original.
+        // Portanto, podemos usar 'this' para se referir à instância do HandledScreen
+        // e chamar o método shadowed 'drawSlot'.
 
         // Verifica se o slot precisa ser redesenhado usando o otimizador.
         if (InventoryOptimizer.shouldRedrawSlot(slot)) {
-            // Se sim, chama o método original drawSlot na instância original.
-            instance.drawSlot(context, slot);
+            // Se sim, chama o método original drawSlot usando o shadow.
+            this.drawSlot(context, slot);
         }
         // Se shouldRedrawSlot retornar false, o método original drawSlot não é chamado,
         // otimizando a renderização ao pular itens que não mudaram.
