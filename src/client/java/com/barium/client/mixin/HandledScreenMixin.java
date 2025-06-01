@@ -35,17 +35,21 @@ public abstract class HandledScreenMixin extends Screen {
      * deve ser pulada.
      *
      * Target Method: net.minecraft.client.gui.screen.ingame.HandledScreen.render(Lnet/minecraft/client/gui/DrawContext;IIF)V
-     * Target INVOKE: Lnet/minecraft/screen/slot/Slot;render(Lnet/minecraft/client/gui/DrawContext;Lnet/minecraft/client/gui/screen/ingame/HandledScreen;)V
+     * Target INVOKE: Lnet/minecraft/screen/slot/Slot;render(Lnet/minecraft/client/gui/DrawContext;II)V
+     *
+     * A assinatura do método Slot.render para 1.21.5 é (DrawContext, int x, int y).
+     * O Mixin deve interceptar a chamada exata e fornecer os mesmos argumentos.
      */
     @Redirect(
         method = "render(Lnet/minecraft/client/gui/DrawContext;IIF)V",
-        at = @At(value = "INVOKE", target = "Lnet/minecraft/screen/slot/Slot;render(Lnet/minecraft/client/gui/DrawContext;Lnet/minecraft/client/gui/screen/ingame/HandledScreen;)V")
+        at = @At(value = "INVOKE", target = "Lnet/minecraft/screen/slot/Slot;render(Lnet/minecraft/client/gui/DrawContext;II)V")
     )
-    private void barium$redirectSlotRender(Slot slot, DrawContext context, HandledScreen<?> screen) {
+    private void barium$redirectSlotRender(Slot slot, DrawContext context, int x, int y) {
         // Verifica se o slot precisa ser redesenhado usando o otimizador.
         if (InventoryOptimizer.shouldRedrawSlot(slot)) {
-            // Se sim, chama o método original de renderização do slot.
-            slot.render(context, screen);
+            // Se sim, chama o método original de renderização do slot,
+            // passando os argumentos 'x' e 'y' que o método original receberia.
+            slot.render(context, x, y);
         }
         // Se shouldRedrawSlot retornar false, o método original de renderização do slot não é chamado,
         // otimizando a renderização ao pular itens que não mudaram.
