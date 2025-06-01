@@ -1,3 +1,4 @@
+// START OF FILE barium-1.21.5-devs/src/client/java/com/barium/client/mixin/HandledScreenMixin.java
 package com.barium.client.mixin;
 
 import com.barium.client.optimization.InventoryOptimizer;
@@ -30,28 +31,31 @@ public abstract class HandledScreenMixin extends Screen {
     }
 
     /**
-     * Redireciona a chamada para Slot.render() dentro do método render principal de HandledScreen.
+     * Redireciona a chamada para HandledScreen.drawSlot() dentro do método render principal de HandledScreen.
      * Isso nos permite decidir se um slot individual deve ser renderizado ou se a chamada original
      * deve ser pulada.
      *
      * Target Method: net.minecraft.client.gui.screen.ingame.HandledScreen.render(Lnet/minecraft/client/gui/DrawContext;IIF)V
-     * Target INVOKE: Lnet/minecraft/screen/slot/Slot;render(Lnet/minecraft/client/gui/DrawContext;II)V
+     * INVOKE: Lnet/minecraft/client/gui/screen/ingame/HandledScreen;drawSlot(Lnet/minecraft/client/gui/DrawContext;Lnet/minecraft/screen/slot/Slot;)V
      *
-     * A assinatura do método Slot.render para 1.21.5 é (DrawContext, int x, int y).
-     * O Mixin deve interceptar a chamada exata e fornecer os mesmos argumentos.
+     * O método `drawSlot` é um método protegido da própria classe HandledScreen que recebe o DrawContext
+     * e o Slot a ser desenhado como parâmetros.
      */
     @Redirect(
         method = "render(Lnet/minecraft/client/gui/DrawContext;IIF)V",
-        at = @At(value = "INVOKE", target = "Lnet/minecraft/screen/slot/Slot;render(Lnet/minecraft/client/gui/DrawContext;II)V")
+        at = @At(value = "INVOKE", target = "Lnet/minecraft/client/gui/screen/ingame/HandledScreen;drawSlot(Lnet/minecraft/client/gui/DrawContext;Lnet/minecraft/screen/slot/Slot;)V")
     )
-    private void barium$redirectSlotRender(Slot slot, DrawContext context, int x, int y) {
+    private void barium$redirectDrawSlot(HandledScreen<?> instance, DrawContext context, Slot slot) {
+        // 'instance' é a instância de HandledScreen em que 'drawSlot' foi chamado (ou seja, 'this' HandledScreen)
+        // 'context' é o DrawContext
+        // 'slot' é o Slot sendo processado
+
         // Verifica se o slot precisa ser redesenhado usando o otimizador.
         if (InventoryOptimizer.shouldRedrawSlot(slot)) {
-            // Se sim, chama o método original de renderização do slot,
-            // passando os argumentos 'x' e 'y' que o método original receberia.
-            slot.render(context, x, y);
+            // Se sim, chama o método original drawSlot na instância original.
+            instance.drawSlot(context, slot);
         }
-        // Se shouldRedrawSlot retornar false, o método original de renderização do slot não é chamado,
+        // Se shouldRedrawSlot retornar false, o método original drawSlot não é chamado,
         // otimizando a renderização ao pular itens que não mudaram.
     }
 
