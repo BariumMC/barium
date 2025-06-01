@@ -25,58 +25,47 @@ public abstract class HandledScreenMixin extends Screen {
 
     @Shadow protected ScreenHandler handler;
 
-    // ADICIONE ESTA LINHA: Declaração de um método shadow para drawSlot.
+    // Declaração de um método shadow para drawSlot.
     // Isso permite que o Mixin chame o método protegido original.
     @Shadow protected abstract void drawSlot(DrawContext context, Slot slot);
 
-    // O construtor Screen requer um Text, pode ser null para mixins
     protected HandledScreenMixin() {
         super(null);
     }
 
     /**
      * Redireciona a chamada para HandledScreen.drawSlot() dentro do método render principal de HandledScreen.
-     * Isso nos permite decidir se um slot individual deve ser renderizado ou se a chamada original
-     * deve ser pulada.
+     * Usando nomes ofuscados para garantir a correspondência exata no bytecode.
      *
-     * Target Method: net.minecraft.client.gui.screen.ingame.HandledScreen.render(Lnet/minecraft/client/gui/DrawContext;IIF)V
-     * INVOKE: Lnet/minecraft/client/gui/screen/ingame/HandledScreen;drawSlot(Lnet/minecraft/client/gui/DrawContext;Lnet/minecraft/screen/slot/Slot;)V
-     *
-     * O método `drawSlot` é um método protegido da própria classe HandledScreen que recebe o DrawContext
-     * e o Slot a ser desenhado como parâmetros.
+     * Target Class (obfuscated): net.minecraft.class_465 (HandledScreen)
+     * Target Method (obfuscated): method_25426 (render)
+     * INVOKE Target (obfuscated): Lnet/minecraft/class_465;method_25396(Lnet/minecraft/class_332;Lnet/minecraft/class_1735;)V
      */
     @Redirect(
-        method = "render(Lnet/minecraft/client/gui/DrawContext;IIF)V",
-        at = @At(value = "INVOKE", target = "Lnet/minecraft/client/gui/screen/ingame/HandledScreen;drawSlot(Lnet/minecraft/client/gui/DrawContext;Lnet/minecraft/screen/slot/Slot;)V")
+        method = "method_25426(Lnet/minecraft/class_332;IIF)V", // Target render method using obfuscated name
+        at = @At(
+            value = "INVOKE",
+            target = "Lnet/minecraft/class_465;method_25396(Lnet/minecraft/class_332;Lnet/minecraft/class_1735;)V" // Target drawSlot call using obfuscated name
+        )
     )
     private void barium$redirectDrawSlot(HandledScreen<?> instance, DrawContext context, Slot slot) {
-        // 'instance' é a instância de HandledScreen em que 'drawSlot' foi chamado.
-        // O Mixin transforma esta classe para ser essencialmente o HandledScreen original.
-        // Portanto, podemos usar 'this' para se referir à instância do HandledScreen
-        // e chamar o método shadowed 'drawSlot'.
-
-        // Verifica se o slot precisa ser redesenhado usando o otimizador.
         if (InventoryOptimizer.shouldRedrawSlot(slot)) {
-            // Se sim, chama o método original drawSlot usando o shadow.
+            // Chama o método original drawSlot usando o shadow.
             this.drawSlot(context, slot);
         }
-        // Se shouldRedrawSlot retornar false, o método original drawSlot não é chamado,
-        // otimizando a renderização ao pular itens que não mudaram.
     }
 
     /**
      * Injeta no final do método close() de HandledScreen para limpar o cache de inventário.
-     * Isso é crucial para evitar vazamentos de memória e garantir que o cache seja atualizado
-     * corretamente quando uma tela de inventário é fechada e reaberta.
+     * Usando nome ofuscado para garantir a correspondência exata.
      *
-     * Target Method: net.minecraft.client.gui.screen.ingame.HandledScreen.close()V
+     * Target Method (obfuscated): method_25402 (close)
      */
     @Inject(
-        method = "close()V",
+        method = "method_25402()V", // Target close method using obfuscated name
         at = @At("TAIL")
     )
     private void barium$onClose(CallbackInfo ci) {
-        // Quando a tela é fechada, notifica o otimizador para limpar o cache associado a este handler.
         if (this.handler != null) {
             InventoryOptimizer.onScreenClosed(this.handler);
         }
