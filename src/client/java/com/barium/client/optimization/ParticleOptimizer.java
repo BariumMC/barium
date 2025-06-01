@@ -63,7 +63,8 @@ public class ParticleOptimizer {
         }
 
         // Culling por frustum (verificação real)
-        Frustum frustum = MinecraftClient.getInstance().gameRenderer.getFrustum();
+        // Corrected: Get frustum from the camera object
+        Frustum frustum = camera.getFrustum(); // Corrected line
         if (frustum != null && !frustum.isVisible(boundingBox)) {
              // BariumMod.LOGGER.debug("Particle culled by frustum");
              return false;

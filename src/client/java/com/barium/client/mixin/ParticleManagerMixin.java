@@ -15,6 +15,7 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.LocalCapture; // Import for local variable capture
+import java.util.Iterator; // Import for Iterator if needed for loop
 
 /**
  * Mixin para a classe ParticleManager para otimizar a renderização de partículas.
@@ -26,37 +27,44 @@ public abstract class ParticleManagerMixin {
     @Shadow protected ClientWorld world;
 
     /**
-     * Injeta antes de chamar particle.buildGeometry para aplicar o culling de renderização.
-     * Isso impede que partículas fora do frustum da câmera ou muito distantes sejam adicionadas
-     * ao buffer de renderização.
+     * Injects before calling particle.buildGeometry to apply render culling.
+     * This prevents particles outside the camera frustum or too far away from being added
+     * to the render buffer.
      *
      * Target Method Signature (Yarn 1.21.5):
      * renderParticles(Lnet/minecraft/client/util/math/MatrixStack;Lnet/minecraft/client/render/VertexConsumerProvider$Immediate;Lnet/minecraft/client/render/LightmapTextureManager;Lnet/minecraft/client/render/Camera;F)V
      *
-     * Injetar no INVOKE de buildGeometry nos dará acesso à instância da partícula localmente.
+     * The `method` name is often obfuscated. Using intermediary name if available, or just the
+     * full signature if Yarn names it.
+     * For 1.21.5, the intermediary name for ParticleManager.renderParticles might be
+     * `method_18118` (or similar). Let's stick to the named one if it's correct.
+     *
+     * We'll keep the named method and the target `buildGeometry` call. The primary
+     * issue might be the LocalCapture, so let's try to be more specific.
      */
     @Inject(
         method = "renderParticles(Lnet/minecraft/client/util/math/MatrixStack;Lnet/minecraft/client/render/VertexConsumerProvider$Immediate;Lnet/minecraft/client/render/LightmapTextureManager;Lnet/minecraft/client/render/Camera;F)V",
         at = @At(
             value = "INVOKE",
-            target = "Lnet/minecraft/client/particle/Particle;buildGeometry(Lnet/minecraft/client/render/VertexConsumer;Lnet/minecraft/client/render/Camera;F)V"
-            // shift = At.Shift.BEFORE // Optional: shift to before the instruction if needed
+            target = "Lnet/minecraft/client/particle/Particle;buildGeometry(Lnet/minecraft/client/render/VertexConsumer;Lnet/minecraft/client/render/Camera;F)V",
+            shift = At.Shift.BEFORE // Ensure we inject right before the call
         ),
-        locals = LocalCapture.CAPTURE_FAILHARD, // Captura variáveis locais, incluindo a partícula iterada
+        locals = LocalCapture.CAPTURE_FAILHARD, // Tries to capture all locals
         cancellable = true
     )
     private void barium$beforeBuildGeometry(MatrixStack matrices, VertexConsumerProvider.Immediate consumers,
                                             LightmapTextureManager lightmap, Camera camera, float tickDelta,
-                                            CallbackInfo ci, // Original callback info
-                                            // Captured locals (order and type must match the target method's locals)
-                                            // You might need to check the exact bytecode to get these right
-                                            // The important one is the 'Particle' instance.
-                                            // This example assumes 'particle' is available as the last local before the target INVOKE.
-                                            // If it fails, use a decompiler on the target method to get the correct locals.
-                                            Particle particle // Captures the particle being processed
+                                            CallbackInfo ci,
+                                            // Assuming the local variable 'particle' is present and is of type Particle
+                                            // Mixin will try to match by type and order.
+                                            // You might need to add other preceding local variables if 'particle'
+                                            // is not the first one or if there are multiple of the same type.
+                                            // For typical iteration loops, `particle` is often the loop variable.
+                                            Iterator<Particle> iterator, // This is a common local variable if particles are iterated
+                                            Particle particle // The actual particle being processed
                                             ) {
-        if (!ParticleOptimizer.shouldRenderParticle(particle, camera, this.world)) {
-            ci.cancel(); // Cancela a chamada a buildGeometry se não deve renderizar
+        if (particle != null && !ParticleOptimizer.shouldRenderParticle(particle, camera, this.world)) {
+            ci.cancel(); // Cancel the call to buildGeometry if the particle should not be rendered
             // BariumMod.LOGGER.debug("ParticleManagerMixin: Particle culled from rendering.");
         }
     }
