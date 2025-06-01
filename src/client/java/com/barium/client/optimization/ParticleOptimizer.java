@@ -5,6 +5,7 @@ import com.barium.config.BariumConfig;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.particle.Particle;
 import net.minecraft.client.render.Camera;
+import net.minecraft.client.render.Frustum; // Importar Frustum
 import net.minecraft.client.world.ClientWorld;
 import net.minecraft.util.math.Box;
 import net.minecraft.util.math.Vec3d;
@@ -14,6 +15,7 @@ import net.minecraft.util.math.Vec3d;
  * Baseado nos mappings Yarn 1.21.5+build.1
  * Corrigido: Adicionado método init() para inicialização.
  * Corrigido: Substituído acesso direto aos campos protegidos x, y, z por getBoundingBox().
+ * Melhorado: Implementado culling de frustum real para partículas.
  */
 public class ParticleOptimizer {
 
@@ -60,8 +62,9 @@ public class ParticleOptimizer {
             return false;
         }
 
-        // Culling por frustum (verificação básica)
-        if (!isBoxInFrustum(boundingBox, camera)) {
+        // Culling por frustum (verificação real)
+        Frustum frustum = MinecraftClient.getInstance().gameRenderer.getFrustum();
+        if (frustum != null && !frustum.isVisible(boundingBox)) {
              // BariumMod.LOGGER.debug("Particle culled by frustum");
              return false;
         }
@@ -76,20 +79,6 @@ public class ParticleOptimizer {
         }
 
         return true; // Renderiza a partícula
-    }
-
-    /**
-     * Verifica se um Bounding Box está dentro do frustum da câmera.
-     * Implementação simplificada.
-     *
-     * @param box O Bounding Box.
-     * @param camera A câmera.
-     * @return true se a caixa está (potencialmente) no frustum.
-     */
-    private static boolean isBoxInFrustum(Box box, Camera camera) {
-        // Placeholder: Assume que está no frustum
-        // Uma verificação real seria: return MinecraftClient.getInstance().gameRenderer.getCamera().getFrustum().isVisible(box);
-        return true; 
     }
 
     /**
