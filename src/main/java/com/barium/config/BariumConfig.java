@@ -30,11 +30,4 @@ public class BariumConfig {
     public static final boolean REDUCE_HUD_UPDATES = true; // Adicionado (usado em HudOptimizer)
     public static final boolean ENABLE_FONT_CACHING = true;
     public static final int HUD_UPDATE_INTERVAL_TICKS = 5;
-
-        // --- TransparentBlockOptimizer (Client-side) --- //
-    public static final boolean ENABLE_TRANSPARENT_BLOCK_OPTIMIZATION = true; // Flag geral para otimização de transparentes
-    public static final boolean ENABLE_LEAVES_LOD = true; // Ativa a LOD para folhas distantes
-    public static final int LEAVES_LOD_DISTANCE = 48; // Distância (em blocos) a partir da qual folhas se tornam opacas
-    public static final boolean ENABLE_TRANSPARENT_BLOCK_CULLING = false; // Ativa culling agressivo para TODOS os blocos transparentes
-    public static final int TRANSPARENT_BLOCK_CULLING_DISTANCE = 128; // Distância (em blocos) a partir da qual blocos transparentes são ocultados
 }
