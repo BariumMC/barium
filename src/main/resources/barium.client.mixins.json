@@ -5,7 +5,7 @@
 	"client": [
 	    "ParticleMixin",
         "DebugHudMixin",
-		"ParticleManagerMixin"
+		"HandledScreenMixin"
 	],
 	"injectors": {
 		"defaultRequire": 1

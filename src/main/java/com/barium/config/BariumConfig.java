@@ -30,4 +30,8 @@ public class BariumConfig {
     public static final boolean REDUCE_HUD_UPDATES = true; // Adicionado (usado em HudOptimizer)
     public static final boolean ENABLE_FONT_CACHING = true;
     public static final int HUD_UPDATE_INTERVAL_TICKS = 5;
+
+    // --- InventoryOptimizer (Client-side) --- //
+    public static final boolean ENABLE_INVENTORY_OPTIMIZATION = true; // Nova flag
+    public static final boolean CACHE_INVENTORY_ITEMS = true; // Nova flag
 }
