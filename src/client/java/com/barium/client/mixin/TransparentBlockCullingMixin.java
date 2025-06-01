@@ -25,6 +25,9 @@ public abstract class TransparentBlockCullingMixin {
      * Se o bloco deve ser culled, a renderização é cancelada.
      *
      * Target: net.minecraft.client.render.block.BlockModelRenderer#render(Lnet/minecraft/block/BlockState;Lnet/minecraft/util/math/BlockPos;Lnet/minecraft/world/BlockRenderView;Lnet/minecraft/client/util/math/MatrixStack;Lnet/minecraft/client/render/VertexConsumer;ZJ)Z
+     * A assinatura correta do método `render` em `BlockModelRenderer` para 1.21.5 (Yarn) é tipicamente
+     * `render(BlockState state, BlockPos pos, BlockRenderView world, MatrixStack matrices, VertexConsumer consumer, boolean checkSides, long seed)`
+     * ou uma sobrecarga similar. O parâmetro `cull` no final da sua assinatura original era `checkSides`.
      */
     @Inject(
         method = "render(Lnet/minecraft/block/BlockState;Lnet/minecraft/util/math/BlockPos;Lnet/minecraft/world/BlockRenderView;Lnet/minecraft/client/util/math/MatrixStack;Lnet/minecraft/client/render/VertexConsumer;ZJ)Z",
@@ -33,7 +36,7 @@ public abstract class TransparentBlockCullingMixin {
     )
     private void barium$cullTransparentBlock(
         BlockState state, BlockPos pos, BlockRenderView world, MatrixStack matrices,
-        VertexConsumer consumer, boolean cull, long seed, CallbackInfoReturnable<Boolean> cir) {
+        VertexConsumer consumer, boolean checkSides, long seed, CallbackInfoReturnable<Boolean> cir) { // Renomeado 'cull' para 'checkSides'
 
         // Garante que o 'world' é uma instância de ClientWorld para verificações de distância.
         if (!(world instanceof net.minecraft.client.world.ClientWorld clientWorld)) {
@@ -45,17 +48,4 @@ public abstract class TransparentBlockCullingMixin {
             cir.setReturnValue(false); // Retorna falso, indicando que o bloco não foi renderizado com sucesso.
         }
     }
-
-    // Nota sobre LOD para Folhas (ENABLE_LEAVES_LOD):
-    // A implementação de LOD para folhas (torná-las opacas em distância) é mais complexa.
-    // Ela geralmente envolve a substituição do RenderLayer para BlockState distantes (de TRANSLUCENT/CUTOUT para SOLID)
-    // ou a modificação dinâmica do BakedModel para usar uma versão opaca.
-    // O método `TransparentBlockOptimizer.shouldRenderLeavesAsOpaqueLOD` fornece a lógica de decisão,
-    // mas a injeção em BlockModelRenderer aqui para efetivamente alterar o comportamento de renderização
-    // para um RenderLayer diferente seria complexa (ex: exigiria um Wrapper VertexConsumer ou ModifyArgs
-    // para mudar o 'consumer' baseado na distância).
-    // Para uma implementação mais simples e direta, o culling é a abordagem proposta.
-    // Se você precisar de LOD visual para folhas, seria necessário um mixin mais avançado
-    // talvez em `net.minecraft.client.render.RenderLayers#get(BlockState)` (se o contexto de World/BlockPos puder ser obtido)
-    // ou manipulando o VertexConsumer diretamente.
 }

@@ -5,6 +5,7 @@ import com.barium.config.BariumConfig;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.LeavesBlock;
 import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.render.RenderLayer; // Importar RenderLayer
 import net.minecraft.client.world.ClientWorld;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Vec3d;
@@ -38,12 +39,15 @@ public class TransparentBlockOptimizer {
             return false;
         }
 
-        // Verifica se o bloco é considerado translúcido pela lógica interna do Minecraft.
-        // Isso é uma boa heurística para blocos transparentes.
-        boolean isMinecraftTranslucent = state.isTranslucent(world, pos);
-
-        if (!isMinecraftTranslucent) {
-            return false; // Culla apenas blocos que o Minecraft considera transparentes
+        // Verifica se o RenderLayer do bloco é translúcido ou recortado (cutout).
+        // Folhas, vidro e outros blocos transparentes usam esses RenderLayers.
+        RenderLayer renderLayer = RenderLayer.getCutout(); // Começa com um padrão
+        if (state.getRenderLayer() == RenderLayer.getTranslucent()) { // Use getRenderLayer() do BlockState
+            renderLayer = RenderLayer.getTranslucent();
+        } else if (state.getRenderLayer() == RenderLayer.getCutout()) {
+            renderLayer = RenderLayer.getCutout();
+        } else {
+            return false; // Não é um bloco transparente para fins de culling
         }
 
         Vec3d cameraPos = client.gameRenderer.getCamera().getPos();
