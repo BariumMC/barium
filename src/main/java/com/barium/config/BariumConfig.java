@@ -30,25 +30,4 @@ public class BariumConfig {
     public static final boolean REDUCE_HUD_UPDATES = true; // Adicionado (usado em HudOptimizer)
     public static final boolean ENABLE_FONT_CACHING = true;
     public static final int HUD_UPDATE_INTERVAL_TICKS = 5;
-
-    // --- Geometric Optimization (Client-side) --- //
-    public static final boolean ENABLE_GEOMETRIC_OPTIMIZATION = true; // Flag geral
-
-    // LOD/Simplificação de Malhas
-    public static final boolean ENABLE_MESH_LOD = true;
-    public static final int LOD_DISTANCE_HIGH = 32; // Distância para LOD de alto nível
-    public static final int LOD_DISTANCE_MEDIUM = 64; // Distância para LOD de médio nível
-    public static final int LOD_DISTANCE_LOW = 128; // Distância para LOD de baixo nível
-
-    // Instancing / Impostors
-    public static final boolean ENABLE_VEGETATION_INSTANCING = true;
-    public static final int INSTANCING_DISTANCE_MAX = 48; // Distância máxima para usar instancing
-
-    public static final boolean ENABLE_VEGETATION_IMPOSTORS = true;
-    public static final int IMPOSTOR_DISTANCE_MIN = 64; // Distância mínima para usar impostors
-    public static final int IMPOSTOR_DISTANCE_MAX = 256; // Distância máxima para renderizar impostors
-
-    // Occlusion Culling (Pre-pass)
-    public static final boolean ENABLE_CHUNK_OCCLUSION_CULLING = true;
-    public static final int OCCLUSION_UPDATE_INTERVAL_TICKS = 20; // Frequência de atualização do culling
 }

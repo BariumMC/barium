@@ -4,9 +4,7 @@
 	"compatibilityLevel": "JAVA_21",
 	"client": [
 	    "ParticleMixin",
-        "DebugHudMixin",
-        "WorldRendererMixin",
-        "BlockModelRendererMixin"
+        "DebugHudMixin"
 	],
 	"injectors": {
 		"defaultRequire": 1
