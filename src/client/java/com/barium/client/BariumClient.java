@@ -3,8 +3,6 @@ package com.barium.client;
 import com.barium.BariumMod;
 import com.barium.client.optimization.HudOptimizer;
 import com.barium.client.optimization.ParticleOptimizer;
-// import com.barium.client.optimization.TransparentBlockOptimizer; // Importar nova classe (comentado: classe não fornecida)
-import com.barium.client.optimization.InventoryOptimizer; // Adicione esta linha
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
@@ -18,7 +16,5 @@ public class BariumClient implements ClientModInitializer {
         // Inicialização dos otimizadores client-side
         HudOptimizer.init();
         ParticleOptimizer.init();
-        // TransparentBlockOptimizer.init(); // Comentado: classe não fornecida no contexto atual
-        InventoryOptimizer.init(); // Adicione esta linha
     }
 }

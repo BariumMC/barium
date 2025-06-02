@@ -31,7 +31,8 @@ public class BariumConfig {
     public static final boolean ENABLE_FONT_CACHING = true;
     public static final int HUD_UPDATE_INTERVAL_TICKS = 5;
 
-    // --- InventoryOptimizer (Client-side) --- //
-    public static final boolean ENABLE_INVENTORY_OPTIMIZATION = true; // Nova flag
-    public static final boolean CACHE_INVENTORY_ITEMS = true; // Nova flag
+        public static final boolean ENABLE_TITLE_SCREEN_OPTIMIZATION = true; // Flag geral
+    public static final boolean DISABLE_TITLE_SCREEN_PANORAMA = false; // Para desligar o fundo animado
+    public static final boolean DISABLE_TITLE_SCREEN_SPLASH_TEXT = false; // Para desligar o texto de splash
+    public static final boolean DRAW_STATIC_BACKGROUND_IF_PANORAMA_DISABLED = true; // Desenha um fundo preto estático
 }
