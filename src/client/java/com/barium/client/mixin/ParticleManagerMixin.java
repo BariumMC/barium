@@ -9,49 +9,50 @@ import net.minecraft.client.render.VertexConsumer;
 import net.minecraft.client.render.VertexConsumerProvider;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.client.world.ClientWorld;
+import net.minecraft.util.math.Vec3d;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
+import org.spongepowered.asm.mixin.Unique; // Adicionado para a demonstração estrutural, mesmo que não usado ativamente
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.LocalCapture;
 
-// Mixin for ParticleManager to apply rendering optimizations (culling).
 @Mixin(ParticleManager.class)
 public abstract class ParticleManagerMixin {
 
-    // Shadow the clientWorld field from ParticleManager
     @Shadow @Final private ClientWorld world;
 
+    // Adicionado apenas para demonstrar a estrutura similar com um campo '@Unique'.
+    // Para esta otimização específica de culling de partículas, este campo não é funcionalmente necessário.
+    @Unique
+    private Object barium$cachedParticleRenderInfo; // Exemplo de um campo único, sem uso ativo para culling direto aqui
+
     /**
-     * Injects before the call to Particle.buildGeometry to check if a particle should be rendered.
-     * If ParticleOptimizer indicates that the particle should not be rendered, the method call is cancelled.
-     * This effectively prevents the particle from being added to the rendering buffer.
+     * Injeta antes da chamada a Particle.buildGeometry para verificar se uma partícula deve ser renderizada.
+     * Se o ParticleOptimizer indicar que a partícula não deve ser renderizada, a chamada original é cancelada.
+     * Isso impede que a partícula seja adicionada ao buffer de renderização desnecessariamente.
      *
-     * Target Method Signature (Yarn 1.21.5):
-     * renderParticles(Lnet/minecraft/client/util/math/MatrixStack;Lnet/minecraft/client/render/VertexConsumerProvider$Immediate;Lnet/minecraft/client/render/LightmapTextureManager;Lnet/minecraft/client/render/Camera;F)V
-     *
-     * The `at` target `INVOKE` with `shift = At.Shift.BEFORE` before `buildGeometry`
-     * and `local` to capture the 'particle' variable is crucial.
+     * A estrutura de `INVOKE` + `cancellable = true` é similar ao padrão do Sodium para substituição de lógica.
      */
     @Inject(
-        method = "renderParticles(Lnet/minecraft/client/util/math/MatrixStack;Lnet/minecraft/client/render/VertexConsumerProvider$Immediate;Lnet/minecraft/client/render/LightmapTextureManager;Lnet/minecraft/client/render/Camera;F)V",
+        method = "renderParticles(Lnet/minecraft/client/util/math/MatrixStack;Lnet/minecraft/client/render/VertexConsumerProvider$Immediate;Lnet/minecraft/client/render/LightmapTextureManager;Lnet/minecraft/client/render/Camera;FLnet/minecraft/util/math/Vec3d;)V",
         at = @At(
             value = "INVOKE",
             target = "Lnet/minecraft/client/particle/Particle;buildGeometry(Lnet/minecraft/client/render/VertexConsumer;Lnet/minecraft/client/render/Camera;F)V",
-            shift = At.Shift.BEFORE
+            shift = At.Shift.BEFORE // Injete antes do método de construção de geometria ser chamado
         ),
         cancellable = true,
-        locals = LocalCapture.CAPTURE_FAILHARD // Capture local variables required for `particle`
+        locals = LocalCapture.CAPTURE_FAILHARD
     )
     private void barium$beforeBuildGeometry(MatrixStack matrices, VertexConsumerProvider.Immediate consumers,
                                             LightmapTextureManager lightmap, Camera camera, float tickDelta,
-                                            CallbackInfo ci, VertexConsumer buffer, // These are captured locals before Particle loop starts, irrelevant for 'particle'
-                                            Particle particle // This local variable `particle` is the one we want to check
+                                            Vec3d cameraPos, CallbackInfo ci, VertexConsumer buffer,
+                                            Particle particle // O `particle` é capturado aqui para nossa verificação
     ) {
         if (!ParticleOptimizer.shouldRenderParticle(particle, camera, this.world)) {
-            // Cancel the injection, preventing the buildGeometry call for this particle.
+            // Se não deve renderizar, cancela a execução para o buildGeometry para esta partícula.
             ci.cancel();
         }
     }
