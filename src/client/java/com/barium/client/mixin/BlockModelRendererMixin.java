@@ -5,10 +5,10 @@ import com.barium.BariumMod;
 import com.barium.client.optimization.GeometricOptimizer;
 import com.barium.config.BariumConfig;
 import net.minecraft.block.BlockState;
-import net.minecraft.client.render.RenderLayer;
+import net.minecraft.client.MinecraftClient; // Adicionar import
 import net.minecraft.client.render.VertexConsumer;
 import net.minecraft.client.render.block.BlockModelRenderer;
-import net.minecraft.client.render.model.BakedModel;
+import net.minecraft.client.render.model.BakedModel; // Adicionar import
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.BlockRenderView;
