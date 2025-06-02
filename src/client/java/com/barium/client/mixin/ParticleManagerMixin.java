@@ -30,22 +30,18 @@ public abstract class ParticleManagerMixin {
     /**
      * Injeta antes de Particle.buildGeometry para realizar otimização de culling.
      */
-    @Inject(
-        method = "renderParticles",
-        at = @At(
-            value = "INVOKE",
-            target = "Lnet/minecraft/client/particle/Particle;buildGeometry(Lnet/minecraft/client/render/VertexConsumer;Lnet/minecraft/client/render/Camera;F)V",
-            shift = At.Shift.BEFORE
-        ),
-        cancellable = true,
-        locals = LocalCapture.CAPTURE_FAILHARD
-    )
-    private void barium$beforeBuildGeometry(MatrixStack matrices, VertexConsumerProvider.Immediate consumers,
-                                            LightmapTextureManager lightmap, Camera camera, float tickDelta,
-                                            Vec3d cameraPos, CallbackInfo ci, VertexConsumer buffer,
-                                            Particle particle) {
-        if (!ParticleOptimizer.shouldRenderParticle(particle, camera, this.world)) {
-            ci.cancel();
-        }
+@Inject(
+    method = "renderParticles",
+    at = @At(
+        value = "INVOKE",
+        target = "Lnet/minecraft/client/particle/Particle;buildGeometry(Lnet/minecraft/client/render/VertexConsumer;Lnet/minecraft/client/render/Camera;F)V",
+        shift = At.Shift.BEFORE
+    ),
+    cancellable = true,
+    locals = LocalCapture.CAPTURE_FAILHARD
+)
+private void barium$beforeBuildGeometry(Camera camera, float tickDelta, VertexConsumerProvider.Immediate consumers, CallbackInfo ci, VertexConsumer buffer, Particle particle) {
+    if (!ParticleOptimizer.shouldRenderParticle(particle, camera, this.world)) {
+        ci.cancel();
     }
 }

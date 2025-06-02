@@ -21,24 +21,28 @@ public abstract class ChestBlockEntityRendererMixin {
     /**
      * Injeta antes da renderização de baús, aplicando otimização de culling baseada na distância.
      */
-    @Inject(method = "render", at = @At("HEAD"), cancellable = true)
-    private void barium$renderChest(ChestBlockEntity chestBlockEntity, float tickDelta, MatrixStack matrixStack,
-                                    VertexConsumerProvider vertexConsumerProvider, int light, int overlay,
-                                    Vec3d cameraPosition, CallbackInfo ci) {
-        if (!BariumConfig.ENABLE_CHEST_RENDER_OPTIMIZATION) {
-            this.barium$lastChestWasCulled = false;
-            return;
-        }
+ @Inject(
+    method = "render",
+    at = @At("HEAD"),
+    cancellable = true
+)
+private void barium$renderChest(ChestBlockEntity chestBlockEntity, float f, MatrixStack matrices,
+                                 VertexConsumerProvider provider, int light, int overlay,
+                                 Vec3d cameraPos, CallbackInfo ci) {
+    if (!BariumConfig.ENABLE_CHEST_RENDER_OPTIMIZATION) {
+        this.barium$lastChestWasCulled = false;
+        return;
+    }
 
-        Vec3d chestPos = Vec3d.ofCenter(chestBlockEntity.getPos());
-        double distanceSq = cameraPosition.squaredDistanceTo(chestPos);
-        double maxRenderDistanceSq = BariumConfig.CHEST_RENDER_DISTANCE * BariumConfig.CHEST_RENDER_DISTANCE;
+    Vec3d chestPos = Vec3d.ofCenter(chestBlockEntity.getPos());
+    double distanceSq = cameraPos.squaredDistanceTo(chestPos);
+    double maxDistanceSq = BariumConfig.CHEST_RENDER_DISTANCE * BariumConfig.CHEST_RENDER_DISTANCE;
 
-        if (distanceSq > maxRenderDistanceSq) {
-            ci.cancel();
-            this.barium$lastChestWasCulled = true;
-        } else {
-            this.barium$lastChestWasCulled = false;
-        }
+    if (distanceSq > maxDistanceSq) {
+        ci.cancel();
+        this.barium$lastChestWasCulled = true;
+    } else {
+        this.barium$lastChestWasCulled = false;
     }
 }
+
