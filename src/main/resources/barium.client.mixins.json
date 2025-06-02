@@ -5,6 +5,7 @@
 	"client": [
 	    "ParticleMixin",
         "DebugHudMixin",
+		"ParticleManagerMixin",
 		"ChestBlockEntityRendererMixin"
 	],
 	"injectors": {
