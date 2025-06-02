@@ -1,49 +1,63 @@
 package com.barium.client.mixin;
 
-import com.barium.client.optimization.TextureOptimizer;
-import net.minecraft.client.texture.NativeImage;
-import net.minecraft.client.texture.NativeImageBackedTexture;
+import com.barium.client.optimization.ChunkOcclusionOptimizer; // Import the correct optimizer
+import net.minecraft.client.render.Camera;
+import net.minecraft.client.render.Frustum;
+import net.minecraft.client.render.WorldRenderer;
+import net.minecraft.client.render.chunk.ChunkRenderDispatcher; // Import ChunkRenderDispatcher for ChunkRenderInfo
 import org.spongepowered.asm.mixin.Mixin;
-import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
-import org.jetbrains.annotations.Nullable;
+import org.spongepowered.asm.mixin.injection.callback.LocalCapture;
 
 /**
- * Mixin para NativeImageBackedTexture para interceptar e otimizar texturas antes de serem carregadas na GPU.
- * Baseado nos mappings Yarn 1.21.5+build.1.
- * O método `upload()` (sem argumentos) é o ponto comum para a NativeImage ser enviada à GPU para a textura completa.
+ * Mixin para WorldRenderer para implementar o culling de oclusão de chunks baseado em CPU.
+ * Otimizado para Yarn 1.21.5+build.1.
  */
-@Mixin(NativeImageBackedTexture.class)
-public abstract class TextureUtilMixin {
-
-    // Shadow field para acessar o campo 'image' da NativeImageBackedTexture
-    @Shadow @Nullable private NativeImage image;
+@Mixin(WorldRenderer.class)
+public abstract class WorldRendererMixin { // This class should be WorldRendererMixin, not TextureUtilMixin
 
     /**
-     * Injeta no início do método `upload()` (sem argumentos) da NativeImageBackedTexture.
-     * Isso permite que a `NativeImage` interna seja otimizada (ex: convertida de RGBA para RGB)
-     * antes de ser efetivamente enviada para a GPU.
+     * Injeta no início do loop de renderização de chunks em WorldRenderer.render().
+     * Aplica a lógica de culling de oclusão baseada em CPU *antes* do culling de frustum padrão do Minecraft.
+     * Isso permite que o Barium descarte chunks de forma mais eficiente em algumas condições,
+     * reduzindo a carga de trabalho para o culling de frustum e o pipeline de renderização.
      *
-     * Target Class: net.minecraft.client.texture.NativeImageBackedTexture
-     * Target Method Signature (Yarn 1.21.5+build.1): upload()V
+     * Target Method (Yarn 1.21.5):
+     * render(Lnet/minecraft/client/util/math/MatrixStack;FJLnet/minecraft/client/render/Camera;Lnet/minecraft/client/render/GameRenderer;Lnet/minecraft/client/render/LightmapTextureManager;Lnet/minecraft/client/render/VertexConsumerProvider$Immediate;Lnet/minecraft/util/math/Matrix4f;)V
+     *
+     * O ponto de injeção é ANTES da chamada a `frustum.isVisible(chunkRenderInfo.getChunkRender().getBox())`,
+     * que é a verificação de culling de frustum padrão.
+     *
+     * @param ci CallbackInfo para cancelar a execução original.
+     * @param frustum A instância do Frustum usada para culling padrão (capturada localmente).
+     * @param chunkRenderInfo A informação do chunk renderizado atual no loop (capturada localmente).
      */
     @Inject(
-        method = "upload()V", // O método sem argumentos
-        at = @At("HEAD") // Injeta no início
+        method = "render(Lnet/minecraft/client/util/math/MatrixStack;FJLnet/minecraft/client/render/Camera;Lnet/minecraft/client/render/GameRenderer;Lnet/minecraft/client/render/LightmapTextureManager;Lnet/minecraft/client/render/VertexConsumerProvider$Immediate;Lnet/minecraft/util/math/Matrix4f;)V",
+        at = @At(
+            value = "INVOKE",
+            target = "Lnet/minecraft/client/render/Frustum;isVisible(Lnet/minecraft/util/math/Box;)Z",
+            shift = At.Shift.BEFORE // Injeta antes da chamada a frustum.isVisible()
+        ),
+        locals = LocalCapture.CAPTURE_FAILHARD, // Essencial para capturar variáveis locais do método
+        cancellable = true // Permite cancelar a execução do método original (para pular o chunk)
     )
-    private void barium$optimizeImageBeforeUpload(CallbackInfo ci) {
-        if (this.image != null) {
-            // Chamamos nosso otimizador para processar a imagem.
-            // O otimizador pode retornar a mesma imagem ou uma nova imagem otimizada.
-            NativeImage optimizedImage = TextureOptimizer.optimizeTexture(this.image);
-
-            // Se o otimizador retornou uma nova imagem (significando que a original foi fechada e substituída),
-            // atualizamos o campo 'image' da instância de NativeImageBackedTexture.
-            if (optimizedImage != this.image) {
-                this.image = optimizedImage;
-            }
+    private void barium$onBeforeFrustumCulling(
+        // Parâmetros do método render (assinatura)
+        Object matrixStack, float tickDelta, long limitTime, Camera camera, Object gameRenderer,
+        Object lightmapTextureManager, Object immediate, Object matrix4f,
+        // Variáveis locais capturadas pelo Mixin
+        CallbackInfo ci,
+        Frustum frustum, // Variável local 'frustum'
+        ChunkRenderDispatcher.ChunkRenderInfo chunkRenderInfo // Variável local 'chunkRenderInfo' no loop
+    ) {
+        // Aplica a lógica de culling de oclusão baseada em CPU do Barium
+        if (!ChunkOcclusionOptimizer.shouldRenderChunk(chunkRenderInfo.getChunkRender(), camera)) {
+            // Se o Barium decidir que este chunk deve ser descartado, cancela a execução
+            // do método original para esta iteração do loop (i.e., pula este chunk).
+            ci.cancel();
         }
     }
 }
