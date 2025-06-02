@@ -30,4 +30,7 @@ public class BariumConfig {
     public static final boolean REDUCE_HUD_UPDATES = true; // Adicionado (usado em HudOptimizer)
     public static final boolean ENABLE_FONT_CACHING = true;
     public static final int HUD_UPDATE_INTERVAL_TICKS = 5;
+
+    public static final boolean ENABLE_TEXTURE_OPTIMIZATION = true;
+    public static final boolean FORCE_LOW_RES_TEXTURES = false;
 }
