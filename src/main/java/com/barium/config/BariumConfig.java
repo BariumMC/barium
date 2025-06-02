@@ -4,7 +4,6 @@ package com.barium.config;
  * Configuração central para o mod Barium.
  * Contém todas as configurações para os diferentes sistemas de otimização.
  * Corrigido: Adicionadas/Renomeadas flags ausentes/incorretas para corrigir erros de compilação.
- * Adicionado: Configurações para ChunkOcclusionOptimizer.
  */
 public class BariumConfig {
 
@@ -31,4 +30,8 @@ public class BariumConfig {
     public static final boolean REDUCE_HUD_UPDATES = true; // Adicionado (usado em HudOptimizer)
     public static final boolean ENABLE_FONT_CACHING = true;
     public static final int HUD_UPDATE_INTERVAL_TICKS = 5;
+
+    // --- Chest Rendering Optimization (New) --- //
+    public static final boolean ENABLE_CHEST_RENDER_OPTIMIZATION = true; // Enable/Disable chest culling
+    public static final int CHEST_RENDER_DISTANCE = 64; // Distance in blocks for chest culling
 }
