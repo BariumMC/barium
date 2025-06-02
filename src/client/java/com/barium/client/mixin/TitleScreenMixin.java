@@ -8,7 +8,9 @@ import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.TitleScreen;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
+import org.spongepowered.asm.mixin.injection.Inject; // Usar Inject para o panorama
 import org.spongepowered.asm.mixin.injection.Redirect;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfo; // Importar CallbackInfo
 
 /**
  * Mixin específico para TitleScreen para otimizações de GUI client-side.
@@ -21,35 +23,38 @@ import org.spongepowered.asm.mixin.injection.Redirect;
 public abstract class TitleScreenMixin {
 
     /**
-     * Redireciona a chamada para renderizar o panorama de fundo.
+     * Injeta ANTES da chamada para renderizar o panorama de fundo.
      * Se a otimização estiver habilitada e a opção de desativar o panorama for true,
-     * o método original de renderização do panorama é pulado.
+     * o método original de renderização do panorama é cancelado (pulado).
      * Opcionalmente, pode desenhar um fundo estático no lugar.
      *
      * Target Method: TitleScreen.render(Lnet/minecraft/client/gui/DrawContext;IIF)V
      * Target INVOKE: Lnet/minecraft/client/gui/screen/TitleScreen;renderPanoramaBackground(Lnet/minecraft/client/gui/DrawContext;F)V
      *
-     * @param instance A instância da TitleScreen (passada automaticamente por @Redirect em métodos de instância).
      * @param context O contexto de desenho.
-     * @param alpha O valor alpha para o panorama.
+     * @param mouseX Posição X do mouse.
+     * @param mouseY Posição Y do mouse.
+     * @param delta O delta (tempo parcial do tick, que é usado como alpha para o panorama).
+     * @param ci CallbackInfo para cancelar o método original.
      */
-    @Redirect(
+    @Inject(
         method = "render(Lnet/minecraft/client/gui/DrawContext;IIF)V",
-        at = @At(value = "INVOKE", target = "Lnet/minecraft/client/gui/screen/TitleScreen;renderPanoramaBackground(Lnet/minecraft/client/gui/DrawContext;F)V")
+        at = @At(value = "INVOKE", target = "Lnet/minecraft/client/gui/screen/TitleScreen;renderPanoramaBackground(Lnet/minecraft/client/gui/DrawContext;F)V"),
+        cancellable = true // Permite que o método original seja cancelado
     )
-    private void barium$redirectRenderPanoramaBackground(TitleScreen instance, DrawContext context, float alpha) {
+    private void barium$onRenderPanoramaBackgroundInvoke(DrawContext context, int mouseX, int mouseY, float delta, CallbackInfo ci) {
         if (BariumConfig.ENABLE_TITLE_SCREEN_OPTIMIZATION && BariumConfig.DISABLE_TITLE_SCREEN_PANORAMA) {
             // Otimização: Não renderiza o panorama animado.
             // Opcionalmente, preenche a tela com uma cor sólida para evitar um fundo transparente/vazio.
             if (BariumConfig.DRAW_STATIC_BACKGROUND_IF_PANORAMA_DISABLED) {
-                // Desenha um fundo preto sólido. Ajuste a cor conforme necessário.
-                context.fill(0, 0, context.getScaledWindowWidth(), context.getScaledWindowHeight(), 0xFF000000); // ARGB (transparente, vermelho, verde, azul)
+                // Desenha um fundo preto sólido. Ajuste a cor conforme necessário (ARGB).
+                context.fill(0, 0, context.getScaledWindowWidth(), context.getScaledWindowHeight(), 0xFF000000);
             }
             BariumMod.LOGGER.debug("TitleScreenMixin: Panorama background skipped.");
-        } else {
-            // Se a otimização estiver desativada ou a opção não for true, chama o método original.
-            instance.renderPanoramaBackground(context, alpha);
+            ci.cancel(); // Cancela a chamada ORIGINAL a renderPanoramaBackground
         }
+        // Se as otimizações não estiverem ativadas, o método original (renderPanoramaBackground)
+        // será chamado normalmente APÓS esta injeção.
     }
 
     /**
