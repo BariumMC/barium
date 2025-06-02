@@ -9,7 +9,7 @@ import java.io.IOException;
 
 /**
  * Otimizador de texturas, responsável por converter formatos de imagem para reduzir o uso de memória da GPU.
- * Atualmente focado na conversão de RGBA para RGB565.
+ * Atualmente focado na conversão de RGBA (32-bit) para RGB (24-bit).
  * Baseado nos mappings Yarn 1.21.5+build.1.
  */
 public class TextureOptimizer {
@@ -46,78 +46,66 @@ public class TextureOptimizer {
             return originalImage;
         }
 
-        // Se a imagem já estiver em RGB565, não fazemos nada.
-        if (originalImage.getFormat() == NativeImage.Format.RGB565) {
+        // O objetivo é reduzir de 32-bit RGBA. Se já não for RGBA, retorna a original.
+        // O formato RGBA tem 4 bytes por pixel.
+        if (originalImage.getFormat() != NativeImage.Format.RGBA) {
             return originalImage;
         }
 
-        // A otimização atual é a conversão para RGB565.
-        // Adicione outras lógicas de otimização de textura aqui (ex: compressão DXT, etc.)
-        // se necessário, com base no formato original.
-        if (originalImage.getFormat() == NativeImage.Format.RGBA) {
-            return convertToRGB565(originalImage);
-        }
-
-        // Se o formato não é RGBA e não há outra otimização específica, retorna a original.
-        return originalImage;
+        // A otimização atual é a conversão para RGB (24-bit) de RGBA (32-bit).
+        // Isso economiza 1 byte por pixel, descartando o canal alfa.
+        return convertToRGB(originalImage);
     }
 
     /**
-     * Converte uma NativeImage do formato RGBA para RGB565.
-     * RGB565 usa 16 bits por pixel (5 bits para R, 6 para G, 5 para B), descartando o canal alfa.
-     * Isso reduz o uso de memória em 50% para texturas RGBA (32 bits para 16 bits).
+     * Converte uma NativeImage do formato RGBA (32-bit) para RGB (24-bit).
+     * Isso reduz o uso de memória em 25% para texturas RGBA (4 bytes para 3 bytes por pixel).
+     * O canal alfa é descartado.
      *
      * @param originalImage A imagem RGBA a ser convertida.
-     * @return Uma nova NativeImage no formato RGB565.
+     * @return Uma nova NativeImage no formato RGB.
      */
-    private static NativeImage convertToRGB565(NativeImage originalImage) {
+    private static NativeImage convertToRGB(NativeImage originalImage) { // Renomeado de convertToRGB565
         int width = originalImage.getWidth();
         int height = originalImage.getHeight();
 
         try {
-            // Cria uma nova imagem com o formato RGB565
-            NativeImage newImage = new NativeImage(NativeImage.Format.RGB565, width, height, false);
+            // Cria uma nova imagem com o formato RGB (24-bit)
+            // NativeImage.Format.RGB utiliza 3 bytes por pixel.
+            NativeImage newImage = new NativeImage(NativeImage.Format.RGB, width, height, false);
 
             for (int y = 0; y < height; y++) {
                 for (int x = 0; x < width; x++) {
+                    // getPixelColor(x, y) retorna um int que representa a cor do pixel.
+                    // Para NativeImage.Format.RGBA, ele é geralmente 0xAARRGGBB.
                     int originalColor = originalImage.getPixelColor(x, y);
 
-                    // Extrai os componentes RGBA (Minecraft usa ARGB ou BGRA internamente, mas NativeImage.getPixelColor normaliza para RGBA)
-                    // Os métodos getRed, getGreen, getBlue, getAlpha são estáticos em NativeImage para interpretar o int.
-                    int r = NativeImage.getRed(originalColor);
-                    int g = NativeImage.getGreen(originalColor);
-                    int b = NativeImage.getBlue(originalColor);
-                    // O canal alfa é descartado em RGB565
+                    // Extrai os componentes RGBA manualmente do int (assumindo ARGB: AARRGGBB)
+                    int r = (originalColor >> 16) & 0xFF; // Componente Vermelho
+                    int g = (originalColor >> 8) & 0xFF;  // Componente Verde
+                    int b = (originalColor >> 0) & 0xFF;  // Componente Azul
+                    // O canal Alfa é descartado para o formato RGB
 
-                    // Converte RGBA (0-255) para RGB565 (R:5 bits, G:6 bits, B:5 bits)
-                    // R: (r / 255.0) * 31 (shift left 11)
-                    // G: (g / 255.0) * 63 (shift left 5)
-                    // B: (b / 255.0) * 31
-                    int r5 = (int) (r / 255.0F * 31.0F) & 0x1F;
-                    int g6 = (int) (g / 255.0F * 63.0F) & 0x3F;
-                    int b5 = (int) (b / 255.0F * 31.0F) & 0x1F;
+                    // Combina os componentes R, G, B em um único int para o formato RGB (0x00RRGGBB)
+                    int newColorInt = (r << 16) | (g << 8) | b;
 
-                    // Combina os bits no formato RGB565
-                    int rgb565Color = (r5 << 11) | (g6 << 5) | b5;
-
-                    // Define a cor no novo formato
-                    newImage.setPixelColor(x, y, rgb565Color);
+                    // Define a cor no novo formato (RGB 24-bit)
+                    newImage.setPixelColor(x, y, newColorInt);
                 }
             }
 
-            // É CRUCIAL fechar a imagem original para liberar sua memória nativa.
-            // A nova imagem será gerenciada pelo ciclo de vida normal do Minecraft.
+            // É CRUCIAL fechar a imagem original para liberar sua memória nativa,
+            // pois uma nova imagem foi criada para substituí-la.
             originalImage.close();
 
-            BariumMod.LOGGER.debug("Converted texture to RGB565: {}x{}", width, height);
+            BariumMod.LOGGER.debug("Converted texture from RGBA to RGB (24-bit): {}x{}", width, height);
             return newImage;
 
         } catch (IOException e) {
-            BariumMod.LOGGER.error("Failed to convert texture to RGB565: {}", e.getMessage());
-            // Em caso de erro, retornamos a imagem original para evitar um crash
+            BariumMod.LOGGER.error("Failed to convert texture to RGB: {}", e.getMessage());
             return originalImage;
         } catch (Exception e) {
-            BariumMod.LOGGER.error("Unexpected error during texture conversion to RGB565: {}", e.getMessage());
+            BariumMod.LOGGER.error("Unexpected error during texture conversion to RGB: {}", e.getMessage());
             return originalImage;
         }
     }
