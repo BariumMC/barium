@@ -4,6 +4,7 @@ package com.barium.config;
  * Configuração central para o mod Barium.
  * Contém todas as configurações para os diferentes sistemas de otimização.
  * Corrigido: Adicionadas/Renomeadas flags ausentes/incorretas para corrigir erros de compilação.
+ * Adicionado: Configurações para ChunkOcclusionOptimizer.
  */
 public class BariumConfig {
 
@@ -31,6 +32,10 @@ public class BariumConfig {
     public static final boolean ENABLE_FONT_CACHING = true;
     public static final int HUD_UPDATE_INTERVAL_TICKS = 5;
 
-    public static final boolean ENABLE_TEXTURE_OPTIMIZATION = true;
-    public static final boolean FORCE_LOW_RES_TEXTURES = false;
+    // --- ChunkOcclusionOptimizer (Client-side) --- //
+    public static final boolean ENABLE_CHUNK_OCCLUSION_CULLING = true;
+    // Distance squared for aggressive culling when player is inside an opaque block
+    public static final double PLAYER_IN_BLOCK_CULL_DISTANCE_SQ = 9.0; // e.g., 3x3 blocks squared (3 blocks radius)
+    // Distance squared beyond which directional culling is applied
+    public static final double AGGRESSIVE_DIRECTIONAL_CULL_DISTANCE_SQ = 64 * 64; // 64 blocks squared
 }

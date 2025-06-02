@@ -3,6 +3,7 @@ package com.barium.client;
 import com.barium.BariumMod;
 import com.barium.client.optimization.HudOptimizer;
 import com.barium.client.optimization.ParticleOptimizer;
+import com.barium.client.optimization.ChunkOcclusionOptimizer;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
@@ -16,5 +17,6 @@ public class BariumClient implements ClientModInitializer {
         // Inicialização dos otimizadores client-side
         HudOptimizer.init();
         ParticleOptimizer.init();
+        ChunkOcclusionOptimizer.init();
     }
 }
