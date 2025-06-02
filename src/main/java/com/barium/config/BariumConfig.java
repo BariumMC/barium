@@ -31,11 +31,4 @@ public class BariumConfig {
     public static final boolean REDUCE_HUD_UPDATES = true; // Adicionado (usado em HudOptimizer)
     public static final boolean ENABLE_FONT_CACHING = true;
     public static final int HUD_UPDATE_INTERVAL_TICKS = 5;
-
-    // --- ChunkOcclusionOptimizer (Client-side) --- //
-    public static final boolean ENABLE_CHUNK_OCCLUSION_CULLING = true;
-    // Distance squared for aggressive culling when player is inside an opaque block
-    public static final double PLAYER_IN_BLOCK_CULL_DISTANCE_SQ = 9.0; // e.g., 3x3 blocks squared (3 blocks radius)
-    // Distance squared beyond which directional culling is applied
-    public static final double AGGRESSIVE_DIRECTIONAL_CULL_DISTANCE_SQ = 64 * 64; // 64 blocks squared
 }
