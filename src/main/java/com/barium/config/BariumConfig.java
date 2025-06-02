@@ -31,8 +31,24 @@ public class BariumConfig {
     public static final boolean ENABLE_FONT_CACHING = true;
     public static final int HUD_UPDATE_INTERVAL_TICKS = 5;
 
-        public static final boolean ENABLE_TITLE_SCREEN_OPTIMIZATION = true; // Flag geral
-    public static final boolean DISABLE_TITLE_SCREEN_PANORAMA = false; // Para desligar o fundo animado
-    public static final boolean DISABLE_TITLE_SCREEN_SPLASH_TEXT = false; // Para desligar o texto de splash
-    public static final boolean DRAW_STATIC_BACKGROUND_IF_PANORAMA_DISABLED = true; // Desenha um fundo preto estático
+    // --- Geometric Optimization (Client-side) --- //
+    public static final boolean ENABLE_GEOMETRIC_OPTIMIZATION = true; // Flag geral
+
+    // LOD/Simplificação de Malhas
+    public static final boolean ENABLE_MESH_LOD = true;
+    public static final int LOD_DISTANCE_HIGH = 32; // Distância para LOD de alto nível
+    public static final int LOD_DISTANCE_MEDIUM = 64; // Distância para LOD de médio nível
+    public static final int LOD_DISTANCE_LOW = 128; // Distância para LOD de baixo nível
+
+    // Instancing / Impostors
+    public static final boolean ENABLE_VEGETATION_INSTANCING = true;
+    public static final int INSTANCING_DISTANCE_MAX = 48; // Distância máxima para usar instancing
+
+    public static final boolean ENABLE_VEGETATION_IMPOSTORS = true;
+    public static final int IMPOSTOR_DISTANCE_MIN = 64; // Distância mínima para usar impostors
+    public static final int IMPOSTOR_DISTANCE_MAX = 256; // Distância máxima para renderizar impostors
+
+    // Occlusion Culling (Pre-pass)
+    public static final boolean ENABLE_CHUNK_OCCLUSION_CULLING = true;
+    public static final int OCCLUSION_UPDATE_INTERVAL_TICKS = 20; // Frequência de atualização do culling
 }
