@@ -44,5 +44,5 @@ private void barium$renderChest(ChestBlockEntity chestBlockEntity, float f, Matr
     } else {
         this.barium$lastChestWasCulled = false;
     }
+  }
 }
-

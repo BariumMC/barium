@@ -44,4 +44,5 @@ private void barium$beforeBuildGeometry(Camera camera, float tickDelta, VertexCo
     if (!ParticleOptimizer.shouldRenderParticle(particle, camera, this.world)) {
         ci.cancel();
     }
+  }
 }
