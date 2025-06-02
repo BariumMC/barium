@@ -8,8 +8,8 @@ import net.minecraft.block.BlockState;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.render.VertexConsumer;
 import net.minecraft.client.render.block.BlockModelRenderer;
-// CORREÇÃO AQUI: Importe BakedModel do caminho correto
-import net.minecraft.client.resources.model.BakedModel; // <<<<<<<<<< CORRIGIDO
+// CORREÇÃO AQUI: REVERTER PARA O CAMINHO CORRETO
+import net.minecraft.client.render.model.BakedModel; // <<<<<<<<<< CORRIGIDO NOVAMENTE
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.BlockRenderView;
@@ -29,11 +29,12 @@ public abstract class BlockModelRendererMixin {
      * Injeta no início do método render para aplicar LOD na renderização da malha do bloco.
      * Este é um ponto de intervenção complexo pois o Sodium também otimiza fortemente esta área.
      *
-     * Target Method: render(Lnet/minecraft/world/BlockRenderView;Lnet/minecraft/client/resources/model/BakedModel;Lnet/minecraft/block/BlockState;Lnet/minecraft/util/math/BlockPos;Lnet/minecraft/client/util/math/MatrixStack;Lnet/minecraft/client/render/VertexConsumer;ZLnet/minecraft/util/math/random/Random;JI)Z
+     * Target Method: render(Lnet/minecraft/world/BlockRenderView;Lnet/minecraft/client/render/model/BakedModel;Lnet/minecraft/block/BlockState;Lnet/minecraft/util/math/BlockPos;Lnet/minecraft/client/util/math/MatrixStack;Lnet/minecraft/client/render/VertexConsumer;ZLnet/minecraft/util/math/random/Random;JI)Z
      * (Assinatura do método render para Vanilla, pode ser diferente em Sodium)
      */
     @Inject(
-        method = "render(Lnet/minecraft/world/BlockRenderView;Lnet/minecraft/client/resources/model/BakedModel;Lnet/minecraft/block/BlockState;Lnet/minecraft/util/math/BlockPos;Lnet/minecraft/client/util/math/MatrixStack;Lnet/minecraft/client/render/VertexConsumer;ZLnet/minecraft/util/math/random/Random;JI)Z",
+        // CORREÇÃO AQUI: Garanta que a assinatura use Lnet/minecraft/client/render/model/BakedModel;
+        method = "render(Lnet/minecraft/world/BlockRenderView;Lnet/minecraft/client/render/model/BakedModel;Lnet/minecraft/block/BlockState;Lnet/minecraft/util/math/BlockPos;Lnet/minecraft/client/util/math/MatrixStack;Lnet/minecraft/client/render/VertexConsumer;ZLnet/minecraft/util/math/random/Random;JI)Z",
         at = @At("HEAD"),
         cancellable = true
     )
@@ -47,32 +48,15 @@ public abstract class BlockModelRendererMixin {
 
         int lod = GeometricOptimizer.getMeshLOD(pos, client.gameRenderer.getCamera());
 
-        // Se o bloco deve ser renderizado por instancing ou impostor, e já não está no LOD mais alto
-        // nós o pulamos aqui para que a renderização customizada o pegue.
         boolean isInstanced = GeometricOptimizer.shouldBeInstanced(state, pos, client.gameRenderer.getCamera());
         boolean isImpostor = GeometricOptimizer.shouldBeImpostor(state, pos, client.gameRenderer.getCamera());
 
         if (lod > 0 && (isInstanced || isImpostor)) {
-            // Este bloco será tratado pelo sistema de instancing/impostor.
-            // Não renderizamos sua geometria tradicional aqui.
-            // No entanto, precisamos adicioná-lo a uma lista para ser renderizado depois.
-            // Isso requer um sistema de coleta de blocos a serem instanciados/impostorizados.
-            // Para simplificar, neste mixin, se decidimos que é um impostor/instanced, simplesmente retornamos true
-            // para que a renderização original seja pulada. A coleta de dados deve ser feita em outro lugar.
             BariumMod.LOGGER.debug("BlockModelRendererMixin: Block at " + pos + " marked for instancing/impostor (LOD: " + lod + "). Skipping original render.");
-            cir.setReturnValue(true); // Indica que o bloco foi "renderizado" (pulado)
+            cir.setReturnValue(true);
             return;
         }
 
-        // TODO: Aqui você implementaria a lógica para renderizar uma versão simplificada
-        // da malha para 'lod' > 0, antes de retornar.
-        // Isso pode envolver:
-        // 1. Obter a BakedModel original.
-        // 2. Filtrar ou simplificar as quads da BakedModel baseadas no LOD.
-        // 3. Renderizar as quads simplificadas para o `vertexConsumer`.
-        // Isso é MUITO complexo e intrusivo ao pipeline do Sodium.
-        // Um caminho mais seguro para LOD simples de vegetação pode ser via texturas mipmap ou shaders que reduzam o detalhe.
-
-        // Por enquanto, se não for para instancing/impostor, deixa o render original acontecer.
+        // TODO: Implementar lógica de LOD de malha aqui
     }
 }
