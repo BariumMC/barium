@@ -76,10 +76,11 @@ public class TextureOptimizer {
 
             for (int y = 0; y < height; y++) {
                 for (int x = 0; x < width; x++) {
-                    // Usa readPixel(x, y) para obter o valor do pixel (int)
-                    int originalColor = originalImage.readPixel(x, y);
+                    // Usa getPixelColor(x, y) para obter o valor do pixel (int)
+                    // Este método retorna a cor no formato ARGB (0xAARRGGBB) para NativeImage.Format.RGBA.
+                    int originalColor = originalImage.getPixelColor(x, y);
 
-                    // Extrai os componentes RGBA manualmente do int (assumindo ARGB: 0xAARRGGBB, pois NativeImage.readPixel retorna nesse formato)
+                    // Extrai os componentes RGBA manualmente do int
                     int r = (originalColor >> 16) & 0xFF; // Componente Vermelho
                     int g = (originalColor >> 8) & 0xFF;  // Componente Verde
                     int b = (originalColor >> 0) & 0xFF;  // Componente Azul
@@ -88,8 +89,8 @@ public class TextureOptimizer {
                     // Combina os componentes R, G, B em um único int para o formato RGB (0x00RRGGBB)
                     int newColorInt = (r << 16) | (g << 8) | b;
 
-                    // Usa writePixel(x, y, color) para definir o pixel
-                    newImage.writePixel(x, y, newColorInt);
+                    // Usa setPixelColor(x, y, color) para definir o pixel
+                    newImage.setPixelColor(x, y, newColorInt);
                 }
             }
 
