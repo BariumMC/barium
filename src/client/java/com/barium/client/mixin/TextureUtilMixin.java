@@ -2,35 +2,48 @@ package com.barium.client.mixin;
 
 import com.barium.client.optimization.TextureOptimizer;
 import net.minecraft.client.texture.NativeImage;
-import net.minecraft.client.texture.TextureUtil;
+import net.minecraft.client.texture.NativeImageBackedTexture; // Importação corrigida
 import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
-import org.spongepowered.asm.mixin.injection.ModifyVariable;
+import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 /**
- * Mixin para TextureUtil para interceptar e otimizar texturas antes de serem carregadas na GPU.
+ * Mixin para NativeImageBackedTexture para interceptar e otimizar texturas antes de serem carregadas na GPU.
  * Baseado nos mappings Yarn 1.21.5+build.1.
+ * O método `upload` é um ponto comum para NativeImages serem enviadas à GPU.
  */
-@Mixin(TextureUtil.class)
-public class TextureUtilMixin {
+@Mixin(NativeImageBackedTexture.class)
+public abstract class TextureUtilMixin { // Mantive o nome do arquivo e classe para simplicidade, mas o alvo mudou
+
+    // Shadow field para acessar o campo 'image' da NativeImageBackedTexture
+    @Shadow @org.jetbrains.annotations.Nullable private NativeImage image;
 
     /**
-     * Intercepta a NativeImage no método uploadImage para permitir otimização (conversão de formato).
+     * Injeta no início do método `upload` da NativeImageBackedTexture.
+     * Isso permite que a `NativeImage` interna seja otimizada (ex: convertida para RGB565)
+     * antes de ser efetivamente enviada para a GPU.
      *
-     * Target Class: net.minecraft.client.texture.TextureUtil
-     * Target Method Signature (Yarn 1.21.5+build.1): uploadImage(ILnet/minecraft/client/texture/NativeImage;Z)V
-     * Argument to modify: 'image' (o segundo argumento, que é um NativeImage)
+     * Target Class: net.minecraft.client.texture.NativeImageBackedTexture
+     * Target Method Signature (Yarn 1.21.5+build.1): upload(IIIIZZZ)V
+     * (int x, int y, int width, int height, boolean updateMipmaps, boolean blur, boolean clamp)
      */
-    @ModifyVariable(
-        method = "uploadImage(ILnet/minecraft/client/texture/NativeImage;Z)V",
-        at = @At("HEAD"),
-        argsOnly = true // Aplica a modificação apenas nos argumentos do método
+    @Inject(
+        method = "upload(IIIIZZZ)V",
+        at = @At("HEAD")
     )
-    private NativeImage barium$optimizeImageBeforeUpload(NativeImage image) {
-        // Chamamos nosso otimizador para processar a imagem.
-        // O otimizador pode retornar a mesma imagem, uma nova imagem otimizada ou null.
-        // Se retornar null, o método original pode falhar ou ter comportamento inesperado,
-        // então é crucial que TextureOptimizer sempre retorne uma NativeImage válida.
-        return TextureOptimizer.optimizeTexture(image);
+    private void barium$optimizeImageBeforeUpload(int x, int y, int width, int height, boolean updateMipmaps, boolean blur, boolean clamp, CallbackInfo ci) {
+        if (this.image != null) {
+            // Chamamos nosso otimizador para processar a imagem.
+            // O otimizador pode retornar a mesma imagem ou uma nova imagem otimizada.
+            NativeImage optimizedImage = TextureOptimizer.optimizeTexture(this.image);
+
+            // Se o otimizador retornou uma nova imagem (significando que a original foi fechada e substituída),
+            // atualizamos o campo 'image' da instância de NativeImageBackedTexture.
+            if (optimizedImage != this.image) {
+                this.image = optimizedImage;
+            }
+        }
     }
 }
