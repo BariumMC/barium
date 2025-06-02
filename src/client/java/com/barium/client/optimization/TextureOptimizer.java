@@ -6,6 +6,7 @@ import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.client.texture.NativeImage;
 
 import java.io.IOException;
+import java.nio.ByteBuffer; // Importar ByteBuffer
 
 /**
  * Otimizador de texturas, responsável por converter formatos de imagem para reduzir o uso de memória da GPU.
@@ -74,23 +75,45 @@ public class TextureOptimizer {
             // NativeImage.Format.RGB utiliza 3 bytes por pixel.
             NativeImage newImage = new NativeImage(NativeImage.Format.RGB, width, height, false);
 
+            // Acessa os buffers de pixel brutos
+            ByteBuffer originalBuffer = originalImage.getBuffer();
+            ByteBuffer newBuffer = newImage.getBuffer();
+
+            // Garante que os buffers estão prontos para leitura/escrita
+            originalBuffer.rewind();
+            newBuffer.rewind();
+
+            // Determine o número de bytes por pixel para o formato original e novo
+            int originalBytesPerPixel = originalImage.getFormat().getPixelByteSize(); // Deve ser 4 para RGBA
+            int newBytesPerPixel = newImage.getFormat().getPixelByteSize();         // Deve ser 3 para RGB
+
             for (int y = 0; y < height; y++) {
                 for (int x = 0; x < width; x++) {
-                    // Usa getPixelColor(x, y) para obter o valor do pixel (int)
-                    // Este método retorna a cor no formato ARGB (0xAARRGGBB).
-                    int originalColor = originalImage.getPixelColor(x, y); // CORRIGIDO: getPixelColor
+                    // Calcula o offset para o pixel na imagem original (em bytes)
+                    int originalPixelOffset = (y * width + x) * originalBytesPerPixel;
+                    // Calcula o offset para o pixel na nova imagem (em bytes)
+                    int newPixelOffset = (y * width + x) * newBytesPerPixel;
 
-                    // Extrai os componentes RGBA manualmente do int
-                    int r = (originalColor >> 16) & 0xFF; // Componente Vermelho
-                    int g = (originalColor >> 8) & 0xFF;  // Componente Verde
-                    int b = (originalColor >> 0) & 0xFF;  // Componente Azul
-                    // O canal Alfa é descartado para o formato RGB
+                    // Lê os componentes RGBA do buffer original
+                    // Nota: ByteBuffer.getInt() lê 4 bytes como um int. Assume Little Endian por padrão do NativeImage.
+                    // O formato interno do Minecraft é ARGB (0xAARRGGBB) para getPixelColor, mas o buffer é frequentemente BGRA.
+                    // Vamos ler bytes individuais para ser seguro e explícito.
+                    originalBuffer.position(originalPixelOffset);
+                    byte b_original = originalBuffer.get(); // B
+                    byte g_original = originalBuffer.get(); // G
+                    byte r_original = originalBuffer.get(); // R
+                    originalBuffer.get(); // A (descartado)
 
-                    // Combina os componentes R, G, B em um único int para o formato RGB (0x00RRGGBB)
-                    int newColorInt = (r << 16) | (g << 8) | b;
+                    // Converte os bytes para int (0-255)
+                    int r = r_original & 0xFF;
+                    int g = g_original & 0xFF;
+                    int b = b_original & 0xFF;
 
-                    // Usa setPixelColor(x, y, color) para definir o pixel
-                    newImage.setPixelColor(x, y, newColorInt); // CORRIGIDO: setPixelColor
+                    // Escreve os componentes RGB no buffer da nova imagem
+                    newBuffer.position(newPixelOffset);
+                    newBuffer.put((byte)b); // B
+                    newBuffer.put((byte)g); // G
+                    newBuffer.put((byte)r); // R
                 }
             }
 
@@ -98,7 +121,7 @@ public class TextureOptimizer {
             // pois uma nova imagem foi criada para substituí-la.
             originalImage.close();
 
-            BariumMod.LOGGER.debug("Converted texture from RGBA to RGB (24-bit): {}x{}", width, height);
+            BariumMod.LOGGER.debug("Converted texture from RGBA (32-bit) to RGB (24-bit): {}x{}", width, height);
             return newImage;
 
         } catch (IOException e) {
