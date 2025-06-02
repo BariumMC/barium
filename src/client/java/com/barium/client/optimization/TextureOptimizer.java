@@ -65,7 +65,7 @@ public class TextureOptimizer {
      * @param originalImage A imagem RGBA a ser convertida.
      * @return Uma nova NativeImage no formato RGB.
      */
-    private static NativeImage convertToRGB(NativeImage originalImage) { // Renomeado de convertToRGB565
+    private static NativeImage convertToRGB(NativeImage originalImage) {
         int width = originalImage.getWidth();
         int height = originalImage.getHeight();
 
@@ -76,11 +76,10 @@ public class TextureOptimizer {
 
             for (int y = 0; y < height; y++) {
                 for (int x = 0; x < width; x++) {
-                    // getPixelColor(x, y) retorna um int que representa a cor do pixel.
-                    // Para NativeImage.Format.RGBA, ele é geralmente 0xAARRGGBB.
-                    int originalColor = originalImage.getPixelColor(x, y);
+                    // Usa readPixel(x, y) para obter o valor do pixel (int)
+                    int originalColor = originalImage.readPixel(x, y);
 
-                    // Extrai os componentes RGBA manualmente do int (assumindo ARGB: AARRGGBB)
+                    // Extrai os componentes RGBA manualmente do int (assumindo ARGB: 0xAARRGGBB, pois NativeImage.readPixel retorna nesse formato)
                     int r = (originalColor >> 16) & 0xFF; // Componente Vermelho
                     int g = (originalColor >> 8) & 0xFF;  // Componente Verde
                     int b = (originalColor >> 0) & 0xFF;  // Componente Azul
@@ -89,8 +88,8 @@ public class TextureOptimizer {
                     // Combina os componentes R, G, B em um único int para o formato RGB (0x00RRGGBB)
                     int newColorInt = (r << 16) | (g << 8) | b;
 
-                    // Define a cor no novo formato (RGB 24-bit)
-                    newImage.setPixelColor(x, y, newColorInt);
+                    // Usa writePixel(x, y, color) para definir o pixel
+                    newImage.writePixel(x, y, newColorInt);
                 }
             }
 
