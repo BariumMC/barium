@@ -5,10 +5,11 @@ import com.barium.BariumMod;
 import com.barium.client.optimization.GeometricOptimizer;
 import com.barium.config.BariumConfig;
 import net.minecraft.block.BlockState;
-import net.minecraft.client.MinecraftClient; // Adicionar import
+import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.render.VertexConsumer;
 import net.minecraft.client.render.block.BlockModelRenderer;
-import net.minecraft.client.render.model.BakedModel; // Adicionar import
+// CORREÇÃO AQUI: Importe BakedModel do caminho correto
+import net.minecraft.client.resources.model.BakedModel; // <<<<<<<<<< CORRIGIDO
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.BlockRenderView;
@@ -28,11 +29,11 @@ public abstract class BlockModelRendererMixin {
      * Injeta no início do método render para aplicar LOD na renderização da malha do bloco.
      * Este é um ponto de intervenção complexo pois o Sodium também otimiza fortemente esta área.
      *
-     * Target Method: render(Lnet/minecraft/world/BlockRenderView;Lnet/minecraft/client/render/model/BakedModel;Lnet/minecraft/block/BlockState;Lnet/minecraft/util/math/BlockPos;Lnet/minecraft/client/util/math/MatrixStack;Lnet/minecraft/client/render/VertexConsumer;ZLnet/minecraft/util/math/random/Random;JI)Z
+     * Target Method: render(Lnet/minecraft/world/BlockRenderView;Lnet/minecraft/client/resources/model/BakedModel;Lnet/minecraft/block/BlockState;Lnet/minecraft/util/math/BlockPos;Lnet/minecraft/client/util/math/MatrixStack;Lnet/minecraft/client/render/VertexConsumer;ZLnet/minecraft/util/math/random/Random;JI)Z
      * (Assinatura do método render para Vanilla, pode ser diferente em Sodium)
      */
     @Inject(
-        method = "render(Lnet/minecraft/world/BlockRenderView;Lnet/minecraft/client/render/model/BakedModel;Lnet/minecraft/block/BlockState;Lnet/minecraft/util/math/BlockPos;Lnet/minecraft/client/util/math/MatrixStack;Lnet/minecraft/client/render/VertexConsumer;ZLnet/minecraft/util/math/random/Random;JI)Z",
+        method = "render(Lnet/minecraft/world/BlockRenderView;Lnet/minecraft/client/resources/model/BakedModel;Lnet/minecraft/block/BlockState;Lnet/minecraft/util/math/BlockPos;Lnet/minecraft/client/util/math/MatrixStack;Lnet/minecraft/client/render/VertexConsumer;ZLnet/minecraft/util/math/random/Random;JI)Z",
         at = @At("HEAD"),
         cancellable = true
     )
