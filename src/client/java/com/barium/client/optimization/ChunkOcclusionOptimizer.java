@@ -4,8 +4,8 @@ import com.barium.BariumMod;
 import com.barium.config.BariumConfig;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.render.Camera;
-import net.minecraft.client.render.chunk.ChunkRender;
-import net.minecraft.client.render.chunk.ChunkRenderDispatcher; // Corrected import for inner class reference
+import net.minecraft.client.render.chunk.ChunkRender; // Confirmed correct
+import net.minecraft.client.render.chunk.ChunkRenderDispatcher.ChunkRenderInfo; // Explicitly import inner class
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Box;
 import net.minecraft.util.math.Vec3d;
@@ -18,7 +18,7 @@ import net.minecraft.world.BlockView;
  *
  * Baseado nos mappings Yarn 1.21.5+build.1.
  */
-public class ChunkOcclusionOptimizer { // This class should be ChunkOcclusionOptimizer, not WorldRendererMixin
+public class ChunkOcclusionOptimizer {
 
     // Cache para a posição da câmera para determinar se a lógica de culling precisa ser reavaliada
     private static Vec3d lastCameraPos = Vec3d.ZERO;
