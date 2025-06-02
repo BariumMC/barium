@@ -76,9 +76,11 @@ public class TextureOptimizer {
 
             for (int y = 0; y < height; y++) {
                 for (int x = 0; x < width; x++) {
-                    // Usa getPixelRGBA(x, y) para obter o valor do pixel (int)
+                    // Obter o offset de byte para o pixel na imagem original
+                    long originalOffset = originalImage.getOffset(x, y);
+                    // Usar o offset para ler o valor do pixel (int)
                     // Este método retorna a cor no formato RGBA (0xAARRGGBB) para NativeImage.Format.RGBA.
-                    int originalColor = originalImage.getPixelRGBA(x, y); // CORRIGIDO: getPixelRGBA
+                    int originalColor = originalImage.getPixelRGBA(originalOffset); // CORRIGIDO: getPixelRGBA com offset
 
                     // Extrai os componentes RGBA manualmente do int
                     int r = (originalColor >> 16) & 0xFF; // Componente Vermelho
@@ -89,8 +91,10 @@ public class TextureOptimizer {
                     // Combina os componentes R, G, B em um único int para o formato RGB (0x00RRGGBB)
                     int newColorInt = (r << 16) | (g << 8) | b;
 
-                    // Usa setPixelRGBA(x, y, color) para definir o pixel
-                    newImage.setPixelRGBA(x, y, newColorInt); // CORRIGIDO: setPixelRGBA
+                    // Obter o offset de byte para o pixel na nova imagem
+                    long newOffset = newImage.getOffset(x, y);
+                    // Usar o offset para definir o pixel
+                    newImage.setPixelRGBA(newOffset, newColorInt); // CORRIGIDO: setPixelRGBA com offset
                 }
             }
 
