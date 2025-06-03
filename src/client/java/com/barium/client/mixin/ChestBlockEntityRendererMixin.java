@@ -35,7 +35,7 @@ private void barium$renderChest(BlockEntity blockEntity, float f, MatrixStack ma
         return;
     }
 
-    Vec3d chestPos = Vec3d.ofCenter(chestBlockEntity.getPos());
+    Vec3d chestPos = Vec3d.ofCenter(BlockEntity.getPos());
     double distanceSq = cameraPos.squaredDistanceTo(chestPos);
     double maxDistanceSq = BariumConfig.CHEST_RENDER_DISTANCE * BariumConfig.CHEST_RENDER_DISTANCE;
 
