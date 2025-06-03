@@ -5,6 +5,7 @@ import net.minecraft.block.entity.ChestBlockEntity;
 import net.minecraft.client.render.VertexConsumerProvider;
 import net.minecraft.client.render.block.entity.ChestBlockEntityRenderer;
 import net.minecraft.client.util.math.MatrixStack;
+import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.util.math.Vec3d;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
