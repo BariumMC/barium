@@ -26,7 +26,7 @@ public abstract class ChestBlockEntityRendererMixin {
     at = @At("HEAD"),
     cancellable = true
 )
-private void barium$renderChest(ChestBlockEntity chestBlockEntity, float f, MatrixStack matrices,
+private void barium$renderChest(BlockEntity blockEntity, float f, MatrixStack matrices,
                                  VertexConsumerProvider provider, int light, int overlay,
                                  Vec3d cameraPos, CallbackInfo ci) {
     if (!BariumConfig.ENABLE_CHEST_RENDER_OPTIMIZATION) {
