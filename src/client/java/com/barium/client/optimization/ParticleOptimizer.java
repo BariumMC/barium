@@ -11,7 +11,8 @@ public class ParticleOptimizer {
     private static final double MAX_RENDER_DISTANCE_SQ = 128 * 128;
     private static final double MAX_TICK_DISTANCE_SQ = 128 * 128;
 
-    public static boolean shouldSkipTick(Particle particle, Camera camera) {
+    // Verifica se deve pular o tick (atualização da partícula)
+    public static boolean shouldSkipParticleTick(Particle particle, Camera camera) {
         ParticleAccessor accessor = (ParticleAccessor) particle;
         Vec3d particlePos = new Vec3d(accessor.getX(), accessor.getY(), accessor.getZ());
         Vec3d cameraPos = camera.getPos();
@@ -20,7 +21,8 @@ public class ParticleOptimizer {
         return distanceSq > MAX_TICK_DISTANCE_SQ;
     }
 
-    public static boolean shouldRender(Particle particle, Camera camera) {
+    // Verifica se deve renderizar a partícula
+    public static boolean shouldRenderParticle(Particle particle, Camera camera) {
         ParticleAccessor accessor = (ParticleAccessor) particle;
         Vec3d particlePos = new Vec3d(accessor.getX(), accessor.getY(), accessor.getZ());
         Vec3d cameraPos = camera.getPos();
@@ -35,6 +37,10 @@ public class ParticleOptimizer {
             accessor.getX() + 0.1, accessor.getY() + 0.1, accessor.getZ() + 0.1
         );
 
-        return camera.getFrustum().isVisible(box);
+        // Aqui o método getFrustum() pode estar disponível — caso não esteja, veja abaixo (comentado)
+    //    return camera.getFrustum().isVisible(box);
+
+        // Se getFrustum() não existir na sua versão de Camera, remova essa linha acima e descomente abaixo:
+        return camera.isBoundingBoxInFrustum(box);
     }
 }
