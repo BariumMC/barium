@@ -1,5 +1,6 @@
 package com.barium.client.optimization;
 
+import com.barium.client.mixin.ParticleAccessor;
 import net.minecraft.client.particle.Particle;
 import net.minecraft.client.render.Camera;
 import net.minecraft.util.math.Box;
@@ -7,33 +8,33 @@ import net.minecraft.util.math.Vec3d;
 
 public class ParticleOptimizer {
 
-    // Distância máxima para atualizar e renderizar partículas
-    private static final double MAX_UPDATE_DISTANCE_SQR = 128 * 128;
-    private static final double MAX_RENDER_DISTANCE_SQR = 128 * 128;
+    private static final double MAX_RENDER_DISTANCE_SQ = 128 * 128;
+    private static final double MAX_TICK_DISTANCE_SQ = 128 * 128;
 
-    // Verifica se deve pular o tick da partícula
-    public static boolean shouldSkipParticleTick(Particle particle, Camera camera) {
-        Vec3d particlePos = new Vec3d(particle.x, particle.y, particle.z);
+    public static boolean shouldSkipTick(Particle particle, Camera camera) {
+        ParticleAccessor accessor = (ParticleAccessor) particle;
+        Vec3d particlePos = new Vec3d(accessor.getX(), accessor.getY(), accessor.getZ());
         Vec3d cameraPos = camera.getPos();
+
         double distanceSq = particlePos.squaredDistanceTo(cameraPos);
-        return distanceSq > MAX_UPDATE_DISTANCE_SQR;
+        return distanceSq > MAX_TICK_DISTANCE_SQ;
     }
 
-    // Verifica se deve renderizar a partícula
-    public static boolean shouldRenderParticle(Particle particle, Camera camera) {
-        Vec3d particlePos = new Vec3d(particle.x, particle.y, particle.z);
+    public static boolean shouldRender(Particle particle, Camera camera) {
+        ParticleAccessor accessor = (ParticleAccessor) particle;
+        Vec3d particlePos = new Vec3d(accessor.getX(), accessor.getY(), accessor.getZ());
         Vec3d cameraPos = camera.getPos();
-        double distanceSq = particlePos.squaredDistanceTo(cameraPos);
 
-        if (distanceSq > MAX_RENDER_DISTANCE_SQR) {
+        double distanceSq = particlePos.squaredDistanceTo(cameraPos);
+        if (distanceSq > MAX_RENDER_DISTANCE_SQ) {
             return false;
         }
 
-        // Frustum culling simplificado
         Box box = new Box(
-            particle.x - 0.1, particle.y - 0.1, particle.z - 0.1,
-            particle.x + 0.1, particle.y + 0.1, particle.z + 0.1
+            accessor.getX() - 0.1, accessor.getY() - 0.1, accessor.getZ() - 0.1,
+            accessor.getX() + 0.1, accessor.getY() + 0.1, accessor.getZ() + 0.1
         );
-        return camera.isBoundingBoxInFrustum(box);
+
+        return camera.getFrustum().isVisible(box);
     }
 }
