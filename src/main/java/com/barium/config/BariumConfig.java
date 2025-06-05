@@ -90,4 +90,14 @@ public class BariumConfig {
 
     /** Ativa otimização adaptativa de chunks baseada na velocidade do jogador. */
     public static final boolean ENABLE_ADAPTIVE_CHUNK_OPTIMIZATION = true; // NOVA FLAG
+
+    // ================== Resource & GUI Optimizations (Client-side) ================== //
+    /** Ativa carregamento assíncrono de recursos (texturas, modelos). */
+    public static final boolean ENABLE_ASYNC_RESOURCE_LOADING = true; // NOVA FLAG
+
+    /** Ativa otimizações para a interface do usuário (GUI), reduzindo recálculos desnecessários. */
+    public static final boolean ENABLE_GUI_OPTIMIZATION = true; // NOVA FLAG
+
+    /** Intervalo mínimo em milissegundos para forçar uma atualização de um elemento da GUI (se otimização de GUI estiver ativada). */
+    public static final long GUI_UPDATE_INTERVAL_MS = 100; // NOVO VALOR
 }
