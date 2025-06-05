@@ -22,8 +22,13 @@ public class ParticleManagerMixin {
     )
     private Particle barium$skipDistantRender(Particle particle) {
         Camera camera = MinecraftClient.getInstance().gameRenderer.getCamera();
+        // A lógica atual de retornar null depende de como o `buildGeometry` lida com um Particle nulo.
+        // Se `buildGeometry` não lida com null, pode causar um NPE.
+        // Se a intenção é que o `buildGeometry` simplesmente não seja chamado, a injeção deve ser diferente.
+        // No entanto, para a otimização de `ModifyArg`, retornar `null` faz com que `buildGeometry` seja chamado com um Particle nulo.
+        // É importante que o `buildGeometry` lide com isso, ou que a injeção seja um `Redirect` para evitar a chamada.
         if (!ParticleOptimizer.shouldRenderParticle(particle, camera)) {
-            return null;  // ou: um NoOpParticle se necessário
+            return null; // O ParticleOptimizer decide se deve renderizar
         }
         return particle;
     }

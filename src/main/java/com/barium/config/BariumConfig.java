@@ -7,63 +7,35 @@ package com.barium.config;
  */
 public class BariumConfig {
 
+    // Instância estática para carregar e acessar as configurações
+    // public static BariumConfig INSTANCE;
+
     // ================== Geral ================== //
-    // (Adicione flags gerais aqui, como DEBUG ou LOGGING)
+    public boolean enableDebugLogging = false; // Exemplo de flag de debug
 
     // ================== Pathfinding Optimizer ================== //
-    /** Ativa a otimização de pathfinding. */
-    public static final boolean ENABLE_PATHFINDING_OPTIMIZATION = true;
-    
-    /** Ativa cache inteligente para pathfinding. */
-    public static final boolean USE_SMART_CACHE = true;
-
-    /** Simplifica verificações de colisão durante o pathfinding. */
-    public static final boolean SIMPLIFY_COLLISION = true;
-
-    /** Reduz cálculos de pathfinding para entidades fora da tela. */
-    public static final boolean REDUCE_OFFSCREEN_PATHFINDING = true;
-
-    /** Tamanho máximo do cache de paths. */
-    public static final int PATH_CACHE_SIZE = 128;
-
-    /** Intervalo de atualização de pathfinding em ticks. */
-    public static final int PATH_UPDATE_INTERVAL_TICKS = 10;
-
-    /** Distância máxima para considerar atualização de pathfinding. */
-    public static final int PATH_UPDATE_DISTANCE = 32;
-
+    public boolean enablePathfindingOptimization = true;
+    public boolean useSmartCache = true;
+    public boolean simplifyCollision = true;
+    public boolean reduceOffscreenPathfinding = true;
+    public int pathCacheSize = 128;
+    public int pathUpdateIntervalTicks = 10;
+    public int pathUpdateDistance = 32;
 
     // ================== Particle Optimizer (Client-side) ================== //
-    /** Ativa a otimização de partículas, incluindo culling e LOD. */
-    public static final boolean ENABLE_PARTICLE_OPTIMIZATION = true;
-
-    /** Ativa Nível de Detalhe (LOD) para partículas. */
-    public static final boolean ENABLE_PARTICLE_LOD = true;
-
-    /** Distância para aplicar LOD em partículas. */
-    public static final int PARTICLE_LOD_DISTANCE = 32;
+    public boolean enableParticleOptimization = true;
+    public boolean enableParticleLOD = true;
+    public int particleLODDistance = 32;
+    public double maxRenderDistanceSq = 128 * 128; // Adicionado aqui para ser configurável
+    public double maxTickDistanceSq = 128 * 128; // Adicionado aqui para ser configurável
 
 
     // ================== Hud Optimizer (Client-side) ================== //
-    /** Ativa a otimização geral da HUD. */
-    public static final boolean ENABLE_HUD_OPTIMIZATION = true;
-
-    /** Ativa o cache específico para Debug HUD (F3). */
-    public static final boolean CACHE_DEBUG_HUD = true;
-
-    /** Reduz atualizações redundantes de elementos da HUD. */
-    public static final boolean REDUCE_HUD_UPDATES = true;
-
-    /** Ativa cache de fontes usadas na HUD. */
-    public static final boolean ENABLE_FONT_CACHING = true;
-
-    /** Intervalo de atualização da HUD em ticks. */
-    public static final int HUD_UPDATE_INTERVAL_TICKS = 5;
-
-    /** Ativa skip da renderização de HUD baseado em delta de tempo. */
-    public static final boolean SKIP_HUD_RENDER = true;
-
-    /** Ativa adaptação dinâmica de intervalos de cache baseado no FPS. */
-    public static final boolean ADAPTIVE_HUD_OPTIMIZATION = true;
-
+    public boolean enableHudOptimization = true;
+    public boolean cacheDebugHud = true;
+    public boolean reduceHudUpdates = true;
+    public boolean enableFontCaching = true;
+    public int hudUpdateIntervalTicks = 5;
+    public boolean skipHudRender = true;
+    public boolean adaptiveHudOptimization = true;
 }
