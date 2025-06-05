@@ -5,8 +5,9 @@
 	"client": [
 	    "ParticleMixin",
 	    "ParticleAccessor",
-            "DebugHudMixin",
-	    "ChunkRenderMixin"
+        "DebugHudMixin",
+	    "ChunkRenderMixin",
+		"ScreenMixin"
 	],
 	"injectors": {
 		"defaultRequire": 1
