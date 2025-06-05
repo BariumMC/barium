@@ -77,11 +77,14 @@ public class BariumConfig {
 
     // ================== Chunk & Block Entity Optimizer (Client-side) ================== //
     /** Ativa otimizações gerais relacionadas a chunks e renderização de blocos. */
-    public static final boolean ENABLE_CHUNK_OPTIMIZATION = true; // Nova flag
+    public static final boolean ENABLE_CHUNK_OPTIMIZATION = true;
 
     /** Ativa culling de entidades de bloco (baús, fornalhas, etc.) */
-    public static final boolean ENABLE_BLOCK_ENTITY_CULLING = true; // Nova flag
+    public static final boolean ENABLE_BLOCK_ENTITY_CULLING = true;
 
     /** Distância quadrada máxima para renderizar entidades de bloco. */
-    public static final double MAX_BLOCK_ENTITY_RENDER_DISTANCE_SQ = 64 * 64; // Nova flag (ex: 64 blocos de distância)
+    public static final double MAX_BLOCK_ENTITY_RENDER_DISTANCE_SQ = 64 * 64;
+
+    /** Ativa o culling de chunks baseado na frustum de visão (culling de cone). */
+    public static final boolean ENABLE_FRUSTUM_CHUNK_CULLING = true;
 }
