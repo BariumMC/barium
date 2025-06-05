@@ -3,7 +3,7 @@ package com.barium.client.optimization.gui;
 import com.barium.BariumMod;
 import com.barium.config.BariumConfig;
 import net.minecraft.client.gui.screen.Screen; // Exemplo para Screen
-import net.minecraft.client.gui.widget.AbstractWidget; // Exemplo para AbstractWidget
+// import net.minecraft.client.gui.widget.AbstractWidget; // Removido: Causava erro de compilação
 
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.Map;
