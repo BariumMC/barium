@@ -50,7 +50,8 @@ public class ChunkRenderMixin {
 
         // Calcula o índice local do chunk na grade de renderização
         int minChunkX = ChunkRenderManager.getMinRenderChunkX();
-        int minChunkZ = ChunkRenderManager.HgetMinRenderChunkZ();
+        // CORRIGIDO: O nome do método estava incorreto (HgetMinRenderChunkZ para getMinRenderChunkZ)
+        int minChunkZ = ChunkRenderManager.getMinRenderChunkZ(); 
         int gridSize = ChunkRenderManager.getRenderGridSize();
 
         int localX = chunkPos.x - minChunkX;
