@@ -5,7 +5,7 @@
 	"client": [
 	    "ParticleMixin",
         "DebugHudMixin",
-		"BlockEntityRendererMixin"
+		"ChunkRenderMixin"
 	],
 	"injectors": {
 		"defaultRequire": 1
