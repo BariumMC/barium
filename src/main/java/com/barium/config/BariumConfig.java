@@ -13,7 +13,7 @@ public class BariumConfig {
     // ================== Pathfinding Optimizer ================== //
     /** Ativa a otimização de pathfinding. */
     public static final boolean ENABLE_PATHFINDING_OPTIMIZATION = true;
-
+    
     /** Ativa cache inteligente para pathfinding. */
     public static final boolean USE_SMART_CACHE = true;
 
@@ -35,13 +35,19 @@ public class BariumConfig {
 
     // ================== Particle Optimizer (Client-side) ================== //
     /** Ativa a otimização de partículas, incluindo culling e LOD. */
-    public static final boolean ENABLE_PARTICLE_OPTIMIZATION = true;
+    public static final boolean ENABLE_PARTICLE_OPTIMIZATION = true; // Adicionado
 
     /** Ativa Nível de Detalhe (LOD) para partículas. */
-    public static final boolean ENABLE_PARTICLE_LOD = true;
+    public static final boolean ENABLE_PARTICLE_LOD = true; // Adicionado
 
     /** Distância para aplicar LOD em partículas. */
-    public static final int PARTICLE_LOD_DISTANCE = 32;
+    public static final int PARTICLE_LOD_DISTANCE = 32; // Adicionado
+
+    /** Distância quadrada máxima para renderizar partículas. */
+    public static final double MAX_RENDER_DISTANCE_SQ = 128 * 128; // Adicionado
+
+    /** Distância quadrada máxima para tick de partículas. */
+    public static final double MAX_TICK_DISTANCE_SQ = 128 * 128; // Adicionado
 
 
     // ================== Hud Optimizer (Client-side) ================== //
@@ -63,10 +69,10 @@ public class BariumConfig {
     /** Ativa skip da renderização de HUD baseado em delta de tempo. */
     public static final boolean SKIP_HUD_RENDER = true;
 
-    /** Ativa skip da renderização do Debug HUD (F3) baseado em delta de tempo. */
-    public static final boolean SKIP_DEBUG_HUD_RENDER = true; // Nova flag para controle mais granular
-
     /** Ativa adaptação dinâmica de intervalos de cache baseado no FPS. */
     public static final boolean ADAPTIVE_HUD_OPTIMIZATION = true;
+
+    /** Ativa skip da renderização do Debug HUD (F3) baseado em delta de tempo. */
+    public static final boolean SKIP_DEBUG_HUD_RENDER = true;
 
 }
