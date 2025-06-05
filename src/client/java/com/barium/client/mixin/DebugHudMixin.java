@@ -14,33 +14,35 @@ public abstract class DebugHudMixin {
 
     @Inject(method = "getLeftText()Ljava/util/List;", at = @At("HEAD"), cancellable = true)
     private void barium$getLeftTextHead(CallbackInfoReturnable<List<String>> cir) {
-        if (HudOptimizer.shouldSkipRender("left")) {
-            cir.setReturnValue(HudOptimizer.getCachedDebugHudText("left"));
+        // Usar "debug_left" para que shouldSkipRender possa aplicar lógica específica para o Debug HUD
+        if (HudOptimizer.shouldSkipRender("debug_left")) {
+            cir.setReturnValue(HudOptimizer.getCachedDebugHudText("debug_left"));
             return;
         }
-        if (!HudOptimizer.shouldRecalculateDebugHud("left")) {
-            cir.setReturnValue(HudOptimizer.getCachedDebugHudText("left"));
+        if (!HudOptimizer.shouldRecalculateDebugHud("debug_left")) {
+            cir.setReturnValue(HudOptimizer.getCachedDebugHudText("debug_left"));
         }
     }
 
     @Inject(method = "getLeftText()Ljava/util/List;", at = @At("RETURN"))
     private void barium$getLeftTextReturn(CallbackInfoReturnable<List<String>> cir) {
-        HudOptimizer.updateDebugHudCache("left", cir.getReturnValue());
+        HudOptimizer.updateDebugHudCache("debug_left", cir.getReturnValue());
     }
 
     @Inject(method = "getRightText()Ljava/util/List;", at = @At("HEAD"), cancellable = true)
     private void barium$getRightTextHead(CallbackInfoReturnable<List<String>> cir) {
-        if (HudOptimizer.shouldSkipRender("right")) {
-            cir.setReturnValue(HudOptimizer.getCachedDebugHudText("right"));
+        // Usar "debug_right" para que shouldSkipRender possa aplicar lógica específica para o Debug HUD
+        if (HudOptimizer.shouldSkipRender("debug_right")) {
+            cir.setReturnValue(HudOptimizer.getCachedDebugHudText("debug_right"));
             return;
         }
-        if (!HudOptimizer.shouldRecalculateDebugHud("right")) {
-            cir.setReturnValue(HudOptimizer.getCachedDebugHudText("right"));
+        if (!HudOptimizer.shouldRecalculateDebugHud("debug_right")) {
+            cir.setReturnValue(HudOptimizer.getCachedDebugHudText("debug_right"));
         }
     }
 
     @Inject(method = "getRightText()Ljava/util/List;", at = @At("RETURN"))
     private void barium$getRightTextReturn(CallbackInfoReturnable<List<String>> cir) {
-        HudOptimizer.updateDebugHudCache("right", cir.getReturnValue());
+        HudOptimizer.updateDebugHudCache("debug_right", cir.getReturnValue());
     }
 }

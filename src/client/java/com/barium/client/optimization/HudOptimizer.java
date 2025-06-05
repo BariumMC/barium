@@ -1,7 +1,7 @@
 package com.barium.client.optimization;
 
 import com.barium.BariumMod;
-import com.barium.config.BariumConfig; // Importar a nova BariumConfig
+import com.barium.config.BariumConfig;
 import net.minecraft.client.MinecraftClient;
 
 import java.util.*;
@@ -29,8 +29,6 @@ public class HudOptimizer {
      */
     public static void init() {
         BariumMod.LOGGER.info("Inicializando HudOptimizer");
-        // Se você implementar um sistema de configuração, carregue-o aqui, ou no BariumClient.java
-        // BariumConfig.loadConfig(); // Exemplo
         clearAllCaches();
     }
 
@@ -38,7 +36,7 @@ public class HudOptimizer {
      * Determina o intervalo de atualização adaptativo com base no FPS atual.
      */
     private static long getAdaptiveInterval(long baseInterval) {
-        if (!BariumConfig.adaptiveHudOptimization) return baseInterval; // Usa a configuração
+        if (!BariumConfig.ADAPTIVE_HUD_OPTIMIZATION) return baseInterval;
         int fps = MinecraftClient.getInstance().getCurrentFps();
         if (fps < 30) {
             return baseInterval * 2; // Aumenta intervalo em low FPS
@@ -52,7 +50,8 @@ public class HudOptimizer {
      * Verifica se o Debug HUD deve ser recalculado.
      */
     public static boolean shouldRecalculateDebugHud(String side) {
-        if (!BariumConfig.enableHudOptimization || !BariumConfig.cacheDebugHud) return true; // Usa a configuração
+        // Usa as flags de configuração para habilitar/desabilitar as otimizações
+        if (!BariumConfig.ENABLE_HUD_OPTIMIZATION || !BariumConfig.CACHE_DEBUG_HUD) return true;
 
         long currentTime = System.currentTimeMillis();
         long lastUpdate = DEBUG_HUD_TIMESTAMPS.getOrDefault(side, 0L);
@@ -63,13 +62,23 @@ public class HudOptimizer {
 
     /**
      * Verifica se deve pular a renderização com base no delta de tempo.
+     * Esta função agora considera especificamente a flag para Debug HUD.
      */
     public static boolean shouldSkipRender(String side) {
-        if (!BariumConfig.skipHudRender) return false; // Usa a configuração
+        // Apenas aplica o SKIP_HUD_RENDER se ele for para o Debug HUD E a flag SKIP_DEBUG_HUD_RENDER for verdadeira
+        if (side.startsWith("debug_") && !BariumConfig.SKIP_DEBUG_HUD_RENDER) {
+            return false;
+        }
+        // Para outros elementos da HUD, usa a flag geral SKIP_HUD_RENDER
+        if (!BariumConfig.SKIP_HUD_RENDER && !side.startsWith("debug_")) {
+             return false;
+        }
 
         long currentTime = System.currentTimeMillis();
         long lastRender = DEBUG_HUD_RENDER_TIMESTAMPS.getOrDefault(side, 0L);
 
+        // Se o FPS for muito baixo, podemos permitir que o HUD atualize mais frequentemente para evitar o piscar
+        // Ou, ajustar o intervalo de 16ms. Para começar, manteremos 16ms mas a flag é crucial.
         if ((currentTime - lastRender) < 16) { // Menos de ~1 frame (a 60fps)
             return true;
         }
@@ -88,7 +97,8 @@ public class HudOptimizer {
      * Atualiza o cache do Debug HUD.
      */
     public static void updateDebugHudCache(String side, List<String> text) {
-        if (!BariumConfig.enableHudOptimization || !BariumConfig.cacheDebugHud) return; // Usa a configuração
+        // Usa as flags de configuração para habilitar/desabilitar as otimizações
+        if (!BariumConfig.ENABLE_HUD_OPTIMIZATION || !BariumConfig.CACHE_DEBUG_HUD) return;
 
         // Compacta as strings, evitando formatações repetidas
         List<String> compacted = new ArrayList<>(text.size());
@@ -104,7 +114,8 @@ public class HudOptimizer {
      * Verifica se um elemento da HUD deve ser atualizado com base no estado.
      */
     public static boolean shouldUpdateHudElement(String elementKey, Supplier<Object> currentStateSupplier) {
-        if (!BariumConfig.enableHudOptimization || !BariumConfig.reduceHudUpdates) return true; // Usa a configuração
+        // Usa as flags de configuração para habilitar/desabilitar as otimizações
+        if (!BariumConfig.ENABLE_HUD_OPTIMIZATION || !BariumConfig.REDUCE_HUD_UPDATES) return true;
 
         long currentTime = System.currentTimeMillis();
         long lastUpdate = HUD_UPDATE_TIMESTAMPS.getOrDefault(elementKey, 0L);
