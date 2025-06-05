@@ -18,7 +18,7 @@ public abstract class BlockEntityRendererMixin<T extends BlockEntity> {
 
     // Reativando a injeção no método 'render' com a nova assinatura para 1.21.5
     @Inject(
-        method = "render(Lnet/minecraft/block/entity/BlockEntity;FLnet/minecraft/client/util/math/MatrixStack;Lnet/minecraft/client/render/VertexConsumerProvider;IILnet/minecraft/util/math/Vec3d;)V",
+        method = "render",
         at = @At("HEAD"),
         cancellable = true
     )
