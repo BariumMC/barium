@@ -35,19 +35,19 @@ public class BariumConfig {
 
     // ================== Particle Optimizer (Client-side) ================== //
     /** Ativa a otimização de partículas, incluindo culling e LOD. */
-    public static final boolean ENABLE_PARTICLE_OPTIMIZATION = true; // Adicionado
+    public static final boolean ENABLE_PARTICLE_OPTIMIZATION = true;
 
     /** Ativa Nível de Detalhe (LOD) para partículas. */
-    public static final boolean ENABLE_PARTICLE_LOD = true; // Adicionado
+    public static final boolean ENABLE_PARTICLE_LOD = true;
 
     /** Distância para aplicar LOD em partículas. */
-    public static final int PARTICLE_LOD_DISTANCE = 32; // Adicionado
+    public static final int PARTICLE_LOD_DISTANCE = 32;
 
     /** Distância quadrada máxima para renderizar partículas. */
-    public static final double MAX_RENDER_DISTANCE_SQ = 128 * 128; // Adicionado
+    public static final double MAX_RENDER_DISTANCE_SQ = 128 * 128;
 
     /** Distância quadrada máxima para tick de partículas. */
-    public static final double MAX_TICK_DISTANCE_SQ = 128 * 128; // Adicionado
+    public static final double MAX_TICK_DISTANCE_SQ = 128 * 128;
 
 
     // ================== Hud Optimizer (Client-side) ================== //
@@ -75,4 +75,13 @@ public class BariumConfig {
     /** Ativa skip da renderização do Debug HUD (F3) baseado em delta de tempo. */
     public static final boolean SKIP_DEBUG_HUD_RENDER = true;
 
+    // ================== Chunk & Block Entity Optimizer (Client-side) ================== //
+    /** Ativa otimizações gerais relacionadas a chunks e renderização de blocos. */
+    public static final boolean ENABLE_CHUNK_OPTIMIZATION = true; // Nova flag
+
+    /** Ativa culling de entidades de bloco (baús, fornalhas, etc.) */
+    public static final boolean ENABLE_BLOCK_ENTITY_CULLING = true; // Nova flag
+
+    /** Distância quadrada máxima para renderizar entidades de bloco. */
+    public static final double MAX_BLOCK_ENTITY_RENDER_DISTANCE_SQ = 64 * 64; // Nova flag (ex: 64 blocos de distância)
 }
