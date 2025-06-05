@@ -4,7 +4,7 @@ import com.barium.client.optimization.ParticleOptimizer;
 import net.minecraft.client.particle.Particle;
 import net.minecraft.client.render.Camera;
 import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.render.VertexConsumer; // Importar VertexConsumer
+import net.minecraft.client.render.VertexConsumer;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -25,7 +25,12 @@ public abstract class ParticleMixin {
     }
 
     // Otimização para pular a renderização (construção da geometria) de partículas distantes
-    @Inject(method = "buildGeometry", at = @At("HEAD"), cancellable = true)
+    // Especifica a assinatura completa do método para evitar o aviso "Unable to determine descriptor"
+    @Inject(
+        method = "buildGeometry(Lnet/minecraft/client/render/VertexConsumer;Lnet/minecraft/client/render/Camera;F)V",
+        at = @At("HEAD"),
+        cancellable = true
+    )
     private void barium$skipDistantRender(VertexConsumer vertexConsumer, Camera camera, float tickDelta, CallbackInfo ci) {
         Particle self = (Particle)(Object)this;
         // Usa a mesma lógica de shouldRenderParticle do ParticleOptimizer
