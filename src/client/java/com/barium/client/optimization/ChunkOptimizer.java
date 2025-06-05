@@ -4,7 +4,7 @@ import com.barium.BariumMod;
 import com.barium.config.BariumConfig;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.render.Camera;
-import net.minecraft.client.render.Frustum; // Importar Frustum
+// import net.minecraft.client.render.Frustum; // Removido, pois getFrustum() não está disponível
 import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.util.math.Box;
 import net.minecraft.util.math.Vec3d;
@@ -45,17 +45,12 @@ public class ChunkOptimizer {
             return false;
         }
 
-        // Culling por Frustum (visível na tela)
-        // Usa getVisibility(Box) em vez de isBoundingBoxInFrustum, que é mais comum em versões mais recentes.
-        // Se este método não estiver disponível, o erro de compilação indicará.
-        Frustum frustum = camera.getFrustum(); // Obtém a frustum da câmera
+        // Culling por Frustum (visível na tela) foi temporariamente desativado
+        // devido à indisponibilidade do método getFrustum() na classe Camera.
+        // Para reativar esta otimização, será necessário encontrar o método correto
+        // para verificar a visibilidade da frustum na versão 1.21.5 do Minecraft.
         
-        // Obtém a caixa delimitadora da entidade de bloco (pode precisar de uma forma mais precisa se o BE tiver um Box personalizado)
-        Box boundingBox = new Box(blockEntity.getPos()); // Crie uma caixa básica no local do BE.
-                                                         // Para BEs com caixas delimitadoras personalizadas, pode ser necessário um Mixin
-                                                         // para obter a caixa real do BE.
-
-        return frustum.isVisible(boundingBox); // Verifica se a caixa delimitadora está visível na frustum da câmera
+        return true; // Retorna sempre true se passar pela checagem de distância
     }
 
     // Comentários sobre outras otimizações de chunk (para referência futura):
