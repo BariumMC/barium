@@ -87,4 +87,7 @@ public class BariumConfig {
 
     /** Ativa o culling de chunks baseado na frustum de visão (culling de cone). */
     public static final boolean ENABLE_FRUSTUM_CHUNK_CULLING = true;
+
+    /** Ativa otimização adaptativa de chunks baseada na velocidade do jogador. */
+    public static final boolean ENABLE_ADAPTIVE_CHUNK_OPTIMIZATION = true; // NOVA FLAG
 }

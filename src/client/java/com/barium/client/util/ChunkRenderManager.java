@@ -1,5 +1,6 @@
-package com.barium.client.util; // Nova localização proposta
+package com.barium.client.util;
 
+import com.barium.config.BariumConfig; // Importar BariumConfig
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.util.math.ChunkPos;
 import net.minecraft.util.math.Vec3d;
@@ -13,9 +14,9 @@ import java.util.concurrent.atomic.AtomicReference;
  */
 public class ChunkRenderManager {
     /** O raio de chunks para sempre renderizar ao redor do jogador. */
-    private static final int CHUNK_BUFFER_RADIUS = 2;
+    private static int chunkBufferRadius = 2; // Agora não é final, pode ser ajustado
 
-    /** Referência atômica para o BitSet representando quais chunks devem ser renderizados. */
+    /** Atomic reference to the BitSet representing which chunks should be rendered. */
     private static final AtomicReference<BitSet> chunksToRender = new AtomicReference<>(new BitSet());
 
     /** As coordenadas X do chunk mínimo no cálculo da frustum. */
@@ -38,11 +39,19 @@ public class ChunkRenderManager {
     /** O último pitch registrado do jogador. */
     private float lastPlayerPitch = 0f;
 
-    /** O limite de distância quadrada para recálculo. */
-    private static final double POSITION_THRESHOLD_SQUARED = 1.0 * 1.0;
+    /** O último vetor de movimento do jogador. */
+    private Vec3d lastPlayerMovement = Vec3d.ZERO; // Para calcular a velocidade
 
-    /** O limite de rotação para recálculo. */
-    private static final float ROTATION_THRESHOLD = 5.0f;
+    /** O limite de distância quadrada para recálculo (pode ser adaptativo). */
+    private static double positionThresholdSquared = 1.0 * 1.0; // Agora não é final
+    /** O limite de rotação para recálculo (pode ser adaptativo). */
+    private static float rotationThreshold = 5.0f; // Agora não é final
+
+    // Limites para ajuste adaptativo
+    private static final double BASE_POSITION_THRESHOLD_SQUARED = 1.0 * 1.0;
+    private static final float BASE_ROTATION_THRESHOLD = 5.0f;
+    private static final int BASE_CHUNK_BUFFER_RADIUS = 2;
+    private static final int FAST_MOVEMENT_CHUNK_BUFFER_RADIUS = 4; // Buffer maior para movimento rápido
 
     /**
      * Determina se os chunks a serem renderizados devem ser recalculados com base no movimento do jogador.
@@ -52,17 +61,75 @@ public class ChunkRenderManager {
      * @return true se o recálculo for necessário, false caso contrário.
      */
     public boolean shouldRecalculate(Vec3d playerPos, float yaw, float pitch) {
-        if (playerPos.squaredDistanceTo(lastPlayerPos) < POSITION_THRESHOLD_SQUARED &&
-                Math.abs(yaw - lastPlayerYaw) < ROTATION_THRESHOLD &&
-                Math.abs(pitch - lastPlayerPitch) < ROTATION_THRESHOLD) {
-            return false;
+        // Calcula a velocidade do jogador
+        Vec3d currentMovement = playerPos.subtract(lastPlayerPos);
+        double speedSquared = currentMovement.lengthSquared();
+
+        if (BariumConfig.ENABLE_ADAPTIVE_CHUNK_OPTIMIZATION) {
+            // Ajusta thresholds e buffer radius baseados na velocidade
+            adjustOptimizationParameters(speedSquared);
+        } else {
+            // Reseta para valores base se a otimização adaptativa estiver desativada
+            resetOptimizationParameters();
+        }
+
+        boolean needsRecalculation = false;
+        if (playerPos.squaredDistanceTo(lastPlayerPos) >= positionThresholdSquared) {
+            needsRecalculation = true;
+        }
+        if (Math.abs(yaw - lastPlayerYaw) >= rotationThreshold || Math.abs(pitch - lastPlayerPitch) >= rotationThreshold) {
+            needsRecalculation = true;
         }
 
         lastPlayerPos = playerPos;
         lastPlayerYaw = yaw;
         lastPlayerPitch = pitch;
-        return true;
+        lastPlayerMovement = currentMovement; // Atualiza o último movimento
+        return needsRecalculation;
     }
+
+    /**
+     * Ajusta dinamicamente os parâmetros de otimização com base na velocidade do jogador.
+     * @param speedSquared A velocidade quadrada do jogador.
+     */
+    private void adjustOptimizationParameters(double speedSquared) {
+        // Exemplos de thresholds de velocidade (ajuste conforme necessário)
+        double walkingSpeedSq = 0.05 * 0.05; // Velocidade de caminhada
+        double runningSpeedSq = 0.1 * 0.1;   // Velocidade de corrida
+        double flyingSpeedSq = 0.5 * 0.5;    // Velocidade de voo
+
+        if (speedSquared > flyingSpeedSq) {
+            // Movimento muito rápido (voo rápido, elytras)
+            positionThresholdSquared = BASE_POSITION_THRESHOLD_SQUARED * 0.25; // Recalcula mais frequentemente
+            rotationThreshold = BASE_ROTATION_THRESHOLD * 0.5f; // Recalcula mais frequentemente
+            chunkBufferRadius = FAST_MOVEMENT_CHUNK_BUFFER_RADIUS; // Aumenta o buffer
+        } else if (speedSquared > runningSpeedSq) {
+            // Movimento rápido (corrida)
+            positionThresholdSquared = BASE_POSITION_THRESHOLD_SQUARED * 0.5;
+            rotationThreshold = BASE_ROTATION_THRESHOLD * 0.75f;
+            chunkBufferRadius = BASE_CHUNK_BUFFER_RADIUS + 1; // Levemente aumenta o buffer
+        } else if (speedSquared > walkingSpeedSq) {
+            // Movimento normal (caminhada)
+            positionThresholdSquared = BASE_POSITION_THRESHOLD_SQUARED;
+            rotationThreshold = BASE_ROTATION_THRESHOLD;
+            chunkBufferRadius = BASE_CHUNK_BUFFER_RADIUS;
+        } else {
+            // Parado ou movimento muito lento
+            positionThresholdSquared = BASE_POSITION_THRESHOLD_SQUARED * 2; // Recalcula menos frequentemente
+            rotationThreshold = BASE_ROTATION_THRESHOLD * 1.5f; // Recalcula menos frequentemente
+            chunkBufferRadius = BASE_CHUNK_BUFFER_RADIUS;
+        }
+    }
+
+    /**
+     * Reseta os parâmetros de otimização para seus valores base.
+     */
+    private void resetOptimizationParameters() {
+        positionThresholdSquared = BASE_POSITION_THRESHOLD_SQUARED;
+        rotationThreshold = BASE_ROTATION_THRESHOLD;
+        chunkBufferRadius = BASE_CHUNK_BUFFER_RADIUS;
+    }
+
 
     /**
      * Calcula quais chunks devem ser renderizados com base na posição e visão do jogador.
@@ -134,10 +201,10 @@ public class ChunkRenderManager {
             }
         }
 
-        // Adiciona chunks de buffer ao redor do jogador
-        for (int dx = -CHUNK_BUFFER_RADIUS; dx <= CHUNK_BUFFER_RADIUS; dx++) {
+        // Adiciona chunks de buffer ao redor do jogador (usando o chunkBufferRadius adaptativo)
+        for (int dx = -chunkBufferRadius; dx <= chunkBufferRadius; dx++) { // Usa o valor adaptativo
             int chunkX = playerChunkX + dx;
-            for (int dz = -CHUNK_BUFFER_RADIUS; dz <= CHUNK_BUFFER_RADIUS; dz++) {
+            for (int dz = -chunkBufferRadius; dz <= chunkBufferRadius; dz++) { // Usa o valor adaptativo
                 int chunkZ = playerChunkZ + dz;
                 
                 // Mapeia coordenadas globais do chunk para coordenadas locais da grade de renderização
