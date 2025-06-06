@@ -2,20 +2,14 @@ package com.barium.client.mixin;
 
 import com.barium.client.optimization.gui.GuiOptimizer;
 import com.barium.config.BariumConfig;
+import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.client.gui.DrawContext; // ALTERADO: Importar DrawContext
 import net.minecraft.text.Text;
-
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
-
-/**
- * Mixin para a classe Screen, otimizando a renderização da tela.
- * Implementa caching para reduzir redesenhos desnecessários de elementos da GUI.
- */
 
 @Mixin(Screen.class)
 public abstract class ScreenMixin {
@@ -24,34 +18,41 @@ public abstract class ScreenMixin {
     @Shadow public int height;
     @Shadow public Text title;
 
-    // CORRIGIDO: Assinatura do método render para 1.21.5 (usando DrawContext)
-    @Inject(
-        method = "render(Lnet/minecraft/client/gui/DrawContext;IIF)V",
-        at = @At("HEAD"),
-        cancellable = true
-    )
-    private void barium$optimizeScreenRender(DrawContext context, int mouseX, int mouseY, float delta, CallbackInfo ci) { // ALTERADO: Parâmetro 'matrices' para 'context'
+    @Inject(method = "render", at = @At("HEAD"), cancellable = true)
+    private void barium$cacheOrRenderScreen(DrawContext context, int mouseX, int mouseY, float delta, CallbackInfo ci) {
         if (!BariumConfig.ENABLE_GUI_OPTIMIZATION) {
             return;
         }
 
-        String currentStateHash = String.format("%d_%d_%s", width, height, title.getString());
+        Screen self = (Screen) (Object) this;
+        // Criamos um hash com mais informações para detectar mudanças no mouse.
+        String currentStateHash = String.format("%d_%d_%s_%d_%d", width, height, title.getString(), mouseX, mouseY);
 
-        if (!GuiOptimizer.shouldUpdateGuiElement((Screen)(Object)this, currentStateHash)) {
-            // Se não devemos atualizar, simplesmente renderizamos a última versão em cache.
-            // Infelizmente, não temos um "framebuffer" em cache, então cancelar é a melhor opção.
-            // Para telas dinâmicas, isso pode causar artefatos visuais.
-            // Uma melhoria seria armazenar e redesenhar os draw calls, mas isso é muito complexo.
-            // Por enquanto, cancelar a renderização é a abordagem mais simples.
+        if (GuiOptimizer.shouldUseCache(self, currentStateHash)) {
+            // Se o cache é válido, desenhamos a imagem salva e cancelamos o resto.
+            GuiOptimizer.drawCachedGui();
             ci.cancel();
+        } else {
+            // Se o cache é inválido, começamos a gravar no nosso framebuffer.
+            GuiOptimizer.beginCacheRender();
         }
     }
 
-    // NOVO MÉTODO: Limpa o cache quando a tela é fechada.
-    @Inject(method = "onClosed()V", at = @At("HEAD"))
-    private void barium$onScreenClosed(CallbackInfo ci) {
+    // Injeta no final da renderização para finalizar a gravação do cache.
+    @Inject(method = "render", at = @At("RETURN"))
+    private void barium$endCacheRender(DrawContext context, int mouseX, int mouseY, float delta, CallbackInfo ci) {
         if (BariumConfig.ENABLE_GUI_OPTIMIZATION) {
-            GuiOptimizer.clearCache();
+            GuiOptimizer.endCacheRender();
+            // Agora que a renderização foi para o cache, desenhamos o cache na tela.
+            GuiOptimizer.drawCachedGui();
+        }
+    }
+
+    // Injeta quando a tela é fechada/removida para limpar os recursos.
+    @Inject(method = "removed", at = @At("HEAD"))
+    private void barium$onScreenRemoved(CallbackInfo ci) {
+        if (BariumConfig.ENABLE_GUI_OPTIMIZATION) {
+            GuiOptimizer.invalidateCache();
         }
     }
 }

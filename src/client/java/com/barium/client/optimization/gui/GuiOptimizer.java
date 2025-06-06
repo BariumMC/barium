@@ -2,71 +2,93 @@ package com.barium.client.optimization.gui;
 
 import com.barium.BariumMod;
 import com.barium.config.BariumConfig;
-import net.minecraft.client.gui.screen.Screen; // Exemplo para Screen
-// import net.minecraft.client.gui.widget.AbstractWidget; // Removido: Causava erro de compilação
+import com.mojang.blaze3d.systems.RenderSystem;
+import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.gl.Framebuffer;
+import net.minecraft.client.gl.SimpleFramebuffer;
+import net.minecraft.client.gui.DrawContext;
+import net.minecraft.client.gui.screen.Screen;
 
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
-/**
- * Otimiza a renderização de elementos da GUI e telas, reduzindo recálculos desnecessários
- * e redesenhos repetitivos.
- */
 public class GuiOptimizer {
 
-    // Mapas para armazenar o último estado e o timestamp da última atualização/renderização
-    // A chave pode ser uma combinação do tipo de elemento e seu hash/ID único.
-    private static final Map<Integer, Long> lastRenderTimestamp = new ConcurrentHashMap<>();
     private static final Map<Integer, Object> lastStateHash = new ConcurrentHashMap<>();
+    private static Framebuffer guiCacheFramebuffer;
+    private static boolean cacheIsValid = false;
 
-    /**
-     * Inicializa o GuiOptimizer.
-     */
     public static void init() {
         BariumMod.LOGGER.info("Inicializando GuiOptimizer");
-        clearCache();
     }
 
-    /**
-     * Verifica se um elemento da GUI deve ser redesenhado ou ter seu layout recalculado.
-     * @param elementId Um ID único para o elemento (e.g., hashCode do objeto, ou uma combinação de ID e tipo).
-     * @param currentStateHash Um hash/representação do estado atual do elemento.
-     * @return true se o elemento precisar de atualização, false caso contrário.
-     */
-    public static boolean shouldUpdateGuiElement(Object element, Object currentStateHash) {
+    // Verifica se devemos redesenhar a GUI ou usar o cache
+    public static boolean shouldUseCache(Screen screen, Object currentStateHash) {
         if (!BariumConfig.ENABLE_GUI_OPTIMIZATION) {
-            return true; // Se a otimização estiver desativada, sempre permite atualização
+            return false;
         }
 
-        int elementId = element.hashCode(); // Usa o hashCode do objeto como ID simples
+        int screenId = screen.hashCode();
+        Object cachedState = lastStateHash.get(screenId);
 
-        long currentTime = System.currentTimeMillis();
-        long lastUpdate = GuiOptimizer.lastRenderTimestamp.getOrDefault(elementId, 0L);
-        Object cachedState = GuiOptimizer.lastStateHash.get(elementId);
-
-        // Verifica o intervalo de tempo mínimo entre atualizações
-        if ((currentTime - lastUpdate) < BariumConfig.GUI_UPDATE_INTERVAL_MS) {
-            // Se o tempo mínimo não passou E o estado não mudou, não atualiza
-            if (currentStateHash.equals(cachedState)) {
-                return false;
-            }
+        if (cacheIsValid && currentStateHash.equals(cachedState)) {
+            // O estado não mudou e o cache é válido, então podemos usar o cache.
+            return true;
         }
 
-        // Atualiza o cache com o novo estado e timestamp
-        GuiOptimizer.lastRenderTimestamp.put(elementId, currentTime);
-        GuiOptimizer.lastStateHash.put(elementId, currentStateHash);
-
-        // Se o estado mudou ou o tempo mínimo passou, permite a atualização
-        return !currentStateHash.equals(cachedState);
+        // O estado mudou ou o cache é inválido. Devemos redesenhar.
+        lastStateHash.put(screenId, currentStateHash);
+        cacheIsValid = false; // Invalida o cache para forçar um redesenho.
+        return false;
     }
 
-    /**
-     * Limpa o cache do otimizador da GUI.
-     * Deve ser chamado ao abrir ou fechar telas importantes, ou mudar de mundo.
-     */
-    public static void clearCache() {
-        lastRenderTimestamp.clear();
+    // Invalida o cache. Chamado quando a tela é fechada ou redimensionada.
+    public static void invalidateCache() {
+        cacheIsValid = false;
         lastStateHash.clear();
-        BariumMod.LOGGER.info("Cache do GuiOptimizer limpo.");
+        if (guiCacheFramebuffer != null) {
+            guiCacheFramebuffer.delete();
+            guiCacheFramebuffer = null;
+        }
+    }
+
+    // Prepara o framebuffer para receber o desenho da GUI.
+    public static void beginCacheRender() {
+        if (!BariumConfig.ENABLE_GUI_OPTIMIZATION) return;
+
+        MinecraftClient client = MinecraftClient.getInstance();
+        int width = client.getWindow().getFramebufferWidth();
+        int height = client.getWindow().getFramebufferHeight();
+
+        // Cria ou recria o framebuffer se necessário.
+        if (guiCacheFramebuffer == null || guiCacheFramebuffer.textureWidth != width || guiCacheFramebuffer.textureHeight != height) {
+            if (guiCacheFramebuffer != null) {
+                guiCacheFramebuffer.delete();
+            }
+            // O true final significa que ele terá um buffer de profundidade.
+            guiCacheFramebuffer = new SimpleFramebuffer(width, height, true, MinecraftClient.IS_SYSTEM_MAC);
+        }
+
+        // Redireciona o desenho para o nosso framebuffer.
+        guiCacheFramebuffer.beginWrite(true);
+    }
+
+    // Finaliza a captura do desenho da GUI.
+    public static void endCacheRender() {
+        if (!BariumConfig.ENABLE_GUI_OPTIMIZATION || guiCacheFramebuffer == null) return;
+
+        // Retorna o desenho para a tela principal.
+        MinecraftClient.getInstance().getFramebuffer().beginWrite(true);
+        cacheIsValid = true; // O cache agora contém a imagem mais recente.
+    }
+
+    // Desenha o conteúdo do nosso framebuffer cacheado diretamente na tela.
+    public static void drawCachedGui() {
+        if (!BariumConfig.ENABLE_GUI_OPTIMIZATION || guiCacheFramebuffer == null || !cacheIsValid) return;
+
+        // Desenha a textura do nosso framebuffer na tela inteira.
+        RenderSystem.disableDepthTest();
+        guiCacheFramebuffer.draw(guiCacheFramebuffer.textureWidth, guiCacheFramebuffer.textureHeight);
+        RenderSystem.enableDepthTest();
     }
 }

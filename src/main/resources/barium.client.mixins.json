@@ -6,8 +6,7 @@
 	    "ParticleMixin",
 	    "ParticleAccessor",
         "DebugHudMixin",
-	    "ChunkRenderMixin",
-		"resource.TextureManagerMixin"
+	    "ChunkRenderMixin"
 	],
 	"injectors": {
 		"defaultRequire": 1
