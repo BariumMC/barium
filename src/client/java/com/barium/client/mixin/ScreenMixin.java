@@ -5,15 +5,8 @@ import com.barium.config.BariumConfig;
 import net.minecraft.client.gl.Framebuffer;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.client.render.GameRenderer;
-import net.minecraft.client.render.Tessellator;
-// CORREÇÃO DAS IMPORTAÇÕES:
-import com.mojang.blaze3d.vertex.VertexFormat;
-import com.mojang.blaze3d.vertex.VertexFormats;
 import net.minecraft.text.Text;
 
-import com.mojang.blaze3d.systems.RenderSystem;
-import org.joml.Matrix4f;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
@@ -57,25 +50,15 @@ public abstract class ScreenMixin {
         }
     }
 
-    // Método helper para desenhar o conteúdo do framebuffer.
+    /**
+     * Usa o método 'blit' do DrawContext para desenhar o conteúdo do framebuffer.
+     * Esta é a forma limpa e moderna, que não precisa de Tessellator ou VertexFormats.
+     */
     private void drawCachedGui(DrawContext context) {
         Framebuffer framebuffer = GuiOptimizer.getFramebuffer();
         if (framebuffer == null) return;
 
-        RenderSystem.setShader(GameRenderer::getPositionTexProgram);
-        RenderSystem.setShaderTexture(0, framebuffer.getColorAttachment());
-        RenderSystem.enableBlend();
-        
-        Tessellator tessellator = Tessellator.getInstance();
-        Matrix4f matrix = context.getMatrices().peek().getPositionMatrix();
-
-        tessellator.getBuffer().begin(VertexFormat.DrawMode.QUADS, VertexFormats.POSITION_TEXTURE_COLOR);
-        tessellator.getBuffer().vertex(matrix, 0, this.height, 0).texture(0, 0).color(255, 255, 255, 255).next();
-        tessellator.getBuffer().vertex(matrix, this.width, this.height, 0).texture(1, 0).color(255, 255, 255, 255).next();
-        tessellator.getBuffer().vertex(matrix, this.width, 0, 0).texture(1, 1).color(255, 255, 255, 255).next();
-        tessellator.getBuffer().vertex(matrix, 0, 0, 0).texture(0, 1).color(255, 255, 255, 255).next();
-        tessellator.draw();
-
-        RenderSystem.disableBlend();
+        int textureId = framebuffer.getColorAttachment();
+        context.blit(textureId, 0, 0, 0, (float)this.height, (float)this.width, (float)-this.height);
     }
 }
