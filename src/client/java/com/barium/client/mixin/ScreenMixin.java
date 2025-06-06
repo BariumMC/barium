@@ -1,3 +1,22 @@
+package com.barium.client.mixin;
+
+import com.barium.client.optimization.gui.GuiOptimizer;
+import com.barium.config.BariumConfig;
+import net.minecraft.client.gui.screen.Screen;Add commentMore actions
+import net.minecraft.client.gui.DrawContext; // ALTERADO: Importar DrawContext
+import net.minecraft.text.Text;
+
+import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Shadow;
+import org.spongepowered.asm.mixin.injection.At;
+import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+
+/**
+ * Mixin para a classe Screen, otimizando a renderização da tela.
+ * Implementa caching para reduzir redesenhos desnecessários de elementos da GUI.
+ */
+
 @Mixin(Screen.class)
 public abstract class ScreenMixin {
 
