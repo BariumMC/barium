@@ -6,7 +6,8 @@
 	    "ParticleMixin",
 	    "ParticleAccessor",
         "DebugHudMixin",
-	    "ChunkRenderMixin"
+	    "ChunkRenderMixin",
+		"ScreenMixin"
 	],
 	"injectors": {
 		"defaultRequire": 1

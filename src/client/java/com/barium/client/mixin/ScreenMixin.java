@@ -7,8 +7,9 @@ import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.render.GameRenderer;
 import net.minecraft.client.render.Tessellator;
-import net.minecraft.client.render.VertexFormat;
-import net.minecraft.client.render.VertexFormats;
+// CORREÇÃO DAS IMPORTAÇÕES:
+import com.mojang.blaze3d.vertex.VertexFormat;
+import com.mojang.blaze3d.vertex.VertexFormats;
 import net.minecraft.text.Text;
 
 import com.mojang.blaze3d.systems.RenderSystem;
@@ -61,7 +62,6 @@ public abstract class ScreenMixin {
         Framebuffer framebuffer = GuiOptimizer.getFramebuffer();
         if (framebuffer == null) return;
 
-        // CORREÇÃO: Lógica de desenho usando a API moderna.
         RenderSystem.setShader(GameRenderer::getPositionTexProgram);
         RenderSystem.setShaderTexture(0, framebuffer.getColorAttachment());
         RenderSystem.enableBlend();
@@ -69,7 +69,6 @@ public abstract class ScreenMixin {
         Tessellator tessellator = Tessellator.getInstance();
         Matrix4f matrix = context.getMatrices().peek().getPositionMatrix();
 
-        // Desenha um retângulo texturizado que cobre a tela inteira.
         tessellator.getBuffer().begin(VertexFormat.DrawMode.QUADS, VertexFormats.POSITION_TEXTURE_COLOR);
         tessellator.getBuffer().vertex(matrix, 0, this.height, 0).texture(0, 0).color(255, 255, 255, 255).next();
         tessellator.getBuffer().vertex(matrix, this.width, this.height, 0).texture(1, 0).color(255, 255, 255, 255).next();
