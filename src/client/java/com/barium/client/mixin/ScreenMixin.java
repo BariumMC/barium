@@ -2,7 +2,7 @@ package com.barium.client.mixin;
 
 import com.barium.client.optimization.gui.GuiOptimizer;
 import com.barium.config.BariumConfig;
-import net.minecraft.client.gui.screen.Screen;Add commentMore actions
+import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.DrawContext; // ALTERADO: Importar DrawContext
 import net.minecraft.text.Text;
 
