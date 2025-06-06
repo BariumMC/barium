@@ -2,9 +2,17 @@ package com.barium.client.mixin;
 
 import com.barium.client.optimization.gui.GuiOptimizer;
 import com.barium.config.BariumConfig;
+import net.minecraft.client.gl.Framebuffer;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.Screen;
+import net.minecraft.client.render.GameRenderer;
+import net.minecraft.client.render.Tessellator;
+import net.minecraft.client.render.VertexFormat;
+import net.minecraft.client.render.VertexFormats;
 import net.minecraft.text.Text;
+
+import com.mojang.blaze3d.systems.RenderSystem;
+import org.joml.Matrix4f;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
@@ -20,39 +28,55 @@ public abstract class ScreenMixin {
 
     @Inject(method = "render", at = @At("HEAD"), cancellable = true)
     private void barium$cacheOrRenderScreen(DrawContext context, int mouseX, int mouseY, float delta, CallbackInfo ci) {
-        if (!BariumConfig.ENABLE_GUI_OPTIMIZATION) {
-            return;
-        }
+        if (!BariumConfig.ENABLE_GUI_OPTIMIZATION) return;
 
         Screen self = (Screen) (Object) this;
-        // Criamos um hash com mais informações para detectar mudanças no mouse.
         String currentStateHash = String.format("%d_%d_%s_%d_%d", width, height, title.getString(), mouseX, mouseY);
 
         if (GuiOptimizer.shouldUseCache(self, currentStateHash)) {
-            // Se o cache é válido, desenhamos a imagem salva e cancelamos o resto.
-            GuiOptimizer.drawCachedGui();
+            drawCachedGui(context);
             ci.cancel();
         } else {
-            // Se o cache é inválido, começamos a gravar no nosso framebuffer.
             GuiOptimizer.beginCacheRender();
         }
     }
 
-    // Injeta no final da renderização para finalizar a gravação do cache.
     @Inject(method = "render", at = @At("RETURN"))
     private void barium$endCacheRender(DrawContext context, int mouseX, int mouseY, float delta, CallbackInfo ci) {
         if (BariumConfig.ENABLE_GUI_OPTIMIZATION) {
             GuiOptimizer.endCacheRender();
-            // Agora que a renderização foi para o cache, desenhamos o cache na tela.
-            GuiOptimizer.drawCachedGui();
+            drawCachedGui(context);
         }
     }
 
-    // Injeta quando a tela é fechada/removida para limpar os recursos.
     @Inject(method = "removed", at = @At("HEAD"))
     private void barium$onScreenRemoved(CallbackInfo ci) {
         if (BariumConfig.ENABLE_GUI_OPTIMIZATION) {
             GuiOptimizer.invalidateCache();
         }
+    }
+
+    // Método helper para desenhar o conteúdo do framebuffer.
+    private void drawCachedGui(DrawContext context) {
+        Framebuffer framebuffer = GuiOptimizer.getFramebuffer();
+        if (framebuffer == null) return;
+
+        // CORREÇÃO: Lógica de desenho usando a API moderna.
+        RenderSystem.setShader(GameRenderer::getPositionTexProgram);
+        RenderSystem.setShaderTexture(0, framebuffer.getColorAttachment());
+        RenderSystem.enableBlend();
+        
+        Tessellator tessellator = Tessellator.getInstance();
+        Matrix4f matrix = context.getMatrices().peek().getPositionMatrix();
+
+        // Desenha um retângulo texturizado que cobre a tela inteira.
+        tessellator.getBuffer().begin(VertexFormat.DrawMode.QUADS, VertexFormats.POSITION_TEXTURE_COLOR);
+        tessellator.getBuffer().vertex(matrix, 0, this.height, 0).texture(0, 0).color(255, 255, 255, 255).next();
+        tessellator.getBuffer().vertex(matrix, this.width, this.height, 0).texture(1, 0).color(255, 255, 255, 255).next();
+        tessellator.getBuffer().vertex(matrix, this.width, 0, 0).texture(1, 1).color(255, 255, 255, 255).next();
+        tessellator.getBuffer().vertex(matrix, 0, 0, 0).texture(0, 1).color(255, 255, 255, 255).next();
+        tessellator.draw();
+
+        RenderSystem.disableBlend();
     }
 }
