@@ -8,7 +8,6 @@
 		"DebugHudMixin",
 		"ParticleAccessor",
 		"ParticleMixin",
-		"WorldRendererAccessor",
 		"WorldRendererMixin",
 		"gui.HandledScreenMixin"
 	],
