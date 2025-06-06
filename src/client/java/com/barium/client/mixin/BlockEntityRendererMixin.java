@@ -16,7 +16,9 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 @Mixin(BlockEntityRenderer.class)
 public abstract class BlockEntityRendererMixin<T extends BlockEntity> {
 
-    // Reativando a injeção no método 'render' com a nova assinatura para 1.21.5
+    // NOTA: Esta otimização agora é secundária à otimização em WorldRendererMixin,
+    // que é mais eficiente. No entanto, mantemos esta como uma camada de segurança
+    // e para casos onde a entidade de bloco possa ser renderizada por outros meios.
     @Inject(
         method = "render",
         at = @At("HEAD"),
@@ -26,7 +28,7 @@ public abstract class BlockEntityRendererMixin<T extends BlockEntity> {
                                               VertexConsumerProvider vertexConsumers, int light, int overlay,
                                               Vec3d cameraPos, // O novo argumento cameraPos
                                               CallbackInfo ci) {
-        // Obter a câmera para usar no ChunkOptimizer (ainda precisamos dela para o frustum culling, mesmo que desativado)
+        // A câmera é necessária para a lógica de culling
         Camera camera = MinecraftClient.getInstance().gameRenderer.getCamera();
 
         if (!ChunkOptimizer.shouldRenderBlockEntity(entity, camera)) {
