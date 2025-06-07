@@ -12,8 +12,8 @@ import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Redirect;
 
+import java.util.Collection;
 import java.util.stream.Collectors;
-import java.util.stream.StreamSupport;
 
 @Mixin(WorldRenderer.class)
 public abstract class WorldRendererMixin {
@@ -24,7 +24,7 @@ public abstract class WorldRendererMixin {
      * Redireciona a chamada que obtém a lista de entidades de bloco a serem renderizadas.
      * Em vez de obter todas as entidades de bloco do mundo, nós pré-filtramos a lista,
      * retornando apenas aquelas que devem ser renderizadas de acordo com nossa lógica de culling.
-     * Isso reduz drasticamente a carga no loop de renderização principal.
+     * Isso é mais eficiente e evita a chamada ao método que estava causando erro de compilação.
      */
     @Redirect(
         method = "renderBlockEntities",
@@ -34,17 +34,18 @@ public abstract class WorldRendererMixin {
         )
     )
     private Iterable<BlockEntity> barium$cullBlockEntityList(ClientWorld world) {
-        // Obter a câmera de forma segura
         Camera camera = this.client.gameRenderer.getCamera();
 
-        // Se a câmera não estiver disponível, retorne a lista original para evitar crashes.
+        // Acessa o mapa de entidades de bloco diretamente através de um accessor
+        // para evitar a chamada de método problemática e recursão.
+        Collection<BlockEntity> allBlockEntities = ((ClientWorldAccessor) world).getBlockEntityMap().values();
+
         if (camera == null) {
-            return world.getBlockEntities();
+            return allBlockEntities; // Retorna a coleção original se a câmera não estiver pronta
         }
 
         // Filtra a lista de entidades de bloco usando um stream.
-        // Isso é mais limpo e eficaz do que iterar e verificar dentro do loop de renderização.
-        return StreamSupport.stream(world.getBlockEntities().spliterator(), false)
+        return allBlockEntities.stream()
             .filter(blockEntity -> ChunkOptimizer.shouldRenderBlockEntity(blockEntity, camera))
             .collect(Collectors.toList());
     }
