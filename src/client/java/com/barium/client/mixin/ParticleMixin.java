@@ -29,7 +29,7 @@ public abstract class ParticleMixin {
     // VERSÃO FINAL CORRIGIDA: Injeção no método 'render', que substituiu 'buildGeometry'.
     // O alvo da injeção agora é o método que você encontrou na documentação.
     @Inject(
-        method = "render(Lnet/minecraft/client/render/VertexConsumer;Lnet/minecraft/client/render/Camera;F)V",
+        method = "render",
         at = @At("HEAD"),
         cancellable = true
     )
