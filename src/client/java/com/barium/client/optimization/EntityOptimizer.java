@@ -48,4 +48,43 @@ public class EntityOptimizer {
 
         return distanceSq <= BariumConfig.ANIMATION_CULL_DISTANCE_SQ;
     }
+        // Marcador de contexto para a otimização de brilho de encantamento
+    public static boolean isRenderingDroppedItem = false;
+    public static Entity currentlyRenderingEntity = null;
+
+    /**
+     * Determina se o conteúdo de uma moldura deve ser renderizado com base na distância.
+     */
+    public static boolean shouldRenderItemFrameContent(Entity itemFrameEntity) {
+        if (!BariumConfig.ENABLE_ITEM_FRAME_CULLING) return true;
+
+        Camera camera = MinecraftClient.getInstance().gameRenderer.getCamera();
+        double distanceSq = itemFrameEntity.getPos().squaredDistanceTo(camera.getPos());
+        return distanceSq <= BariumConfig.ITEM_FRAME_CULL_DISTANCE_SQ;
+    }
+
+    /**
+     * Determina se o nome de uma entidade deve ser renderizado.
+     */
+    public static boolean shouldRenderNameTag(Entity entity) {
+        if (!BariumConfig.ENABLE_NAME_TAG_CULLING) return true;
+
+        Camera camera = MinecraftClient.getInstance().gameRenderer.getCamera();
+        double distanceSq = entity.getPos().squaredDistanceTo(camera.getPos());
+        return distanceSq <= BariumConfig.NAME_TAG_CULL_DISTANCE_SQ;
+    }
+
+    /**
+     * Determina se o brilho de um item no chão deve ser renderizado.
+     */
+    public static boolean shouldRenderDroppedItemGlint() {
+        if (!isRenderingDroppedItem || !BariumConfig.ENABLE_DROPPED_ITEM_GLINT_CULLING) {
+            return true;
+        }
+        if (currentlyRenderingEntity == null) return true;
+
+        Camera camera = MinecraftClient.getInstance().gameRenderer.getCamera();
+        double distanceSq = currentlyRenderingEntity.getPos().squaredDistanceTo(camera.getPos());
+        return distanceSq <= BariumConfig.DROPPED_ITEM_GLINT_CULL_DISTANCE_SQ;
+    }
 }
