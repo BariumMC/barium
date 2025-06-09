@@ -11,18 +11,18 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 @Mixin(WorldRenderer.class)
 public class WorldRendererMixin {
 
-    // Injetamos no método que renderiza cada "coluna" de chuva/neve
     @Inject(
-        method = "renderWeather(Lnet/minecraft/client/render/LightmapTextureManager;FDDD)V",
+        // CORREÇÃO: Removemos a assinatura explícita do método para maior robustez.
+        method = "renderWeather",
         at = @At(
             value = "INVOKE",
-            target = "Ljava/util/Random;setSeed(J)V" // Um ponto estável antes de renderizar a partícula
+            target = "Ljava/util/Random;setSeed(J)V"
         ),
         cancellable = true
     )
     private void barium$reduceWeatherDensity(LightmapTextureManager manager, float tickDelta, double cameraX, double cameraY, double cameraZ, CallbackInfo ci) {
         if (!WeatherOptimizer.shouldRenderWeatherParticle()) {
-            ci.cancel(); // Pula a renderização desta partícula de clima
+            ci.cancel();
         }
     }
 }
