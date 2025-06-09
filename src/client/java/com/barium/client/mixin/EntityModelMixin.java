@@ -11,9 +11,13 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 @Mixin(EntityModel.class)
 public class EntityModelMixin<T extends Entity> {
 
+    // A INJEÇÃO ABAIXO FOI DESATIVADA (COMENTADA)
+    // Para garantir a compatibilidade com Lithium, que modifica o método 'setAngles'
+    // e causa um conflito de assinatura (InvalidDescriptor). Manter esta injeção
+    // estava causando o crash final.
+    /*
     @Inject(
-        // CORREÇÃO: Removemos a assinatura explícita do método para maior robustez.
-        method = "setAngles",
+        method = "setAngles(Lnet/minecraft/entity/Entity;FFFFF)V",
         at = @At("HEAD"),
         cancellable = true
     )
@@ -22,4 +26,5 @@ public class EntityModelMixin<T extends Entity> {
             ci.cancel();
         }
     }
+    */
 }
