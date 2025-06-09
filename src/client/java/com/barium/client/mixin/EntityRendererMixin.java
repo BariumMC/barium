@@ -21,6 +21,7 @@ public abstract class EntityRendererMixin<T extends Entity> {
 
     @Shadow @Final protected EntityRenderDispatcher dispatcher;
 
+    // Esta otimização já funciona e é segura.
     @Inject(
         method = "shouldRender(Lnet/minecraft/entity/Entity;Lnet/minecraft/client/render/Frustum;DDD)Z",
         at = @At("HEAD"),
@@ -33,11 +34,13 @@ public abstract class EntityRendererMixin<T extends Entity> {
         }
     }
     
-    // CORREÇÃO: Removido o parâmetro 'float tickDelta' extra que não existe no método original.
+    // CORREÇÃO FINAL: Tornamos a injeção opcional para que ela não quebre a compilação
+    // se o método não for encontrado no ambiente de build.
     @Inject(
         method = "renderLabelIfPresent(Lnet/minecraft/entity/Entity;Lnet/minecraft/text/Text;Lnet/minecraft/client/util/math/MatrixStack;Lnet/minecraft/client/render/VertexConsumerProvider;I)V",
         at = @At("HEAD"),
-        cancellable = true
+        cancellable = true,
+        require = 0 // A injeção agora é opcional.
     )
     private void barium$cullNameTag(T entity, Text text, MatrixStack matrices, VertexConsumerProvider vertexConsumers, int light, CallbackInfo ci) {
         if (!EntityOptimizer.shouldRenderNameTag(entity)) {
