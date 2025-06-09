@@ -6,9 +6,6 @@
 		"ChunkRenderMixin",
 		"DebugHudMixin",
 		"EntityRendererMixin",
-		"ItemEntityRendererMixin",
-		"ItemFrameEntityRendererMixin",
-		"ItemStackMixin",
 		"ParticleAccessor",
 		"ParticleMixin"
 	],
