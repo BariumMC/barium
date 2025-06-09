@@ -6,7 +6,6 @@
 		"ChunkRenderMixin",
 		"DebugHudMixin",
 		"EntityRendererMixin",
-		"LivingEntityModelMixin",
 		"ParticleAccessor",
 		"ParticleMixin"
 	],
