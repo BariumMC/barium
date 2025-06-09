@@ -11,8 +11,12 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 @Mixin(WorldRenderer.class)
 public class WorldRendererMixin {
 
+    // A INJEÇÃO ABAIXO FOI DESATIVADA (COMENTADA)
+    // Para garantir a compatibilidade com Sodium e outros mods de performance (como ImmediatelyFast),
+    // que reescrevem completamente o método de renderização do clima. Manter esta
+    // injeção estava causando um crash por "target not found".
+    /*
     @Inject(
-        // CORREÇÃO: Removemos a assinatura explícita do método para maior robustez.
         method = "renderWeather",
         at = @At(
             value = "INVOKE",
@@ -25,4 +29,5 @@ public class WorldRendererMixin {
             ci.cancel();
         }
     }
+    */
 }

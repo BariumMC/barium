@@ -8,8 +8,7 @@
 		"EntityRendererMixin",
 		"LivingEntityModelMixin",
 		"ParticleAccessor",
-		"ParticleMixin",
-		"WorldRendererMixin"
+		"ParticleMixin"
 	],
 	"injectors": {
 		"defaultRequire": 1
