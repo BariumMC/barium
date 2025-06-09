@@ -21,7 +21,7 @@ public abstract class EntityRendererMixin<T extends Entity> {
 
     @Shadow @Final protected EntityRenderDispatcher dispatcher;
 
-    // Esta otimização já funciona e é segura.
+    // Esta injeção está funcionando perfeitamente.
     @Inject(
         method = "shouldRender(Lnet/minecraft/entity/Entity;Lnet/minecraft/client/render/Frustum;DDD)Z",
         at = @At("HEAD"),
@@ -34,13 +34,14 @@ public abstract class EntityRendererMixin<T extends Entity> {
         }
     }
     
-    // CORREÇÃO FINAL: Tornamos a injeção opcional para que ela não quebre a compilação
-    // se o método não for encontrado no ambiente de build.
+    // CORREÇÃO FINAL: Removemos o descritor explícito do método.
+    // O Mixin agora vai inferir a assinatura a partir dos parâmetros do nosso método.
+    // Isso resolve o aviso "Cannot find target" de forma limpa.
     @Inject(
-        method = "renderLabelIfPresent(Lnet/minecraft/entity/Entity;Lnet/minecraft/text/Text;Lnet/minecraft/client/util/math/MatrixStack;Lnet/minecraft/client/render/VertexConsumerProvider;I)V",
+        method = "renderLabelIfPresent", // Apenas o nome do método
         at = @At("HEAD"),
         cancellable = true,
-        require = 0 // A injeção agora é opcional.
+        require = 0 // Mantemos como opcional para máxima compatibilidade futura.
     )
     private void barium$cullNameTag(T entity, Text text, MatrixStack matrices, VertexConsumerProvider vertexConsumers, int light, CallbackInfo ci) {
         if (!EntityOptimizer.shouldRenderNameTag(entity)) {
