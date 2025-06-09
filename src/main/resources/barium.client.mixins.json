@@ -5,10 +5,10 @@
 	"client": [
 		"ChunkRenderMixin",
 		"DebugHudMixin",
-		"ChunkBuildMixin",
 		"EntityRendererMixin",
 		"ParticleAccessor",
-		"ParticleMixin"
+		"ParticleMixin",
+		"FluidRendererMixin"
 	],
 	"injectors": {
 		"defaultRequire": 1

@@ -133,4 +133,9 @@ public class BariumConfig {
     
       /** Ativa o culling de seções de chunk que contêm apenas ar, evitando que sejam reconstruídas. */
     public static final boolean ENABLE_EMPTY_CHUNK_CULLING = true;
+
+        /** Ativa o culling (desbaste) de vegetação densa como grama, samambaias e arbustos. */
+    public static final boolean ENABLE_DENSE_FOLIAGE_CULLING = true;
+    /** Nível de desbaste. 0 = normal, 1 = 75% renderizado, 2 = 50% renderizado, 3 = 25% renderizado. */
+    public static final int DENSE_FOLIAGE_CULLING_LEVEL = 2; // Padrão de 50%, um bom equilíbrio.
 }
