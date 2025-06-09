@@ -114,4 +114,20 @@ public class BariumConfig {
 
     /** Reduz a densidade da chuva/neve para melhorar o FPS. 0 = normal, 1 = 75%, 2 = 50%, 3 = 25% */
     public static final int WEATHER_DENSITY_LEVEL = 2; // Reduz em 50% por padrão
+
+        // ================== High-Level Rendering Culling ================== //
+    /** Ativa o culling de conteúdo de molduras distantes (item/mapa). */
+    public static final boolean ENABLE_ITEM_FRAME_CULLING = true;
+    /** Distância quadrada para parar de renderizar o conteúdo das molduras. */
+    public static final double ITEM_FRAME_CULL_DISTANCE_SQ = 24 * 24; // 24 blocos
+
+    /** Ativa o culling de nomes (name tags) de entidades distantes. */
+    public static final boolean ENABLE_NAME_TAG_CULLING = true;
+    /** Distância quadrada para parar de renderizar os nomes das entidades. */
+    public static final double NAME_TAG_CULL_DISTANCE_SQ = 32 * 32; // 32 blocos
+
+    /** Ativa o culling do brilho de encantamento em itens distantes no chão. */
+    public static final boolean ENABLE_DROPPED_ITEM_GLINT_CULLING = true;
+    /** Distância quadrada para parar de renderizar o brilho de itens no chão. */
+    public static final double DROPPED_ITEM_GLINT_CULL_DISTANCE_SQ = 24 * 24; // 24 blocos
 }
