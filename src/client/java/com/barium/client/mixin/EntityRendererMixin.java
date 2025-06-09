@@ -19,16 +19,16 @@ public abstract class EntityRendererMixin<T extends Entity> {
         cancellable = true
     )
     private void barium$cullDistantEntity(T entity, float yaw, float tickDelta, MatrixStack matrices, VertexConsumerProvider vertexConsumers, int light, CallbackInfo ci) {
-        // CORREÇÃO: Usamos um cast de tipo bruto para evitar o erro de compilação "wrong number of type arguments".
-        // Isso nos dá acesso ao dispatcher sem o compilador reclamar sobre os genéricos.
+        // Usamos um cast de tipo bruto para evitar problemas com genéricos do compilador.
         EntityRenderer self = (EntityRenderer)(Object)this;
         
-        // A câmera pode ser nula durante a inicialização
-        if (self.getDispatcher().camera == null) {
+        // CORREÇÃO: Acessamos 'dispatcher' como um campo, não como um método getDispatcher().
+        if (self.dispatcher.camera == null) {
             return;
         }
         
-        if (!EntityOptimizer.shouldRenderEntity(entity, self.getDispatcher().camera)) {
+        // CORREÇÃO: Acessamos 'dispatcher' como um campo aqui também.
+        if (!EntityOptimizer.shouldRenderEntity(entity, self.dispatcher.camera)) {
             ci.cancel();
         }
     }
