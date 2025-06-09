@@ -130,4 +130,7 @@ public class BariumConfig {
     public static final boolean ENABLE_DROPPED_ITEM_GLINT_CULLING = true;
     /** Distância quadrada para parar de renderizar o brilho de itens no chão. */
     public static final double DROPPED_ITEM_GLINT_CULL_DISTANCE_SQ = 24 * 24; // 24 blocos
+    
+      /** Ativa o culling de seções de chunk que contêm apenas ar, evitando que sejam reconstruídas. */
+    public static final boolean ENABLE_EMPTY_CHUNK_CULLING = true;
 }
