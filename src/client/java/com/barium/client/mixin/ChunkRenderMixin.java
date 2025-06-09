@@ -43,15 +43,14 @@ public class ChunkRenderMixin {
         // Obtém o BitSet de chunks a serem renderizados do ChunkRenderManager
         BitSet chunksToRenderBitSet = ChunkRenderManager.getChunksToRender();
 
-        // Se o BitSet não foi inicializado (improvável após ClientTickEvents), não faz nada
+        // Se o BitSet não foi inicializado, não faz nada
         if (chunksToRenderBitSet == null) {
             return;
         }
 
         // Calcula o índice local do chunk na grade de renderização
         int minChunkX = ChunkRenderManager.getMinRenderChunkX();
-        // CORRIGIDO: O nome do método estava incorreto (HgetMinRenderChunkZ para getMinRenderChunkZ)
-        int minChunkZ = ChunkRenderManager.getMinRenderChunkZ(); 
+        int minChunkZ = ChunkRenderManager.getMinRenderChunkZ(); // CORRIGIDO: Nome do método
         int gridSize = ChunkRenderManager.getRenderGridSize();
 
         int localX = chunkPos.x - minChunkX;
@@ -59,8 +58,7 @@ public class ChunkRenderMixin {
 
         // Verifica se o chunk está dentro dos limites da grade de renderização calculada
         if (localX < 0 || localX >= gridSize || localZ < 0 || localZ >= gridSize) {
-            // Se o chunk estiver fora da área rastreada, ele não deve ser construído pela nossa otimização.
-            // Isso evita a construção de chunks muito distantes ou que estão fora do cone de visão.
+            // Se estiver fora da área rastreada, não deve ser construído.
             cir.setReturnValue(false);
             return;
         }
@@ -68,19 +66,14 @@ public class ChunkRenderMixin {
         // Calcula o índice linear no BitSet
         int chunkIndex = localX + localZ * gridSize;
 
-        // Verifica se o índice está dentro dos limites do BitSet para evitar ArrayIndexOutOfBoundsException
-        // Embora o cálculo acima deva garantir isso se gridSize for consistente.
-        if (chunkIndex < 0 || chunkIndex >= chunksToRenderBitSet.length()) { // Use length() para o tamanho alocado
-             cir.setReturnValue(false); // Chunk fora dos limites do BitSet, não deve ser construído
+        // Verifica se o índice está dentro dos limites do BitSet
+        if (chunkIndex < 0 || chunkIndex >= chunksToRenderBitSet.length()) {
+             cir.setReturnValue(false); // Fora dos limites, não construir
              return;
         }
 		
         // Define o valor de retorno baseado se o chunk deve ser renderizado
-        // Se BitSet.get(index) for false, significa que o chunk não está no cone de visão,
-        // então shouldBuild retorna false para evitar sua construção.
+        // Se BitSet.get(index) for false, shouldBuild retorna false.
         cir.setReturnValue(chunksToRenderBitSet.get(chunkIndex));
     }
-
-    // O método calculateChunkIndex helper não é mais necessário aqui, pois
-    // a lógica foi integrada diretamente ou substituída por chamadas a ChunkRenderManager.
 }
