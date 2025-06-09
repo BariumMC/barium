@@ -5,7 +5,7 @@
 	"client": [
 		"ChunkRenderMixin",
 		"DebugHudMixin",
-		"BuiltChunkMixin",
+		"ChunkBuildMixin",
 		"EntityRendererMixin",
 		"ParticleAccessor",
 		"ParticleMixin"
