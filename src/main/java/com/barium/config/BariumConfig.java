@@ -90,4 +90,28 @@ public class BariumConfig {
 
     /** Ativa otimização adaptativa de chunks baseada na velocidade do jogador. */
     public static final boolean ENABLE_ADAPTIVE_CHUNK_OPTIMIZATION = true; // NOVA FLAG
+
+        // ================== Entity & Animation Optimizer (Client-side) ================== //
+    /** Ativa otimizações gerais relacionadas a entidades. */
+    public static final boolean ENABLE_ENTITY_OPTIMIZATION = true;
+
+    /** Ativa o culling de entidades (mobs, itens) com base na distância. */
+    public static final boolean ENABLE_ENTITY_CULLING = true;
+
+    /** Distância quadrada máxima para renderizar entidades. */
+    public static final double MAX_ENTITY_RENDER_DISTANCE_SQ = 64 * 64;
+
+    /** Ativa a otimização de animação, pulando cálculos para entidades distantes. */
+    public static final boolean ENABLE_ANIMATION_CULLING = true;
+
+    /** Distância quadrada para parar de animar entidades. Deve ser menor que a distância de renderização. */
+    public static final double ANIMATION_CULL_DISTANCE_SQ = 48 * 48;
+
+
+    // ================== World Rendering Optimizer (Client-side) ================== //
+    /** Ativa otimizações de renderização do mundo, como o clima. */
+    public static final boolean ENABLE_WORLD_RENDERING_OPTIMIZATION = true;
+
+    /** Reduz a densidade da chuva/neve para melhorar o FPS. 0 = normal, 1 = 75%, 2 = 50%, 3 = 25% */
+    public static final int WEATHER_DENSITY_LEVEL = 2; // Reduz em 50% por padrão
 }
