@@ -3,11 +3,13 @@
 	"package": "com.barium.client.mixin",
 	"compatibilityLevel": "JAVA_21",
 	"client": [
+		"BlockEntityRendererMixin",
 		"ChunkRenderMixin",
 		"DebugHudMixin",
 		"EntityRendererMixin",
 		"ParticleAccessor",
 		"ParticleMixin",
+		"ParticleManagerMixin",
 		"BlockRenderManagerMixin"
 	],
 	"injectors": {

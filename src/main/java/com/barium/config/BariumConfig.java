@@ -138,4 +138,13 @@ public class BariumConfig {
     public static final boolean ENABLE_DENSE_FOLIAGE_CULLING = true;
     /** Nível de desbaste. 0 = normal, 1 = 75% renderizado, 2 = 50% renderizado, 3 = 25% renderizado. */
     public static final int DENSE_FOLIAGE_CULLING_LEVEL = 2; // Padrão de 50%, um bom equilíbrio.
+
+        // ================== Advanced Culling & Limits (From Spark Report) ================== //
+    /** Ativa o culling de Entidades de Bloco que estão escondidas (ocluídas) atrás de outros blocos. */
+    public static final boolean ENABLE_BLOCK_ENTITY_OCCLUSION_CULLING = true;
+
+    /** Ativa um limite máximo global para o número de partículas vivas. */
+    public static final boolean ENABLE_GLOBAL_PARTICLE_LIMIT = true;
+    /** O número máximo de partículas permitidas no mundo. Um bom valor é entre 1000 e 4000. */
+    public static final int MAX_GLOBAL_PARTICLES = 2000;
 }

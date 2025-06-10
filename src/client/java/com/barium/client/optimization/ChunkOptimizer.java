@@ -38,5 +38,33 @@ public class ChunkOptimizer {
 
         // Culling por distância
         return distanceSq <= BariumConfig.MAX_BLOCK_ENTITY_RENDER_DISTANCE_SQ;
+
+            /**
+     * Verifica se uma entidade de bloco está ocluída (escondida) por geometria sólida.
+     * @return true se a entidade de bloco estiver escondida.
+     */
+    public static boolean isBlockEntityOccluded(BlockEntity blockEntity, Camera camera) {
+        if (!BariumConfig.ENABLE_BLOCK_ENTITY_OCCLUSION_CULLING) {
+            return false; // Se a otimização estiver desligada, nunca está ocluído.
+        }
+
+        var world = blockEntity.getWorld();
+        if (world == null) return false;
+
+        Vec3d cameraPos = camera.getPos();
+        Vec3d blockEntityPos = Vec3d.ofCenter(blockEntity.getPos());
+
+        // Faz um raycast do olho da câmera para o centro do bloco.
+        // Se acertar um bloco sólido no caminho, a entidade está ocluída.
+        var hitResult = world.raycast(new net.minecraft.world.RaycastContext(
+                cameraPos,
+                blockEntityPos,
+                net.minecraft.world.RaycastContext.ShapeType.COLLIDER, // Apenas considera blocos sólidos
+                net.minecraft.world.RaycastContext.FluidHandling.NONE,
+                MinecraftClient.getInstance().player
+        ));
+
+        return hitResult.getType() == net.minecraft.util.hit.HitResult.Type.BLOCK;
+    }
     }
 }

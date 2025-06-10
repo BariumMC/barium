@@ -7,7 +7,6 @@ import net.minecraft.client.render.Camera;
 import net.minecraft.client.render.VertexConsumerProvider;
 import net.minecraft.client.render.block.entity.BlockEntityRenderer;
 import net.minecraft.client.util.math.MatrixStack;
-import net.minecraft.util.math.Vec3d;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -19,17 +18,22 @@ public abstract class BlockEntityRendererMixin<T extends BlockEntity> {
     @Inject(
         method = "render(Lnet/minecraft/block/entity/BlockEntity;FLnet/minecraft/client/util/math/MatrixStack;Lnet/minecraft/client/render/VertexConsumerProvider;II)V",
         at = @At("HEAD"),
-        cancellable = true,
-        remap = false // A assinatura pode variar, remap=false ajuda na compatibilidade
+        cancellable = true
     )
-    private void barium$cullBlockEntityRender(T entity, float tickDelta, MatrixStack matrices, VertexConsumerProvider vertexConsumers, int light, int overlay, CallbackInfo ci) {
-        MinecraftClient client = MinecraftClient.getInstance();
-        if (client.gameRenderer == null) return;
+    private void barium$advancedBlockEntityCulling(T entity, float tickDelta, MatrixStack matrices, VertexConsumerProvider vertexConsumers, int light, int overlay, CallbackInfo ci) {
+        if (MinecraftClient.getInstance().gameRenderer == null) return;
         
-        Camera camera = client.gameRenderer.getCamera();
+        Camera camera = MinecraftClient.getInstance().gameRenderer.getCamera();
 
+        // Estágio 1: Culling por Distância (rápido)
         if (!ChunkOptimizer.shouldRenderBlockEntity(entity, camera)) {
-            ci.cancel(); // Cancela a renderização se a entidade deve ser ocultada
+            ci.cancel();
+            return;
+        }
+
+        // Estágio 2: Culling por Oclusão (mais caro, só é feito se o Estágio 1 passar)
+        if (ChunkOptimizer.isBlockEntityOccluded(entity, camera)) {
+            ci.cancel();
         }
     }
 }
