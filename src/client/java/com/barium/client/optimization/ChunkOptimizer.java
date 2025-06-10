@@ -1,39 +1,47 @@
-package com.barium.client.mixin;
+package com.barium.client.optimization;
 
-import com.barium.client.optimization.ChunkOptimizer;
+import com.barium.BariumMod;
+import com.barium.config.BariumConfig;
 import net.minecraft.block.entity.BlockEntity;
+import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.render.Camera;
-import net.minecraft.client.render.VertexConsumerProvider;
-import net.minecraft.client.render.block.entity.BlockEntityRenderDispatcher;
-import net.minecraft.client.util.math.MatrixStack;
-import org.spongepowered.asm.mixin.Mixin;
-import org.spongepowered.asm.mixin.Shadow;
-import org.spongepowered.asm.mixin.injection.At;
-import org.spongepowered.asm.mixin.injection.Inject;
-import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+import net.minecraft.util.hit.HitResult;
+import net.minecraft.util.math.Vec3d;
+import net.minecraft.world.RaycastContext;
 
-@Mixin(BlockEntityRenderDispatcher.class)
-public abstract class BlockEntityRenderDispatcherMixin {
+public class ChunkOptimizer {
 
-    // Usamos @Shadow para obter uma referência segura à câmera
-    @Shadow
-    private Camera camera;
+    public static void init() {
+        BariumMod.LOGGER.info("Inicializando ChunkOptimizer");
+    }
 
-    @Inject(
-        method = "render(Lnet/minecraft/block/entity/BlockEntity;FLnet/minecraft/client/util/math/MatrixStack;Lnet/minecraft/client/render/VertexConsumerProvider;)V",
-        at = @At("HEAD"),
-        cancellable = true
-    )
-    private <E extends BlockEntity> void barium$advancedBlockEntityCulling(E blockEntity, float tickDelta, MatrixStack matrices, VertexConsumerProvider vertexConsumers, CallbackInfo ci) {
-        // Estágio 1: Culling por Distância
-        if (!ChunkOptimizer.shouldRenderBlockEntity(blockEntity, this.camera)) {
-            ci.cancel();
-            return;
+    public static boolean shouldRenderBlockEntity(BlockEntity blockEntity, Camera camera) {
+        if (!BariumConfig.ENABLE_BLOCK_ENTITY_CULLING) {
+            return true;
         }
+        Vec3d blockEntityPos = Vec3d.ofCenter(blockEntity.getPos());
+        Vec3d cameraPos = camera.getPos();
+        double distanceSq = blockEntityPos.squaredDistanceTo(cameraPos);
+        return distanceSq <= BariumConfig.MAX_BLOCK_ENTITY_RENDER_DISTANCE_SQ;
+    }
 
-        // Estágio 2: Culling por Oclusão
-        if (ChunkOptimizer.isBlockEntityOccluded(blockEntity, this.camera)) {
-            ci.cancel();
+    public static boolean isBlockEntityOccluded(BlockEntity blockEntity, Camera camera) {
+        if (!BariumConfig.ENABLE_BLOCK_ENTITY_OCCLUSION_CULLING) {
+            return false;
         }
+        var world = blockEntity.getWorld();
+        if (world == null) return false;
+
+        Vec3d cameraPos = camera.getPos();
+        Vec3d blockEntityPos = Vec3d.ofCenter(blockEntity.getPos());
+
+        var hitResult = world.raycast(new RaycastContext(
+                cameraPos,
+                blockEntityPos,
+                RaycastContext.ShapeType.COLLIDER,
+                RaycastContext.FluidHandling.NONE,
+                MinecraftClient.getInstance().player
+        ));
+        return hitResult.getType() == HitResult.Type.BLOCK;
     }
 }
