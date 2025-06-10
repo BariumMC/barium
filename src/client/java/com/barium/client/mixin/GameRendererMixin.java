@@ -6,30 +6,29 @@ import net.minecraft.client.gl.Framebuffer;
 import net.minecraft.client.render.GameRenderer;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
-import org.spongepowered.asm.mixin.injection.Redirect;
+import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 @Mixin(GameRenderer.class)
 public class GameRendererMixin {
 
-    @Redirect(
+    // Usamos @Inject no final do método onResized. Esta é a abordagem mais segura.
+    @Inject(
         method = "onResized(II)V",
-        at = @At(
-            value = "INVOKE",
-            // O alvo é a chamada para redimensionar o framebuffer principal do WorldRenderer
-            target = "Lnet/minecraft/client/gl/Framebuffer;resize(II)V"
-        )
+        at = @At("RETURN")
     )
-    private void barium$resizeEntityOutlineFramebuffer(Framebuffer instance, int width, int height) {
-        // CORREÇÃO: Obtemos a referência do framebuffer de contorno diretamente do WorldRenderer.
-        Framebuffer entityOutlinesFramebuffer = MinecraftClient.getInstance().worldRenderer.getEntityOutlinesFramebuffer();
+    private void barium$forceResizeEntityOutlineFramebuffer(int width, int height, CallbackInfo ci) {
+        if (!BariumConfig.ENABLE_HALF_RESOLUTION_ENTITY_OUTLINES) {
+            return;
+        }
 
-        // Se a instância que estamos interceptando é o framebuffer de contorno...
-        if (instance == entityOutlinesFramebuffer && BariumConfig.ENABLE_HALF_RESOLUTION_ENTITY_OUTLINES) {
-            // ...redimensionamos para metade da resolução.
-            instance.resize(width / 2, height / 2);
-        } else {
-            // Caso contrário, usamos o comportamento original.
-            instance.resize(width, height);
+        // Obtemos a referência do framebuffer de contorno de forma segura.
+        Framebuffer entityOutlinesFramebuffer = MinecraftClient.getInstance().worldRenderer.getEntityOutlinesFramebuffer();
+        
+        if (entityOutlinesFramebuffer != null) {
+            // Forçamos o redimensionamento para metade da resolução da janela.
+            // Isso sobrescreve qualquer redimensionamento que outro mod possa ter feito.
+            entityOutlinesFramebuffer.resize(width / 2, height / 2);
         }
     }
 }
