@@ -46,5 +46,11 @@ public class HudOptimizer {
         DEBUG_HUD_TIMESTAMPS.clear();
     }
 
+    public static boolean shouldSkipRender(String side) {
+        // A lógica complexa foi removida, pois a otimização principal é o cache.
+        // Se a otimização de HUD estiver desligada, nunca pulamos a renderização.
+        return !BariumConfig.ENABLE_HUD_OPTIMIZATION;
+    }
+
     // A lógica de shouldSkipRender e shouldUpdateHudElement foi removida por ser complexa e de baixo impacto.
 }

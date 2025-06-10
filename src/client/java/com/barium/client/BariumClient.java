@@ -8,41 +8,32 @@ import com.barium.client.util.ChunkRenderManager;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
-import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.util.math.Vec3d;
+// As importações de tick e de vetores não são mais necessárias aqui.
 
 @Environment(EnvType.CLIENT)
 public class BariumClient implements ClientModInitializer {
 
+    private static BariumClient instance;
     private final ChunkRenderManager chunkRenderManager = new ChunkRenderManager();
 
     @Override
     public void onInitializeClient() {
+        instance = this;
         BariumMod.LOGGER.info("Inicializando cliente Barium");
         
-        // Inicialização dos otimizadores client-side
         HudOptimizer.init();
         ParticleOptimizer.init();
         ChunkOptimizer.init();
 
-        // Registra o evento de tick do cliente para atualizar o ChunkRenderManager
-        ClientTickEvents.END_CLIENT_TICK.register(this::onClientTick);
+        // CORREÇÃO: A lógica de onClientTick foi removida completamente,
+        // pois agora a atualização é feita pelo WorldRendererMixin, que é mais eficiente.
     }
 
-    private void onClientTick(MinecraftClient client) {
-        if (client.world == null || client.player == null) {
-            return;
-        }
+    public static BariumClient getInstance() {
+        return instance;
+    }
 
-        // Obtém a posição e rotação do jogador
-        Vec3d playerPos = client.player.getPos();
-        float yaw = client.player.getYaw();
-        float pitch = client.player.getPitch();
-
-        // Verifica se o cálculo de chunks visíveis precisa ser refeito
-        if (chunkRenderManager.shouldRecalculate(playerPos, yaw, pitch)) {
-            chunkRenderManager.calculateChunksToRender(client, playerPos, yaw, pitch);
-        }
+    public ChunkRenderManager getChunkRenderManager() {
+        return chunkRenderManager;
     }
 }
