@@ -147,4 +147,7 @@ public class BariumConfig {
     public static final boolean ENABLE_GLOBAL_PARTICLE_LIMIT = true;
     /** O número máximo de partículas permitidas no mundo. Um bom valor é entre 1000 e 4000. */
     public static final int MAX_GLOBAL_PARTICLES = 2000;
+
+        /** Ativa a otimização de renderização do efeito de brilho, renderizando-o em meia resolução para um grande ganho de FPS. */
+    public static final boolean ENABLE_HALF_RESOLUTION_ENTITY_OUTLINES = true;
 }

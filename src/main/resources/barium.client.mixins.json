@@ -10,6 +10,8 @@
 		"ParticleAccessor",
 		"ParticleMixin",
 		"ParticleManagerMixin",
+		"WorldRendererMixin",
+		"GameRendererMixin",
 		"BlockRenderManagerMixin"
 	],
 	"injectors": {
