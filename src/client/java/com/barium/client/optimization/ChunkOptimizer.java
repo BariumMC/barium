@@ -1,73 +1,39 @@
-package com.barium.client.optimization;
+package com.barium.client.mixin;
 
-import com.barium.BariumMod;
-import com.barium.config.BariumConfig;
+import com.barium.client.optimization.ChunkOptimizer;
 import net.minecraft.block.entity.BlockEntity;
-import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.render.Camera;
-import net.minecraft.util.math.Vec3d;
-import net.minecraft.world.RaycastContext;
-import net.minecraft.util.hit.HitResult;
+import net.minecraft.client.render.VertexConsumerProvider;
+import net.minecraft.client.render.block.entity.BlockEntityRenderDispatcher;
+import net.minecraft.client.util.math.MatrixStack;
+import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Shadow;
+import org.spongepowered.asm.mixin.injection.At;
+import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-/**
- * Otimiza a renderização de chunks e entidades de bloco.
- * Foca em culling de entidades de bloco para melhorar a performance.
- */
-public class ChunkOptimizer {
+@Mixin(BlockEntityRenderDispatcher.class)
+public abstract class BlockEntityRenderDispatcherMixin {
 
-    /**
-     * Inicializa o ChunkOptimizer.
-     */
-    public static void init() {
-        BariumMod.LOGGER.info("Inicializando ChunkOptimizer");
-    }
+    // Usamos @Shadow para obter uma referência segura à câmera
+    @Shadow
+    private Camera camera;
 
-    /**
-     * Determina se uma entidade de bloco deve ser renderizada com base na distância.
-     * @param blockEntity A entidade de bloco a ser verificada.
-     * @param camera A câmera atual do jogador.
-     * @return true se a entidade de bloco deve ser renderizada, false caso contrário.
-     */
-    public static boolean shouldRenderBlockEntity(BlockEntity blockEntity, Camera camera) {
-        if (!BariumConfig.ENABLE_CHUNK_OPTIMIZATION || !BariumConfig.ENABLE_BLOCK_ENTITY_CULLING) {
-            return true; // Se as otimizações estiverem desativadas, sempre renderiza
+    @Inject(
+        method = "render(Lnet/minecraft/block/entity/BlockEntity;FLnet/minecraft/client/util/math/MatrixStack;Lnet/minecraft/client/render/VertexConsumerProvider;)V",
+        at = @At("HEAD"),
+        cancellable = true
+    )
+    private <E extends BlockEntity> void barium$advancedBlockEntityCulling(E blockEntity, float tickDelta, MatrixStack matrices, VertexConsumerProvider vertexConsumers, CallbackInfo ci) {
+        // Estágio 1: Culling por Distância
+        if (!ChunkOptimizer.shouldRenderBlockEntity(blockEntity, this.camera)) {
+            ci.cancel();
+            return;
         }
 
-        Vec3d blockEntityPos = Vec3d.ofCenter(blockEntity.getPos());
-        Vec3d cameraPos = camera.getPos();
-
-        double distanceSq = blockEntityPos.squaredDistanceTo(cameraPos);
-
-        return distanceSq <= BariumConfig.MAX_BLOCK_ENTITY_RENDER_DISTANCE_SQ;
-    }
-
-    /**
-     * CORREÇÃO: Este método agora está DENTRO da classe ChunkOptimizer.
-     * Verifica se uma entidade de bloco está ocluída (escondida) por geometria sólida.
-     * @return true se a entidade de bloco estiver escondida.
-     */
-    public static boolean isBlockEntityOccluded(BlockEntity blockEntity, Camera camera) {
-        if (!BariumConfig.ENABLE_BLOCK_ENTITY_OCCLUSION_CULLING) {
-            return false; // Se a otimização estiver desligada, nunca está ocluído.
+        // Estágio 2: Culling por Oclusão
+        if (ChunkOptimizer.isBlockEntityOccluded(blockEntity, this.camera)) {
+            ci.cancel();
         }
-
-        var world = blockEntity.getWorld();
-        if (world == null) return false;
-
-        Vec3d cameraPos = camera.getPos();
-        Vec3d blockEntityPos = Vec3d.ofCenter(blockEntity.getPos());
-
-        // Faz um raycast do olho da câmera para o centro do bloco.
-        // Se acertar um bloco sólido no caminho, a entidade está ocluída.
-        var hitResult = world.raycast(new RaycastContext(
-                cameraPos,
-                blockEntityPos,
-                RaycastContext.ShapeType.COLLIDER, // Apenas considera blocos sólidos
-                RaycastContext.FluidHandling.NONE,
-                MinecraftClient.getInstance().player
-        ));
-
-        return hitResult.getType() == HitResult.Type.BLOCK;
     }
-
-} // A chave de fechamento final da classe
+}
