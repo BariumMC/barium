@@ -2,10 +2,12 @@ package com.barium.client.optimization;
 
 import com.barium.BariumMod;
 import com.barium.config.BariumConfig;
+import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.render.Camera;
-import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.util.math.Vec3d;
+import net.minecraft.world.RaycastContext;
+import net.minecraft.util.hit.HitResult;
 
 /**
  * Otimiza a renderização de chunks e entidades de bloco.
@@ -36,10 +38,11 @@ public class ChunkOptimizer {
 
         double distanceSq = blockEntityPos.squaredDistanceTo(cameraPos);
 
-        // Culling por distância
         return distanceSq <= BariumConfig.MAX_BLOCK_ENTITY_RENDER_DISTANCE_SQ;
+    }
 
-            /**
+    /**
+     * CORREÇÃO: Este método agora está DENTRO da classe ChunkOptimizer.
      * Verifica se uma entidade de bloco está ocluída (escondida) por geometria sólida.
      * @return true se a entidade de bloco estiver escondida.
      */
@@ -56,15 +59,15 @@ public class ChunkOptimizer {
 
         // Faz um raycast do olho da câmera para o centro do bloco.
         // Se acertar um bloco sólido no caminho, a entidade está ocluída.
-        var hitResult = world.raycast(new net.minecraft.world.RaycastContext(
+        var hitResult = world.raycast(new RaycastContext(
                 cameraPos,
                 blockEntityPos,
-                net.minecraft.world.RaycastContext.ShapeType.COLLIDER, // Apenas considera blocos sólidos
-                net.minecraft.world.RaycastContext.FluidHandling.NONE,
+                RaycastContext.ShapeType.COLLIDER, // Apenas considera blocos sólidos
+                RaycastContext.FluidHandling.NONE,
                 MinecraftClient.getInstance().player
         ));
 
-        return hitResult.getType() == net.minecraft.util.hit.HitResult.Type.BLOCK;
+        return hitResult.getType() == HitResult.Type.BLOCK;
     }
-    }
-}
+
+} // A chave de fechamento final da classe
