@@ -11,7 +11,7 @@
     "homepage": "https://github.com/bariumteam/barium",
     "sources": "https://github.com/bariumteam/barium"
   },
-  "license": "MIT",
+  "license": "CC0-1.0",
   "icon": "assets/barium/icon.png",
   "environment": "*",
   "entrypoints": {
@@ -20,6 +20,9 @@
     ],
     "client": [
       "com.barium.client.BariumClient"
+    ],
+    "modmenu": [
+      "com.barium.config.BariumModMenu"
     ]
   },
   "mixins": [
@@ -30,9 +33,11 @@
     "fabricloader": ">=0.14.0",
     "fabric": "*",
     "minecraft": "1.21.4",
-    "java": ">=17"
+    "java": ">=17",
+    "cloth-config": ">=17.0.126"
   },
   "suggests": {
-    "sodium": "*"
+    "sodium": "*",
+    "modmenu": ">=11.0.0-beta.1"
   }
 }
