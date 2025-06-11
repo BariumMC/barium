@@ -86,6 +86,14 @@ public class BariumModMenu implements ModMenuApi {
                     .setSaveConsumer(newValue -> BariumConfig.C.MAX_GLOBAL_PARTICLES = newValue)
                     .build());
 
+                    ConfigCategory postProcessing = builder.getOrCreateCategory(Text.translatable("category.barium.post_processing"));
+
+            postProcessing.addEntry(entryBuilder.startBooleanToggle(Text.translatable("option.barium.enable_half_res_outlines"), BariumConfig.C.ENABLE_HALF_RESOLUTION_ENTITY_OUTLINES)
+                    .setDefaultValue(new ConfigData().ENABLE_HALF_RESOLUTION_ENTITY_OUTLINES)
+                    .setTooltip(Text.translatable("tooltip.barium.enable_half_res_outlines"))
+                    .setSaveConsumer(newValue -> BariumConfig.C.ENABLE_HALF_RESOLUTION_ENTITY_OUTLINES = newValue)
+                    .build());
+
             return builder.build();
         };
     }
