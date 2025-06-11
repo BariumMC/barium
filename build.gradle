@@ -41,10 +41,10 @@ dependencies {
 
 	// --- DEPENDÊNCIAS DE CONFIGURAÇÃO ---
 	// Adiciona a API Cloth Config
-	modImplementation "maven.modrinth:cloth-config:17.0.126"
+	modImplementation "maven.modrinth:cloth-config:17.0.144"
 
 	// Adiciona o Mod Menu (para o botão de "Configurações")
-	modImplementation "maven.modrinth:modmenu:11.0.0-beta.1"
+	modImplementation "maven.modrinth:modmenu:13.0.3"
 	// ------------------------------------
 }
 
