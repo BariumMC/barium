@@ -14,7 +14,6 @@
 		"GameRendererMixin",
 		"BlockRenderManagerMixin",
 				"BuiltChunkRebuildMixin",
-        "ChunkBuilderUploadMixin",
         "WorldRendererChunkPriorityMixin"
 	],
 	"injectors": {
