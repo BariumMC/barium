@@ -13,7 +13,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 import java.util.BitSet;
 
-@Mixin(targets = "ChunkBuilder.BuiltChunk")
+@Mixin(ChunkBuilder.BuiltChunk.class)
 public abstract class ChunkRenderMixin {
 
     @Shadow public abstract BlockPos getOrigin();
