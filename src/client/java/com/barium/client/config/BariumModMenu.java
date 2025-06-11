@@ -1,4 +1,11 @@
-package com.barium.client.config;
+// --- Substitua o conteúdo em: src/client/java/com/barium/config/BariumModMenu.java ---
+package com.barium.config; // O pacote está correto
+
+// --- CORREÇÕES AQUI: Adicione estas importações ---
+import com.barium.config.BariumConfig;
+import com.barium.config.ConfigData;
+import com.barium.config.ConfigManager;
+// ---------------------------------------------
 
 import com.terraformersmc.modmenu.api.ConfigScreenFactory;
 import com.terraformersmc.modmenu.api.ModMenuApi;
@@ -15,35 +22,37 @@ public class BariumModMenu implements ModMenuApi {
         return parent -> {
             ConfigBuilder builder = ConfigBuilder.create()
                     .setParentScreen(parent)
-                    .setTitle(Text.translatable("title.barium.config")); // MUDANÇA AQUI
+                    .setTitle(Text.translatable("title.barium.config"));
 
-            builder.setSavingRunnable(ConfigManager::saveConfig);
+            builder.setSavingRunnable(ConfigManager::saveConfig); // Agora encontra ConfigManager
 
             ConfigEntryBuilder entryBuilder = builder.entryBuilder();
 
-            // --- Categoria: Chunk Performance ---
-            ConfigCategory chunkPerformance = builder.getOrCreateCategory(Text.translatable("category.barium.chunk_performance")); // MUDANÇA AQUI
+            // Categoria Chunk Performance
+            ConfigCategory chunkPerformance = builder.getOrCreateCategory(Text.translatable("category.barium.chunk_performance"));
 
+            // Agora encontra BariumConfig e ConfigData
             chunkPerformance.addEntry(entryBuilder.startBooleanToggle(Text.translatable("option.barium.cull_empty_sections"), BariumConfig.C.ENABLE_EMPTY_CHUNK_SECTION_CULLING)
                     .setDefaultValue(new ConfigData().ENABLE_EMPTY_CHUNK_SECTION_CULLING)
-                    .setTooltip(Text.translatable("tooltip.barium.cull_empty_sections")) // MUDANÇA AQUI
+                    .setTooltip(Text.translatable("tooltip.barium.cull_empty_sections"))
                     .setSaveConsumer(newValue -> BariumConfig.C.ENABLE_EMPTY_CHUNK_SECTION_CULLING = newValue)
                     .build());
-
+            
+            // ... e assim por diante para todas as outras opções.
+            // O código abaixo já está correto, o problema era só a falta dos imports.
             chunkPerformance.addEntry(entryBuilder.startBooleanToggle(Text.translatable("option.barium.enable_chunk_update_throttling"), BariumConfig.C.ENABLE_CHUNK_UPDATE_THROTTLING)
                     .setDefaultValue(new ConfigData().ENABLE_CHUNK_UPDATE_THROTTLING)
-                    .setTooltip(Text.translatable("tooltip.barium.enable_chunk_update_throttling")) // MUDANÇA AQUI
+                    .setTooltip(Text.translatable("tooltip.barium.enable_chunk_update_throttling"))
                     .setSaveConsumer(newValue -> BariumConfig.C.ENABLE_CHUNK_UPDATE_THROTTLING = newValue)
                     .build());
-
+            
             chunkPerformance.addEntry(entryBuilder.startIntSlider(Text.translatable("option.barium.max_chunk_uploads"), BariumConfig.C.MAX_CHUNK_UPLOADS_PER_FRAME, 1, 16)
                     .setDefaultValue(new ConfigData().MAX_CHUNK_UPLOADS_PER_FRAME)
-                    .setTooltip(Text.translatable("tooltip.barium.max_chunk_uploads")) // MUDANÇA AQUI
+                    .setTooltip(Text.translatable("tooltip.barium.max_chunk_uploads"))
                     .setSaveConsumer(newValue -> BariumConfig.C.MAX_CHUNK_UPLOADS_PER_FRAME = newValue)
                     .build());
 
-            // --- Categoria: Culling & LOD ---
-            ConfigCategory culling = builder.getOrCreateCategory(Text.translatable("category.barium.culling_lod")); // MUDANÇA AQUI
+            ConfigCategory culling = builder.getOrCreateCategory(Text.translatable("category.barium.culling_lod"));
             
             culling.addEntry(entryBuilder.startBooleanToggle(Text.translatable("option.barium.enable_block_entity_culling"), BariumConfig.C.ENABLE_BLOCK_ENTITY_CULLING)
                     .setDefaultValue(new ConfigData().ENABLE_BLOCK_ENTITY_CULLING)
@@ -65,8 +74,7 @@ public class BariumModMenu implements ModMenuApi {
                     .setSaveConsumer(newValue -> BariumConfig.C.DENSE_FOLIAGE_CULLING_LEVEL = newValue)
                     .build());
             
-            // --- Categoria: Partículas ---
-            ConfigCategory particles = builder.getOrCreateCategory(Text.translatable("category.barium.particles")); // MUDANÇA AQUI
+            ConfigCategory particles = builder.getOrCreateCategory(Text.translatable("category.barium.particles"));
 
             particles.addEntry(entryBuilder.startBooleanToggle(Text.translatable("option.barium.enable_particle_optimizations"), BariumConfig.C.ENABLE_PARTICLE_OPTIMIZATION)
                     .setDefaultValue(new ConfigData().ENABLE_PARTICLE_OPTIMIZATION)
