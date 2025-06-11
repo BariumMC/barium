@@ -18,7 +18,7 @@ public class GameRendererMixin {
         at = @At("RETURN")
     )
     private void barium$forceResizeEntityOutlineFramebuffer(int width, int height, CallbackInfo ci) {
-        if (!BariumConfig.ENABLE_HALF_RESOLUTION_ENTITY_OUTLINES) {
+        if (!BariumConfig.C.ENABLE_HALF_RESOLUTION_ENTITY_OUTLINES) {
             return;
         }
 

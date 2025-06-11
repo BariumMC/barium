@@ -21,11 +21,11 @@ public class ChunkUploadThrottler {
      * Este método substitui a chamada direta a `queue.poll()`.
      */
     public static Runnable pollTask(Queue<Runnable> queue) {
-        if (!BariumConfig.ENABLE_CHUNK_UPDATE_THROTTLING) {
+        if (!BariumConfig.C.ENABLE_CHUNK_UPDATE_THROTTLING) {
             return queue.poll();
         }
 
-        if (uploadsThisFrame >= BariumConfig.MAX_CHUNK_UPLOADS_PER_FRAME) {
+        if (uploadsThisFrame >= BariumConfig.C.MAX_CHUNK_UPLOADS_PER_FRAME) {
             return null;
         }
 

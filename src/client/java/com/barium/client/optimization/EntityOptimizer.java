@@ -10,7 +10,7 @@ import net.minecraft.util.math.Vec3d;
 public class EntityOptimizer {
 
     public static boolean shouldRenderEntity(Entity entity, Camera camera) {
-        if (!BariumConfig.ENABLE_ENTITY_OPTIMIZATION || !BariumConfig.ENABLE_ENTITY_CULLING) {
+        if (!BariumConfig.C.ENABLE_ENTITY_OPTIMIZATION || !BariumConfig.C.ENABLE_ENTITY_CULLING) {
             return true;
         }
 
@@ -22,6 +22,6 @@ public class EntityOptimizer {
         Vec3d cameraPos = camera.getPos();
         double distanceSq = entity.getPos().squaredDistanceTo(cameraPos);
 
-        return distanceSq <= BariumConfig.MAX_ENTITY_RENDER_DISTANCE_SQ;
+        return distanceSq <= BariumConfig.C.MAX_ENTITY_RENDER_DISTANCE_SQ;
     }
 }

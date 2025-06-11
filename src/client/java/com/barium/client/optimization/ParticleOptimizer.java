@@ -13,7 +13,7 @@ public class ParticleOptimizer {
     }
 
     public static boolean shouldSkipParticleTick(Particle particle, Camera camera) {
-        if (!BariumConfig.ENABLE_PARTICLE_OPTIMIZATION) return false;
+        if (!BariumConfig.C.ENABLE_PARTICLE_OPTIMIZATION) return false;
 
         ParticleAccessor accessor = (ParticleAccessor) particle;
         Vec3d particlePos = new Vec3d(accessor.getX(), accessor.getY(), accessor.getZ());
@@ -21,11 +21,11 @@ public class ParticleOptimizer {
 
         double distanceSq = particlePos.squaredDistanceTo(cameraPos);
         // CORREÇÃO: Usa a única flag de distância de partícula
-        return distanceSq > BariumConfig.MAX_TICK_DISTANCE_SQ;
+        return distanceSq > BariumConfig.C.MAX_TICK_DISTANCE_SQ;
     }
 
     public static boolean shouldRenderParticle(Particle particle, Camera camera) {
-        if (!BariumConfig.ENABLE_PARTICLE_OPTIMIZATION) return true;
+        if (!BariumConfig.C.ENABLE_PARTICLE_OPTIMIZATION) return true;
 
         ParticleAccessor accessor = (ParticleAccessor) particle;
         Vec3d particlePos = new Vec3d(accessor.getX(), accessor.getY(), accessor.getZ());
@@ -33,7 +33,7 @@ public class ParticleOptimizer {
 
         double distanceSq = particlePos.squaredDistanceTo(cameraPos);
         // CORREÇÃO: Usa a única flag de distância de partícula
-        return distanceSq <= BariumConfig.MAX_TICK_DISTANCE_SQ;
+        return distanceSq <= BariumConfig.C.MAX_TICK_DISTANCE_SQ;
     }
     
     // CORREÇÃO: A lógica de LOD foi removida pois era redundante e complexa.

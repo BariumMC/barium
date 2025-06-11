@@ -16,17 +16,17 @@ public class ChunkOptimizer {
     }
 
     public static boolean shouldRenderBlockEntity(BlockEntity blockEntity, Camera camera) {
-        if (!BariumConfig.ENABLE_BLOCK_ENTITY_CULLING) {
+        if (!BariumConfig.C.ENABLE_BLOCK_ENTITY_CULLING) {
             return true;
         }
         Vec3d blockEntityPos = Vec3d.ofCenter(blockEntity.getPos());
         Vec3d cameraPos = camera.getPos();
         double distanceSq = blockEntityPos.squaredDistanceTo(cameraPos);
-        return distanceSq <= BariumConfig.MAX_BLOCK_ENTITY_RENDER_DISTANCE_SQ;
+        return distanceSq <= BariumConfig.C.MAX_BLOCK_ENTITY_RENDER_DISTANCE_SQ;
     }
 
     public static boolean isBlockEntityOccluded(BlockEntity blockEntity, Camera camera) {
-        if (!BariumConfig.ENABLE_BLOCK_ENTITY_OCCLUSION_CULLING) {
+        if (!BariumConfig.C.ENABLE_BLOCK_ENTITY_OCCLUSION_CULLING) {
             return false;
         }
         var world = blockEntity.getWorld();

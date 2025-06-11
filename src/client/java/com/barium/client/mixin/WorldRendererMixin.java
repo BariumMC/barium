@@ -18,7 +18,7 @@ public abstract class WorldRendererMixin {
 
     @Inject(method = "drawEntityOutlinesFramebuffer", at = @At("HEAD"))
     private void barium$beforeDrawEntityOutlines(CallbackInfo ci) {
-        if (BariumConfig.ENABLE_HALF_RESOLUTION_ENTITY_OUTLINES) {
+        if (BariumConfig.C.ENABLE_HALF_RESOLUTION_ENTITY_OUTLINES) {
             WorldRenderer self = (WorldRenderer)(Object)this;
             Framebuffer entityOutlinesFramebuffer = self.getEntityOutlinesFramebuffer();
             if (entityOutlinesFramebuffer != null) {
@@ -30,7 +30,7 @@ public abstract class WorldRendererMixin {
     
     @Inject(method = "drawEntityOutlinesFramebuffer", at = @At("RETURN"))
     private void barium$afterDrawEntityOutlines(CallbackInfo ci) {
-        if (BariumConfig.ENABLE_HALF_RESOLUTION_ENTITY_OUTLINES) {
+        if (BariumConfig.C.ENABLE_HALF_RESOLUTION_ENTITY_OUTLINES) {
             // Restauramos o viewport para o tamanho total da janela.
             MinecraftClient client = MinecraftClient.getInstance();
             RenderSystem.viewport(0, 0, client.getFramebuffer().textureWidth, client.getFramebuffer().textureHeight);
@@ -42,7 +42,7 @@ public abstract class WorldRendererMixin {
     @Inject(method = "drawEntityOutlinesFramebuffer", at = @At("HEAD"), cancellable = true)
     private void barium$disableEntityOutlines(CallbackInfo ci) {
         // (Este método de uma etapa anterior pode ser removido se não for mais desejado)
-        if (BariumConfig.DISABLE_ENTITY_OUTLINES) {
+        if (BariumConfig.C.DISABLE_ENTITY_OUTLINES) {
             ci.cancel();
         }
     }

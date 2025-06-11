@@ -25,7 +25,7 @@ public class BlockRenderManagerMixin {
         cancellable = true
     )
     private void barium$cullDenseFoliage(BlockState state, BlockPos pos, BlockRenderView world, MatrixStack matrices, VertexConsumer vertexConsumer, boolean cull, Random random, CallbackInfo ci) {
-        if (!BariumConfig.ENABLE_DENSE_FOLIAGE_CULLING || BariumConfig.DENSE_FOLIAGE_CULLING_LEVEL <= 0) {
+        if (!BariumConfig.C.ENABLE_DENSE_FOLIAGE_CULLING || BariumConfig.C.DENSE_FOLIAGE_CULLING_LEVEL <= 0) {
             return;
         }
 
@@ -34,7 +34,7 @@ public class BlockRenderManagerMixin {
             // Nível 1: Pula 1 em 4 (75% densidade)
             // Nível 2: Pula 2 em 4 (50% densidade)
             // Nível 3: Pula 3 em 4 (25% densidade)
-            if (ThreadLocalRandom.current().nextInt(4) < BariumConfig.DENSE_FOLIAGE_CULLING_LEVEL) {
+            if (ThreadLocalRandom.current().nextInt(4) < BariumConfig.C.DENSE_FOLIAGE_CULLING_LEVEL) {
                 ci.cancel(); // Pula a renderização deste bloco de grama/arbusto
             }
         }

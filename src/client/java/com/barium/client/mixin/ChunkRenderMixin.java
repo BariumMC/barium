@@ -22,7 +22,7 @@ public abstract class ChunkRenderMixin {
     private void barium$onShouldBuild(CallbackInfoReturnable<Boolean> cir) {
         // CORREÇÃO: Removemos a verificação da variável ENABLE_CHUNK_OPTIMIZATION,
         // que não existe mais. A única verificação necessária aqui é a de frustum culling.
-        if (!BariumConfig.ENABLE_FRUSTUM_CHUNK_CULLING) {
+        if (!BariumConfig.C.ENABLE_FRUSTUM_CHUNK_CULLING) {
             return;
         }
 

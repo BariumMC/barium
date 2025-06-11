@@ -20,7 +20,7 @@ public class HudOptimizer {
     }
 
     public static boolean shouldRecalculateDebugHud(String side) {
-        if (!BariumConfig.ENABLE_HUD_OPTIMIZATION || !BariumConfig.CACHE_DEBUG_HUD) return true;
+        if (!BariumConfig.C.ENABLE_HUD_OPTIMIZATION || !BariumConfig.C.CACHE_DEBUG_HUD) return true;
 
         long currentTime = System.currentTimeMillis();
         long lastUpdate = DEBUG_HUD_TIMESTAMPS.getOrDefault(side, 0L);
@@ -32,7 +32,7 @@ public class HudOptimizer {
     }
 
     public static void updateDebugHudCache(String side, List<String> text) {
-        if (!BariumConfig.ENABLE_HUD_OPTIMIZATION || !BariumConfig.CACHE_DEBUG_HUD) return;
+        if (!BariumConfig.C.ENABLE_HUD_OPTIMIZATION || !BariumConfig.C.CACHE_DEBUG_HUD) return;
         List<String> compacted = new ArrayList<>(text.size());
         for (String line : text) {
             compacted.add(line.intern());
@@ -49,7 +49,7 @@ public class HudOptimizer {
     public static boolean shouldSkipRender(String side) {
         // A lógica complexa foi removida, pois a otimização principal é o cache.
         // Se a otimização de HUD estiver desligada, nunca pulamos a renderização.
-        return !BariumConfig.ENABLE_HUD_OPTIMIZATION;
+        return !BariumConfig.C.ENABLE_HUD_OPTIMIZATION;
     }
 
     // A lógica de shouldSkipRender e shouldUpdateHudElement foi removida por ser complexa e de baixo impacto.

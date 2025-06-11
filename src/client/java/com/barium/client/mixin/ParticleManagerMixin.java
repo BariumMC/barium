@@ -23,7 +23,7 @@ public class ParticleManagerMixin {
     // Injetamos no início do método que adiciona partículas.
     @Inject(method = "addParticle(Lnet/minecraft/client/particle/Particle;)V", at = @At("HEAD"), cancellable = true)
     private void barium$applyGlobalParticleLimit(Particle particle, CallbackInfo ci) {
-        if (!BariumConfig.ENABLE_GLOBAL_PARTICLE_LIMIT) {
+        if (!BariumConfig.C.ENABLE_GLOBAL_PARTICLE_LIMIT) {
             return;
         }
 
