@@ -21,6 +21,16 @@ repositories {
     }
 }
 
+loom {
+	splitEnvironmentSourceSets()Add commentMore actions
+
+	mods {
+		"barium" {
+			sourceSet sourceSets.main
+			sourceSet sourceSets.client
+		}
+	}
+
 dependencies {
     minecraft "com.mojang:minecraft:${project.minecraft_version}"
     mappings "net.fabricmc:yarn:${project.yarn_mappings}:v2"
@@ -41,7 +51,8 @@ processResources {
 
 	filesMatching("fabric.mod.json") {
 		expand "version": inputs.properties.version
-	}
+	   }
+    }
 }
 
 tasks.withType(JavaCompile).configureEach {
