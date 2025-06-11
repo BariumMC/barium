@@ -3,6 +3,7 @@
   "minVersion": "0.8",
   "package": "com.barium.mixin",
   "compatibilityLevel": "JAVA_21",
+  "plugin": "com.barium.BariumMixinPlugin",
   "mixins": [
   ],
   "injectors": {

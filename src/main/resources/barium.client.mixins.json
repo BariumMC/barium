@@ -2,6 +2,7 @@
 	"required": true,
 	"package": "com.barium.client.mixin",
 	"compatibilityLevel": "JAVA_21",
+	"plugin": "com.barium.BariumMixinPlugin",
 	"client": [
 		"BlockEntityRenderDispatcherMixin",
 		"ChunkRenderMixin",
