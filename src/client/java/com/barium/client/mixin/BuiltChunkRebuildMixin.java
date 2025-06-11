@@ -18,7 +18,7 @@ public class BuiltChunkRebuildMixin {
      * Esta assinatura está correta para o Minecraft 1.21.4.
      */
     @Redirect(
-        method = "rebuild(),
+        method = "rebuild",
         at = @At(value = "INVOKE", target = "Lnet/minecraft/world/chunk/ChunkSection;isEmpty()Z")
     )
     private boolean barium$cullEmptyChunkSections(ChunkSection section) {
