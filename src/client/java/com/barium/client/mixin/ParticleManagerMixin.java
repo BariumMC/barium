@@ -35,7 +35,7 @@ public class ParticleManagerMixin {
             currentCount += queue.size();
         }
 
-        if (currentCount >= BariumConfig.MAX_GLOBAL_PARTICLES) {
+        if (currentCount >= BariumConfig.C.MAX_GLOBAL_PARTICLES) {
             ci.cancel(); // Se o limite foi atingido, a nova partícula não é adicionada.
         }
     }
