@@ -1,6 +1,6 @@
 package com.barium.client.optimization;
 
-import com.barium.config.BariumConfig;
+import com.barium.config.ConfigData;
 import net.minecraft.world.chunk.ChunkSection;
 
 /**

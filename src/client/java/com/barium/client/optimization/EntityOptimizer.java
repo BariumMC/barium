@@ -1,6 +1,6 @@
 package com.barium.client.optimization;
 
-import com.barium.config.BariumConfig;
+import com.barium.config.ConfigData;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.render.Camera;
 import net.minecraft.entity.Entity;
