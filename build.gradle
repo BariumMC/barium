@@ -12,7 +12,6 @@ base {
 
 loom {
 	splitEnvironmentSourceSets()
-	sourceSet(sourceSets.main)
 
 	mods {
 		"barium" {
