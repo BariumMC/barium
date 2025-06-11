@@ -3,7 +3,7 @@ package com.barium.client.mixin;
 
 import com.barium.client.util.ChunkRenderManager;
 import com.barium.config.BariumConfig;
-import net.minecraft.client.render.chunk.ChunkBuilder.BuiltChunk;
+import net.minecraft.client.render.chunk.ChunkBuilder;
 import net.minecraft.util.math.BlockPos;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
