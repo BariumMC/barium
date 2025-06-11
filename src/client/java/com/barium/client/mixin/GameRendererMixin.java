@@ -1,4 +1,4 @@
-// --- Crie ou edite o arquivo: src/client/java/com/barium/client/mixin/GameRendererMixin.java ---
+// --- Substitua o conteúdo em: src/client/java/com/barium/client/mixin/GameRendererMixin.java ---
 package com.barium.client.mixin;
 
 import com.barium.config.BariumConfig;
@@ -25,12 +25,12 @@ public class GameRendererMixin {
     )
     private void barium$forceResizeEntityOutlineFramebuffer(int width, int height, CallbackInfo ci) {
         if (BariumConfig.C.ENABLE_HALF_RESOLUTION_ENTITY_OUTLINES) {
-            // Obtém a referência do framebuffer de contorno de forma segura.
             Framebuffer entityOutlinesFramebuffer = MinecraftClient.getInstance().worldRenderer.getEntityOutlinesFramebuffer();
             
             if (entityOutlinesFramebuffer != null) {
-                // Força o redimensionamento para metade da largura e altura da janela.
-                entityOutlinesFramebuffer.resize(width / 2, height / 2, MinecraftClient.IS_SYSTEM_MAC);
+                // CORREÇÃO: Removemos o terceiro argumento (MinecraftClient.IS_SYSTEM_MAC),
+                // pois o método resize agora só aceita a largura e a altura.
+                entityOutlinesFramebuffer.resize(width / 2, height / 2);
             }
         }
     }
