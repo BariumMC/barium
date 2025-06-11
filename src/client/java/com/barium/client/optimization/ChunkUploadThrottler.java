@@ -1,38 +1,40 @@
-// --- Substitua o conteúdo em: src/client/java/com/barium/client/optimization/ChunkUploadThrottler.java ---
+// --- Verifique e substitua o conteúdo em: src/client/java/com/barium/client/optimization/ChunkUploadThrottler.java ---
 package com.barium.client.optimization;
 
 import com.barium.config.BariumConfig;
-import net.minecraft.client.render.chunk.ChunkBuilder;
-
 import java.util.Queue;
 
 public class ChunkUploadThrottler {
 
-    // CORREÇÃO: Usamos a interface pública 'Runnable' em vez da classe privada 'UploadTask'
-    public static int processUploadQueue(Queue<Runnable> uploadQueue) {
+    private static int uploadsThisFrame = 0;
+
+    /**
+     * CORREÇÃO: Adiciona este método se ele estiver faltando.
+     * Reseta o contador de uploads. Deve ser chamado uma vez no início de cada ciclo de agendamento.
+     */
+    public static void resetCounter() {
+        uploadsThisFrame = 0;
+    }
+
+    /**
+     * Tenta pegar uma tarefa da fila, respeitando o limite de uploads por frame.
+     * Este método substitui a chamada direta a `queue.poll()`.
+     */
+    public static Runnable pollTask(Queue<Runnable> queue) {
         if (!BariumConfig.ENABLE_CHUNK_UPDATE_THROTTLING) {
-            int count = 0;
-            while (!uploadQueue.isEmpty()) {
-                Runnable task = uploadQueue.poll();
-                if (task != null) {
-                    task.run();
-                    count++;
-                }
-            }
-            return count;
+            return queue.poll();
         }
 
-        int uploadsProcessed = 0;
-        final int limit = BariumConfig.MAX_CHUNK_UPLOADS_PER_FRAME;
-
-        while (uploadsProcessed < limit && !uploadQueue.isEmpty()) {
-            Runnable task = uploadQueue.poll();
-            if (task != null) {
-                task.run();
-                uploadsProcessed++;
-            }
+        if (uploadsThisFrame >= BariumConfig.MAX_CHUNK_UPLOADS_PER_FRAME) {
+            return null;
         }
 
-        return uploadsProcessed;
+        Runnable task = queue.poll();
+
+        if (task != null) {
+            uploadsThisFrame++;
+        }
+
+        return task;
     }
 }
