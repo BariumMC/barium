@@ -1,7 +1,7 @@
 // --- Verifique e substitua o conteúdo em: src/client/java/com/barium/client/optimization/ChunkUploadThrottler.java ---
 package com.barium.client.optimization;
 
-import com.barium.config.ConfigData;
+import com.barium.config.BariumConfig;
 import java.util.Queue;
 
 public class ChunkUploadThrottler {

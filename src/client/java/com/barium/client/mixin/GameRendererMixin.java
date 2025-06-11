@@ -1,6 +1,6 @@
 package com.barium.client.mixin;
 
-import com.barium.config.ConfigData;
+import com.barium.config.BariumConfig;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gl.Framebuffer;
 import net.minecraft.client.render.GameRenderer;

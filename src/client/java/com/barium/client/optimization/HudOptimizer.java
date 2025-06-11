@@ -1,7 +1,7 @@
 package com.barium.client.optimization;
 
 import com.barium.BariumMod;
-import com.barium.config.ConfigData;
+import com.barium.config.BariumConfig;
 import net.minecraft.client.MinecraftClient;
 
 import java.util.*;

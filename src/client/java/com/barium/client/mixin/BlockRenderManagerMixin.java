@@ -1,6 +1,6 @@
 package com.barium.client.mixin;
 
-import com.barium.config.ConfigData;
+import com.barium.config.BariumConfig;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
 import net.minecraft.client.render.VertexConsumer;

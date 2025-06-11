@@ -1,6 +1,6 @@
 package com.barium.client.mixin;
 
-import com.barium.config.ConfigData;
+import com.barium.config.BariumConfig;
 import net.minecraft.client.particle.Particle;
 import net.minecraft.client.particle.ParticleManager;
 import net.minecraft.client.particle.ParticleTextureSheet;
