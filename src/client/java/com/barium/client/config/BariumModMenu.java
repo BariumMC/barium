@@ -1,5 +1,5 @@
 // --- Substitua o conteúdo em: src/client/java/com/barium/config/BariumModMenu.java ---
-package com.barium.config; // O pacote está correto
+package com.barium.client.config; // O pacote está correto
 
 // --- CORREÇÕES AQUI: Adicione estas importações ---
 import com.barium.config.BariumConfig;
