@@ -1,6 +1,8 @@
+// --- Substitua o conteúdo em: src/client/java/com/barium/client/mixin/WorldRendererChunkPriorityMixin.java ---
 package com.barium.client.mixin;
 
 import com.barium.client.optimization.ChunkRenderPrioritizer;
+import com.barium.client.optimization.ChunkUploadThrottler;
 import net.minecraft.client.render.Camera;
 import net.minecraft.client.render.WorldRenderer;
 import net.minecraft.client.render.chunk.ChunkBuilder;
@@ -16,21 +18,28 @@ public class WorldRendererChunkPriorityMixin {
     @Shadow private ChunkBuilder chunkBuilder;
 
     /**
-     * Injeta no início do método `updateChunks`.
-     * Antes que o WorldRenderer comece a decidir quais chunks precisam de atualização,
-     * nós garantimos que nossa classe de priorização e o ChunkBuilder tenham a
-     * posição mais recente da câmera.
-     *
-     * @param camera A câmera do jogo.
-     * @param ci CallbackInfo.
+     * Injeta no início do método `updateChunks` para garantir que a priorização
+     * de chunks sempre use a posição mais recente da câmera.
      */
     @Inject(method = "updateChunks", at = @At("HEAD"))
     private void barium$updateCameraPositionForPriority(Camera camera, CallbackInfo ci) {
-        // Atualiza nossa classe de otimização com a posição atual da câmera.
         ChunkRenderPrioritizer.updateCameraPosition(camera.getPos());
-
-        // Também atualiza o ChunkBuilder do vanilla, o que aciona sua lógica de ordenação interna.
-        // Fazer isso aqui garante que a ordenação ocorra com os dados mais frescos possíveis.
         this.chunkBuilder.setCameraPosition(camera.getPos());
+    }
+
+    /**
+     * Injeta em `updateChunks` no exato momento ANTES da chamada ao método privado `scheduleRunTasks`.
+     * Este é o local perfeito e mais robusto para resetar nosso contador de uploads por frame.
+     */
+    @Inject(
+        method = "updateChunks",
+        at = @At(
+            value = "INVOKE",
+            target = "Lnet/minecraft/client/render/chunk/ChunkBuilder;scheduleRunTasks()V"
+        )
+    )
+    private void barium$beforeScheduleTasks(Camera camera, CallbackInfo ci) {
+        // Reseta o contador para o novo ciclo de uploads.
+        ChunkUploadThrottler.resetCounter();
     }
 }
