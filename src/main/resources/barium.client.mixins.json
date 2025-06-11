@@ -12,7 +12,10 @@
 		"ParticleManagerMixin",
 		"WorldRendererMixin",
 		"GameRendererMixin",
-		"BlockRenderManagerMixin"
+		"BlockRenderManagerMixin",
+				"BuiltChunkRebuildMixin",
+        "ChunkBuilderUploadMixin",
+        "WorldRendererChunkPriorityMixin"
 	],
 	"injectors": {
 		"defaultRequire": 1

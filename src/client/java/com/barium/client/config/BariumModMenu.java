@@ -1,6 +1,6 @@
-package com.barium.client.config;
+// --- Substitua o conteúdo em: src/client/java/com/barium/config/BariumModMenu.java ---
+package com.barium.config;
 
-import com.barium.config.BariumConfig;
 import com.terraformersmc.modmenu.api.ConfigScreenFactory;
 import com.terraformersmc.modmenu.api.ModMenuApi;
 import me.shedaniel.clothconfig2.api.ConfigBuilder;
@@ -18,16 +18,37 @@ public class BariumModMenu implements ModMenuApi {
                     .setParentScreen(parent)
                     .setTitle(Text.literal("Barium Config"));
 
-            // Em um sistema de salvamento real, você chamaria config.save() aqui.
-            // Por enquanto, as mudanças só afetam a sessão atual do jogo.
+            // A lógica de salvar em arquivo viria aqui, no setSavingRunnable
             builder.setSavingRunnable(() -> {
-                // Lógica de salvamento viria aqui.
+                // Ex: ConfigManager.save();
             });
 
             ConfigEntryBuilder entryBuilder = builder.entryBuilder();
 
-            // --- Categoria: Renderização ---
-            ConfigCategory rendering = builder.getOrCreateCategory(Text.literal("Rendering"));
+            // --- Categoria: Chunk Performance ---
+            ConfigCategory chunkPerformance = builder.getOrCreateCategory(Text.literal("Chunk Performance"));
+
+            chunkPerformance.addEntry(entryBuilder.startBooleanToggle(Text.literal("Cull Empty Chunk Sections"), BariumConfig.ENABLE_EMPTY_CHUNK_SECTION_CULLING)
+                    .setDefaultValue(true)
+                    .setTooltip(Text.literal("Skips rendering sections of the world that only contain air.\nHuge performance boost."))
+                    .setSaveConsumer(newValue -> BariumConfig.ENABLE_EMPTY_CHUNK_SECTION_CULLING = newValue)
+                    .build());
+
+            chunkPerformance.addEntry(entryBuilder.startBooleanToggle(Text.literal("Enable Chunk Update Throttling"), BariumConfig.ENABLE_CHUNK_UPDATE_THROTTLING)
+                    .setDefaultValue(true)
+                    .setTooltip(Text.literal("Limits how many chunks are sent to the GPU per frame.\nReduces stutters when moving or turning quickly."))
+                    .setSaveConsumer(newValue -> BariumConfig.ENABLE_CHUNK_UPDATE_THROTTLING = newValue)
+                    .build());
+
+            chunkPerformance.addEntry(entryBuilder.startIntSlider(Text.literal("Max Chunk Uploads/Frame"), BariumConfig.MAX_CHUNK_UPLOADS_PER_FRAME, 1, 16)
+                    .setDefaultValue(2)
+                    .setTooltip(Text.literal("The max number of chunks uploaded to the GPU each frame.\nLower values = smoother, higher values = faster world loading."))
+                    .setSaveConsumer(newValue -> BariumConfig.MAX_CHUNK_UPLOADS_PER_FRAME = newValue)
+                    .build());
+
+
+            // --- Categoria: Renderização Geral ---
+            ConfigCategory rendering = builder.getOrCreateCategory(Text.literal("General Rendering"));
 
             rendering.addEntry(entryBuilder.startBooleanToggle(Text.literal("Enable Particle Optimizations"), BariumConfig.ENABLE_PARTICLE_OPTIMIZATION)
                     .setDefaultValue(true)
@@ -84,7 +105,6 @@ public class BariumModMenu implements ModMenuApi {
                     .setDefaultValue(true)
                     .setSaveConsumer(newValue -> BariumConfig.DISABLE_VIGNETTE = newValue)
                     .build());
-
 
             return builder.build();
         };
