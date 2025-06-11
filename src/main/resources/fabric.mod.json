@@ -22,7 +22,7 @@
       "com.barium.client.BariumClient"
     ],
     "modmenu": [
-      "com.barium.config.BariumModMenu"
+      "com.barium.client.config.BariumModMenu"
     ]
   },
   "mixins": [
@@ -34,10 +34,10 @@
     "fabric": "*",
     "minecraft": "1.21.4",
     "java": ">=17",
-    "cloth-config": ">=17.0.126"
+    "cloth-config": "*"
   },
   "suggests": {
     "sodium": "*",
-    "modmenu": ">=11.0.0-beta.1"
+    "modmenu": "*"
   }
 }
