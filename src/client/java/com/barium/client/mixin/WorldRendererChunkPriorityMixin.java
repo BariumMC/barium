@@ -1,5 +1,4 @@
-// --- Nenhuma mudança necessária aqui, apenas verifique se está igual ---
-// src/client/java/com/barium/client/mixin/WorldRendererChunkPriorityMixin.java
+// --- Substitua o conteúdo em: src/client/java/com/barium/client/mixin/WorldRendererChunkPriorityMixin.java ---
 package com.barium.client.mixin;
 
 import com.barium.client.optimization.ChunkRenderPrioritizer;
@@ -18,20 +17,23 @@ public class WorldRendererChunkPriorityMixin {
 
     @Shadow private ChunkBuilder chunkBuilder;
 
+    /**
+     * Injeta no início do método `updateChunks`. Este é o local mais robusto e
+     * ideal para fazer todos os nossos preparativos de atualização de chunks,
+     * incluindo a priorização e o reset do contador de throttling.
+     *
+     * @param camera A câmera do jogo, fornecida pelo método original.
+     * @param ci CallbackInfo.
+     */
     @Inject(method = "updateChunks", at = @At("HEAD"))
-    private void barium$updateCameraPositionForPriority(Camera camera, CallbackInfo ci) {
+    private void barium$beforeUpdateChunks(Camera camera, CallbackInfo ci) {
+        // 1. Atualiza a posição da câmera para a lógica de priorização.
         ChunkRenderPrioritizer.updateCameraPosition(camera.getPos());
         this.chunkBuilder.setCameraPosition(camera.getPos());
-    }
 
-    @Inject(
-        method = "updateChunks",
-        at = @At(
-            value = "INVOKE",
-            target = "Lnet/minecraft/client/render/chunk/ChunkBuilder;scheduleRunTasks()V"
-        )
-    )
-    private void barium$beforeScheduleTasks(Camera camera, CallbackInfo ci) {
+        // 2. Reseta o contador de uploads para o novo ciclo de trabalho.
+        // Como isso é feito no início, garantimos que o limite de uploads
+        // estará correto quando a thread do ChunkBuilder for executada.
         ChunkUploadThrottler.resetCounter();
     }
 }
