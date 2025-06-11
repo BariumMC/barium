@@ -1,0 +1,26 @@
+{
+  "title.barium.config": "Configuração do Barium",
+
+  "category.barium.chunk_performance": "Desempenho de Chunks",
+  "category.barium.culling_lod": "Otimização e LOD",
+  "category.barium.particles": "Partículas",
+  "category.barium.hud": "HUD",
+  "category.barium.post_processing": "Pós-Processamento",
+
+  "option.barium.cull_empty_sections": "Otimizar Seções de Chunk Vazias",
+  "tooltip.barium.cull_empty_sections": "Pula a renderização de seções do mundo que contêm apenas ar.\nGrande ganho de performance.",
+
+  "option.barium.enable_chunk_update_throttling": "Ativar Limite de Atualização de Chunks",
+  "tooltip.barium.enable_chunk_update_throttling": "Limita quantos chunks são enviados para a GPU por frame.\nReduz travamentos ao se mover ou virar rapidamente.",
+
+  "option.barium.max_chunk_uploads": "Máx. de Uploads de Chunk/Frame",
+  "tooltip.barium.max_chunk_uploads": "O número máximo de chunks enviados para a GPU a cada frame.\nValores baixos = mais suave, valores altos = carregamento mais rápido.",
+
+  "option.barium.enable_block_entity_culling": "Ativar Otimização de Entidades de Bloco",
+  "option.barium.block_entity_render_distance": "Distância de Renderização de Entidades de Bloco",
+  "option.barium.enable_dense_foliage_culling": "Ativar Otimização de Folhagem Densa",
+  "option.barium.dense_foliage_culling_level": "Nível da Otimização de Folhagem (0-3)",
+
+  "option.barium.enable_particle_optimizations": "Ativar Otimização de Partículas",
+  "option.barium.max_global_particles": "Máximo de Partículas Globais"
+}

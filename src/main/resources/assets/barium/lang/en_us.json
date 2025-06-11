@@ -1,0 +1,26 @@
+{
+  "title.barium.config": "Barium Config",
+
+  "category.barium.chunk_performance": "Chunk Performance",
+  "category.barium.culling_lod": "Culling & LOD",
+  "category.barium.particles": "Particles",
+  "category.barium.hud": "HUD",
+  "category.barium.post_processing": "Post-Processing",
+
+  "option.barium.cull_empty_sections": "Cull Empty Chunk Sections",
+  "tooltip.barium.cull_empty_sections": "Skips rendering sections of the world that only contain air.\nHuge performance boost.",
+
+  "option.barium.enable_chunk_update_throttling": "Enable Chunk Update Throttling",
+  "tooltip.barium.enable_chunk_update_throttling": "Limits how many chunks are sent to the GPU per frame.\nReduces stutters when moving or turning quickly.",
+
+  "option.barium.max_chunk_uploads": "Max Chunk Uploads/Frame",
+  "tooltip.barium.max_chunk_uploads": "The max number of chunks uploaded to the GPU each frame.\nLower values = smoother, higher values = faster world loading.",
+
+  "option.barium.enable_block_entity_culling": "Enable Block Entity Culling",
+  "option.barium.block_entity_render_distance": "Block Entity Render Distance",
+  "option.barium.enable_dense_foliage_culling": "Enable Dense Foliage Culling",
+  "option.barium.dense_foliage_culling_level": "Dense Foliage Culling Level (0-3)",
+
+  "option.barium.enable_particle_optimizations": "Enable Particle Optimizations",
+  "option.barium.max_global_particles": "Max Global Particles"
+}
