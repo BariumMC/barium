@@ -81,7 +81,7 @@ public class BariumModMenu implements ModMenuApi {
                     .setSaveConsumer(newValue -> BariumConfig.C.ENABLE_PARTICLE_OPTIMIZATION = newValue)
                     .build());
 
-            particles.addEntry(entryBuilder.startIntSlider(Text.translatable("option.barium.max_global_particles"), BaramConfig.C.MAX_GLOBAL_PARTICLES, 0, 10000)
+            particles.addEntry(entryBuilder.startIntSlider(Text.translatable("option.barium.max_global_particles"), BariumConfig.C.MAX_GLOBAL_PARTICLES, 0, 10000)
                     .setDefaultValue(defaults.MAX_GLOBAL_PARTICLES)
                     .setSaveConsumer(newValue -> BariumConfig.C.MAX_GLOBAL_PARTICLES = newValue)
                     .build());
@@ -95,7 +95,7 @@ public class BariumModMenu implements ModMenuApi {
                     .setSaveConsumer(newValue -> BariumConfig.C.ENABLE_HALF_RESOLUTION_ENTITY_OUTLINES = newValue)
                     .build());
 
-            // --- Categoria 5: Lógica do Jogo / Ticks (NOVAS OPÇÕES) ---
+            // --- Categoria 5: Lógica do Jogo / Ticks ---
             ConfigCategory gameLogic = builder.getOrCreateCategory(Text.translatable("category.barium.game_logic"));
 
             gameLogic.addEntry(entryBuilder.startBooleanToggle(Text.translatable("option.barium.enable_entity_tick_culling"), BariumConfig.C.ENABLE_ENTITY_TICK_CULLING)
@@ -107,7 +107,6 @@ public class BariumModMenu implements ModMenuApi {
             gameLogic.addEntry(entryBuilder.startIntSlider(Text.translatable("option.barium.entity_tick_distance"), (int) Math.sqrt(BariumConfig.C.ENTITY_TICK_CULLING_DISTANCE_SQ), 16, 128)
                     .setDefaultValue((int) Math.sqrt(defaults.ENTITY_TICK_CULLING_DISTANCE_SQ))
                     .setTooltip(Text.translatable("tooltip.barium.entity_tick_distance"))
-                    // Usa setTextGetter para formatar o texto exibido no slider
                     .setTextGetter(value -> Text.translatable("generic.barium.distance_blocks", value))
                     .setSaveConsumer(newValue -> BariumConfig.C.ENTITY_TICK_CULLING_DISTANCE_SQ = newValue * newValue)
                     .build());
