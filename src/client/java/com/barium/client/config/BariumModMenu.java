@@ -117,6 +117,27 @@ public class BariumModMenu implements ModMenuApi {
                     .setSaveConsumer(newValue -> BariumConfig.C.REDUCE_AMBIENT_PARTICLES = newValue)
                     .build());
 
+            // --- Categoria 6: Otimizações Específicas ---
+            ConfigCategory specificLogic = builder.getOrCreateCategory(Text.translatable("category.barium.specific_optimizations"));
+
+            specificLogic.addEntry(entryBuilder.startBooleanToggle(Text.translatable("option.barium.enable_hopper_culling"), BariumConfig.C.ENABLE_HOPPER_TICK_CULLING)
+                    .setDefaultValue(defaults.ENABLE_HOPPER_TICK_CULLING)
+                    .setTooltip(Text.translatable("tooltip.barium.enable_hopper_culling"))
+                    .setSaveConsumer(newValue -> BariumConfig.C.ENABLE_HOPPER_TICK_CULLING = newValue)
+                    .build());
+            
+            specificLogic.addEntry(entryBuilder.startBooleanToggle(Text.translatable("option.barium.reduce_explosion_particles"), BariumConfig.C.ENABLE_EXPLOSION_PARTICLE_REDUCTION)
+                    .setDefaultValue(defaults.ENABLE_EXPLOSION_PARTICLE_REDUCTION)
+                    .setTooltip(Text.translatable("tooltip.barium.reduce_explosion_particles"))
+                    .setSaveConsumer(newValue -> BariumConfig.C.ENABLE_EXPLOSION_PARTICLE_REDUCTION = newValue)
+                    .build());
+
+            specificLogic.addEntry(entryBuilder.startBooleanToggle(Text.translatable("option.barium.enable_beacon_culling"), BariumConfig.C.ENABLE_BEACON_BEAM_CULLING)
+                    .setDefaultValue(defaults.ENABLE_BEACON_BEAM_CULLING)
+                    .setTooltip(Text.translatable("tooltip.barium.enable_beacon_culling"))
+                    .setSaveConsumer(newValue -> BariumConfig.C.ENABLE_BEACON_BEAM_CULLING = newValue)
+                    .build());
+
             // Constrói e retorna a tela final
             return builder.build();
         };

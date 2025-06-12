@@ -16,7 +16,10 @@
 		"BlockRenderManagerMixin",
 				"BuiltChunkRebuildMixin",
         "WorldRendererChunkPriorityMixin",
-		"ClientWorldMixin"
+		"ClientWorldMixin",
+		        "HopperBlockEntityMixin",
+        "ExplosionMixin",
+        "BeaconBlockEntityRendererMixin"
 	],
 	"injectors": {
 		"defaultRequire": 1

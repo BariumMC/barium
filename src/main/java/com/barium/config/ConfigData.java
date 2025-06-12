@@ -63,4 +63,26 @@ public class ConfigData {
      */
     public boolean REDUCE_AMBIENT_PARTICLES = true;
     // ------------------------------------
+
+        // ================== Specific Logic Optimizations ================== //
+
+    /**
+     * Se ativado, reduz drasticamente a frequência de atualização de funis que estão
+     * longe do jogador, diminuindo o lag em farms e sistemas de armazenamento.
+     */
+    public boolean ENABLE_HOPPER_TICK_CULLING = true;
+    public double HOPPER_TICK_CULLING_DISTANCE_SQ = 48 * 48;
+
+    /**
+     * Se ativado, reduz a quantidade de partículas de fumaça e destroços geradas
+     * por explosões, suavizando os picos de lag.
+     */
+    public boolean ENABLE_EXPLOSION_PARTICLE_REDUCTION = true;
+
+    /**
+     * Se ativado, feixes de sinalizadores (beacons) muito distantes não serão
+     * renderizados, economizando um pouco de performance em bases grandes.
+     */
+    public boolean ENABLE_BEACON_BEAM_CULLING = true;
+    public double BEACON_BEAM_CULL_DISTANCE_SQ = 128 * 128;
 }

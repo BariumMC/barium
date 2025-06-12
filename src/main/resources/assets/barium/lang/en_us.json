@@ -35,5 +35,16 @@
   "option.barium.reduce_ambient_particles": "Reduce Ambient Particles",
   "tooltip.barium.reduce_ambient_particles": "Reduces the frequency of ambient particle effects (torch smoke, water drips).\nReduces constant CPU usage.",
   
-  "generic.barium.distance_blocks": "%d blocks"
+  "generic.barium.distance_blocks": "%d blocks",
+
+    "category.barium.specific_optimizations": "Specific Optimizations",
+  
+  "option.barium.enable_hopper_culling": "Enable Hopper Culling",
+  "tooltip.barium.enable_hopper_culling": "Reduces the update frequency of distant hoppers. Huge CPU saver for farms.",
+  
+  "option.barium.reduce_explosion_particles": "Reduce Explosion Particles",
+  "tooltip.barium.reduce_explosion_particles": "Greatly reduces the amount of particles from explosions to prevent lag spikes.",
+  
+  "option.barium.enable_beacon_culling": "Enable Beacon Beam Culling",
+  "tooltip.barium.enable_beacon_culling": "Prevents rendering of very distant beacon beams."
 }
