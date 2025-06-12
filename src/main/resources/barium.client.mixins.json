@@ -18,7 +18,7 @@
         "WorldRendererChunkPriorityMixin",
 		"ClientWorldMixin",
 		        "HopperBlockEntityMixin",
-        "ExplosionMixin",
+        "WorldMixin",
         "BeaconBlockEntityRendererMixin"
 	],
 	"injectors": {
