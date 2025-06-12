@@ -22,5 +22,18 @@
   "option.barium.dense_foliage_culling_level": "Dense Foliage Culling Level (0-3)",
 
   "option.barium.enable_particle_optimizations": "Enable Particle Optimizations",
-  "option.barium.max_global_particles": "Max Global Particles"
+  "option.barium.max_global_particles": "Max Global Particles",
+
+    "category.barium.game_logic": "Game Logic & Ticks",
+
+  "option.barium.enable_entity_tick_culling": "Enable Entity Tick Culling",
+  "tooltip.barium.enable_entity_tick_culling": "Reduces the update frequency of distant entities' logic (AI).\nImproves CPU performance in areas with many mobs.",
+  
+  "option.barium.entity_tick_distance": "Entity Tick Distance",
+  "tooltip.barium.entity_tick_distance": "Entities beyond this distance will have their logic updates reduced.",
+
+  "option.barium.reduce_ambient_particles": "Reduce Ambient Particles",
+  "tooltip.barium.reduce_ambient_particles": "Reduces the frequency of ambient particle effects (torch smoke, water drips).\nReduces constant CPU usage.",
+  
+  "generic.barium.distance_blocks": "%d blocks"
 }

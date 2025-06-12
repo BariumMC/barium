@@ -1,4 +1,4 @@
-// --- Crie este arquivo em: src/main/java/com/barium/config/ConfigData.java ---
+// --- Substitua o conteúdo em: src/main/java/com/barium/config/ConfigData.java ---
 package com.barium.config;
 
 /**
@@ -44,4 +44,23 @@ public class ConfigData {
     public boolean DISABLE_ENTITY_OUTLINES = false;
     public boolean ENABLE_HALF_RESOLUTION_ENTITY_OUTLINES = true;
     public boolean DISABLE_VIGNETTE = true;
+
+    // --- NOVO: Adicione esta seção ---
+    // ================== Game Logic / Tick Optimizations ================== //
+    
+    /**
+     * Se ativado, reduz a frequência de atualização da lógica (IA, movimento)
+     * de entidades que estão longe do jogador.
+     * Alvo: Otimizar ClientWorld.tickEntities
+     */
+    public boolean ENABLE_ENTITY_TICK_CULLING = true;
+    public double ENTITY_TICK_CULLING_DISTANCE_SQ = 64 * 64;
+
+    /**
+     * Se ativado, reduz a frequência de verificação de blocos para criar
+     * partículas de ambiente (fumaça de tochas, água pingando, etc).
+     * Alvo: Otimizar ClientWorld.animateTicks
+     */
+    public boolean REDUCE_AMBIENT_PARTICLES = true;
+    // ------------------------------------
 }
