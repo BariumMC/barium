@@ -4,8 +4,11 @@
   "category.barium.chunk_performance": "Chunk Performance",
   "category.barium.culling_lod": "Culling & LOD",
   "category.barium.particles": "Particles",
-  "category.barium.hud": "HUD",
-  "category.barium.post_processing": "Post-Processing",
+  "category.barium.visual_effects": "Visual Effects & HUD",
+  "category.barium.game_logic": "Game Logic & Ticks",
+  "category.barium.specific_optimizations": "Specific Optimizations",
+
+  "generic.barium.distance_blocks": "%d blocks",
 
   "option.barium.cull_empty_sections": "Cull Empty Chunk Sections",
   "tooltip.barium.cull_empty_sections": "Skips rendering sections of the world that only contain air.\nHuge performance boost.",
@@ -16,28 +19,40 @@
   "option.barium.max_chunk_uploads": "Max Chunk Uploads/Frame",
   "tooltip.barium.max_chunk_uploads": "The max number of chunks uploaded to the GPU each frame.\nLower values = smoother, higher values = faster world loading.",
 
-  "option.barium.enable_block_entity_culling": "Enable Block Entity Culling",
+  "option.barium.enable_block_entity_culling": "Enable Block Entity Culling (Distance)",
+  "tooltip.barium.enable_block_entity_culling": "Stops rendering block entities (chests, signs) that are too far away.",
   "option.barium.block_entity_render_distance": "Block Entity Render Distance",
+  "tooltip.barium.block_entity_render_distance": "Max distance at which block entities are rendered.",
+
+  "option.barium.enable_block_entity_occlusion_culling": "Enable Block Entity Culling (Occlusion)",
+  "tooltip.barium.enable_block_entity_occlusion_culling": "Stops rendering block entities that are hidden behind other blocks.\nCan significantly improve FPS in complex scenes.",
+  "option.barium.block_entity_occlusion_min_distance": "Block Entity Occlusion Min Distance",
+  "tooltip.barium.block_entity_occlusion_min_distance": "The culling check only activates for entities beyond this distance.\nAvoids checks on very close objects.",
+  
   "option.barium.enable_dense_foliage_culling": "Enable Dense Foliage Culling",
+  "tooltip.barium.enable_dense_foliage_culling": "Randomly skips rendering some grass and ferns to make dense areas less demanding.",
   "option.barium.dense_foliage_culling_level": "Dense Foliage Culling Level (0-3)",
+  "tooltip.barium.dense_foliage_culling_level": "How aggressively to cull foliage. 0 = off, 3 = max culling.",
 
   "option.barium.enable_particle_optimizations": "Enable Particle Optimizations",
   "option.barium.max_global_particles": "Max Global Particles",
 
-    "category.barium.game_logic": "Game Logic & Ticks",
-
+  "option.barium.disable_entity_outlines": "Disable Glowing Effect",
+  "tooltip.barium.disable_entity_outlines": "Completely disables the glowing outline effect (e.g., from spectral arrows).",
+  "option.barium.enable_half_res_outlines": "Half Resolution Glowing Effect",
+  "tooltip.barium.enable_half_res_outlines": "Renders the glowing effect at half resolution for better performance.",
+  "option.barium.disable_vignette": "Disable Vignette",
+  "tooltip.barium.disable_vignette": "Removes the dark overlay at the screen edges, especially in dark areas.",
+  "option.barium.disable_toasts": "Disable Toasts",
+  "tooltip.barium.disable_toasts": "Hides the recipe/advancement pop-ups in the top-right corner.",
+  
   "option.barium.enable_entity_tick_culling": "Enable Entity Tick Culling",
   "tooltip.barium.enable_entity_tick_culling": "Reduces the update frequency of distant entities' logic (AI).\nImproves CPU performance in areas with many mobs.",
-  
   "option.barium.entity_tick_distance": "Entity Tick Distance",
   "tooltip.barium.entity_tick_distance": "Entities beyond this distance will have their logic updates reduced.",
 
   "option.barium.reduce_ambient_particles": "Reduce Ambient Particles",
   "tooltip.barium.reduce_ambient_particles": "Reduces the frequency of ambient particle effects (torch smoke, water drips).\nReduces constant CPU usage.",
-  
-  "generic.barium.distance_blocks": "%d blocks",
-
-    "category.barium.specific_optimizations": "Specific Optimizations",
   
   "option.barium.enable_hopper_culling": "Enable Hopper Culling",
   "tooltip.barium.enable_hopper_culling": "Reduces the update frequency of distant hoppers. Huge CPU saver for farms.",

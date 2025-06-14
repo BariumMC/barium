@@ -4,8 +4,11 @@
   "category.barium.chunk_performance": "Desempenho de Chunks",
   "category.barium.culling_lod": "Otimização e LOD",
   "category.barium.particles": "Partículas",
-  "category.barium.hud": "HUD",
-  "category.barium.post_processing": "Pós-Processamento",
+  "category.barium.visual_effects": "Efeitos Visuais e HUD",
+  "category.barium.game_logic": "Lógica do Jogo e Ticks",
+  "category.barium.specific_optimizations": "Otimizações Específicas",
+
+  "generic.barium.distance_blocks": "%d blocos",
 
   "option.barium.cull_empty_sections": "Otimizar Seções de Chunk Vazias",
   "tooltip.barium.cull_empty_sections": "Pula a renderização de seções do mundo que contêm apenas ar.\nGrande ganho de performance.",
@@ -16,11 +19,47 @@
   "option.barium.max_chunk_uploads": "Máx. de Uploads de Chunk/Frame",
   "tooltip.barium.max_chunk_uploads": "O número máximo de chunks enviados para a GPU a cada frame.\nValores baixos = mais suave, valores altos = carregamento mais rápido.",
 
-  "option.barium.enable_block_entity_culling": "Ativar Otimização de Entidades de Bloco",
-  "option.barium.block_entity_render_distance": "Distância de Renderização de Entidades de Bloco",
+  "option.barium.enable_block_entity_culling": "Otimizar Entidades de Bloco (Distância)",
+  "tooltip.barium.enable_block_entity_culling": "Para de renderizar entidades de bloco (baús, placas) que estão muito longe.",
+  "option.barium.block_entity_render_distance": "Dist. de Render. de Entidades de Bloco",
+  "tooltip.barium.block_entity_render_distance": "Distância máxima em que entidades de bloco são renderizadas.",
+
+  "option.barium.enable_block_entity_occlusion_culling": "Otimizar Entidades de Bloco (Oclusão)",
+  "tooltip.barium.enable_block_entity_occlusion_culling": "Para de renderizar entidades de bloco que estão escondidas atrás de outros blocos.\nPode melhorar muito o FPS em cenas complexas.",
+  "option.barium.block_entity_occlusion_min_distance": "Dist. Mínima para Oclusão de Entidades",
+  "tooltip.barium.block_entity_occlusion_min_distance": "A checagem só ativa para entidades além desta distância.\nEvita checagens em objetos muito próximos.",
+
   "option.barium.enable_dense_foliage_culling": "Ativar Otimização de Folhagem Densa",
+  "tooltip.barium.enable_dense_foliage_culling": "Pula aleatoriamente a renderização de algumas gramas e samambaias para tornar áreas densas menos pesadas.",
   "option.barium.dense_foliage_culling_level": "Nível da Otimização de Folhagem (0-3)",
+  "tooltip.barium.dense_foliage_culling_level": "Quão agressivamente otimizar a folhagem. 0 = desligado, 3 = otimização máxima.",
 
   "option.barium.enable_particle_optimizations": "Ativar Otimização de Partículas",
-  "option.barium.max_global_particles": "Máximo de Partículas Globais"
+  "option.barium.max_global_particles": "Máximo de Partículas Globais",
+
+  "option.barium.disable_entity_outlines": "Desativar Efeito de Brilho",
+  "tooltip.barium.disable_entity_outlines": "Desativa completamente o contorno brilhante (ex: de flechas espectrais).",
+  "option.barium.enable_half_res_outlines": "Efeito de Brilho em Meia Resolução",
+  "tooltip.barium.enable_half_res_outlines": "Renderiza o efeito de brilho em meia resolução para melhor performance.",
+  "option.barium.disable_vignette": "Desativar Vinheta",
+  "tooltip.barium.disable_vignette": "Remove o efeito escurecido nas bordas da tela, especialmente em locais escuros.",
+  "option.barium.disable_toasts": "Desativar Notificações (Toasts)",
+  "tooltip.barium.disable_toasts": "Esconde os pop-ups de receitas/conquistas no canto superior direito.",
+
+  "option.barium.enable_entity_tick_culling": "Ativar Otimização de Ticks de Entidades",
+  "tooltip.barium.enable_entity_tick_culling": "Reduz a frequência de atualização da lógica (IA) de entidades distantes.\nMelhora a performance da CPU em áreas com muitos monstros.",
+  "option.barium.entity_tick_distance": "Distância para Otimização de Ticks",
+  "tooltip.barium.entity_tick_distance": "Entidades além desta distância terão sua lógica atualizada com menos frequência.",
+
+  "option.barium.reduce_ambient_particles": "Reduzir Partículas de Ambiente",
+  "tooltip.barium.reduce_ambient_particles": "Reduz a frequência de efeitos de partículas do ambiente (fumaça de tocha, gotas d'água).\nReduz o uso constante da CPU.",
+  
+  "option.barium.enable_hopper_culling": "Ativar Otimização de Funis",
+  "tooltip.barium.enable_hopper_culling": "Reduz a frequência de atualização de funis distantes. Grande economia de CPU para farms.",
+  
+  "option.barium.reduce_explosion_particles": "Reduzir Partículas de Explosão",
+  "tooltip.barium.reduce_explosion_particles": "Reduz drasticamente a quantidade de partículas de explosões para prevenir picos de lag.",
+  
+  "option.barium.enable_beacon_culling": "Ativar Otimização de Sinalizadores",
+  "tooltip.barium.enable_beacon_culling": "Previne a renderização de raios de sinalizadores muito distantes."
 }

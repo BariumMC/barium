@@ -24,17 +24,19 @@ public abstract class BlockEntityRenderDispatcherMixin {
         cancellable = true
     )
     private <E extends BlockEntity> void barium$advancedBlockEntityCulling(E blockEntity, float tickDelta, MatrixStack matrices, VertexConsumerProvider vertexConsumers, CallbackInfo ci) {
-        if (this.camera == null) {
-            return;
-        }
+    if (this.camera == null) {
+        return;
+    }
 
-        if (!ChunkOptimizer.shouldRenderBlockEntity(blockEntity, this.camera)) {
-            ci.cancel();
-            return;
-        }
+    // Verificação 1: A entidade está longe demais? (Otimização de distância)
+    if (!ChunkOptimizer.shouldRenderBlockEntity(blockEntity, this.camera)) {
+        ci.cancel();
+        return; // Retorna para não fazer a segunda verificação
+    }
 
-        if (ChunkOptimizer.isBlockEntityOccluded(blockEntity, this.camera)) {
-            ci.cancel();
-        }
+    // Verificação 2: A entidade está escondida atrás de um muro? (Otimização de oclusão)
+    // Agora que está consertada, podemos usá-la com segurança.
+    if (ChunkOptimizer.isBlockEntityOccluded(blockEntity, this.camera)) {
+        ci.cancel();
     }
 }

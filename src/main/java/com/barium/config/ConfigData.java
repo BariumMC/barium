@@ -22,6 +22,7 @@ public class ConfigData {
     public int DENSE_FOLIAGE_CULLING_LEVEL = 2;
     public boolean ENABLE_BEACON_BEAM_CULLING = true; // Já existia
     public double BEACON_BEAM_CULL_DISTANCE_SQ = 128 * 128; // Já existia
+    public double BLOCK_ENTITY_OCCLUSION_MIN_DISTANCE_SQ = 8 * 8;
     public boolean ENABLE_ARMOR_STAND_LOD = true;
     public double ARMOR_STAND_LOD_DISTANCE_SQ = 32 * 32;
 
