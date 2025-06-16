@@ -2,6 +2,7 @@ package com.barium.client.mixin;
 
 import com.barium.config.BariumConfig;
 import net.minecraft.block.entity.HopperBlockEntity;
+import net.minecraft.entity.player.PlayerEntity; // Importe o PlayerEntity
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 import org.spongepowered.asm.mixin.Mixin;
@@ -13,9 +14,9 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 public class HopperBlockEntityMixin {
 
     /**
-     * Em vez de injetar no 'tick', injetamos no método 'insert', que é a operação principal
-     * do funil. Se o funil estiver longe, cancelamos a tentativa de inserção,
-     * economizando a busca por inventários e outras verificações caras.
+     * Injeta no método 'insert' para controlar a lógica do funil.
+     * Esta versão final e segura verifica periodicamente a distância do jogador mais próximo,
+     * tratando corretamente o caso em que nenhum jogador é encontrado.
      */
     @Inject(method = "insert", at = @At("HEAD"), cancellable = true)
     private void barium$cullHopperLogic(CallbackInfoReturnable<Boolean> cir) {
@@ -26,19 +27,23 @@ public class HopperBlockEntityMixin {
             return;
         }
 
-        // A lógica de culling só se aplica em ticks espaçados para reduzir a verificação de distância.
-        if (world.getTime() % 8 != 0) {
+        // CORREÇÃO: Usamos '==' para fazer a verificação apenas 1 vez a cada 8 ticks,
+        // o que é muito mais eficiente.
+        if (world.getTime() % 8 == 0) {
             BlockPos pos = self.getPos();
             
-            // Verificação rápida: se não houver jogador por perto, pula a lógica cara.
-            if (!world.isPlayerInRange(pos.getX(), pos.getY(), pos.getZ(), 64)) {
-                cir.setReturnValue(false); // Diz ao jogo que "nada foi inserido"
+            // Pega o jogador mais próximo de forma segura.
+            PlayerEntity closestPlayer = world.getClosestPlayer(pos.getX(), pos.getY(), pos.getZ(), 128, false);
+
+            // A VERIFICAÇÃO DE SEGURANÇA CRÍTICA:
+            // Se não houver nenhum jogador por perto, consideramos que o funil deve ser otimizado.
+            if (closestPlayer == null) {
+                cir.setReturnValue(false); // Diz ao jogo que "nada foi inserido".
                 return;
             }
 
-            // Verificação mais precisa se houver um jogador próximo
-            double distanceSq = world.getClosestPlayer(pos.getX(), pos.getY(), pos.getZ(), 128, false)
-                                  .getPos().squaredDistanceTo(pos.toCenterPos());
+            // Agora que sabemos que 'closestPlayer' não é nulo, podemos usá-lo com segurança.
+            double distanceSq = closestPlayer.getPos().squaredDistanceTo(pos.toCenterPos());
             
             if (distanceSq > BariumConfig.C.HOPPER_TICK_CULLING_DISTANCE_SQ) {
                 cir.setReturnValue(false);
