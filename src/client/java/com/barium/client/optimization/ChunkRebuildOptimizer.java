@@ -20,8 +20,10 @@ public class ChunkRebuildOptimizer {
     public static boolean shouldSkipSection(ChunkSection section) {
         // Se a otimização estiver desativada, nunca pulamos a seção.
         // A lógica do vanilla (section.isEmpty()) cuidará do básico.
-        // (Esta otimização não está em BariumConfig ainda, então vamos assumir que está sempre ativa)
-        
+        if (!BariumConfig.C.ENABLE_EMPTY_CHUNK_SECTION_CULLING) {
+            return section.isEmpty();
+        }
+
         // A verificação `section.isEmpty()` é um primeiro passo rápido que o vanilla faz.
         // Ele verifica se a paleta de blocos contém apenas ar.
         if (section.isEmpty()) {

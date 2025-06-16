@@ -1,4 +1,3 @@
-// --- Crie este arquivo em: src/client/java/com/barium/client/optimization/ChunkRenderPrioritizer.java ---
 package com.barium.client.optimization;
 
 import net.minecraft.client.render.chunk.ChunkBuilder;
