@@ -1,55 +1,49 @@
 package com.barium.client.mixin;
 
 import com.barium.config.BariumConfig;
+import net.minecraft.block.BlockState;
 import net.minecraft.block.entity.HopperBlockEntity;
+import net.minecraft.client.MinecraftClient;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
-import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 @Mixin(HopperBlockEntity.class)
 public class HopperBlockEntityMixin {
 
     /**
-     * Em vez de injetar no 'tick', injetamos no método 'insert', que é a operação principal
-     * do funil. Se o funil estiver longe, cancelamos a tentativa de inserção,
-     * economizando a busca por inventários e outras verificações caras.
-     *
-     * A CORREÇÃO CRÍTICA é especificar a assinatura completa "insert()Z" para desambiguar
-     * e garantir que estamos injetando no método de instância, não no estático.
+     * A solução final e correta para otimizar funis no lado do cliente.
+     * Injetamos no início do método `clientTick`, que é público e estático.
+     * Nosso método handler também é estático, o que resolve todos os erros de compilação anteriores.
+     * O próprio método `clientTick` nos fornece todos os parâmetros de que precisamos (world, pos).
      */
-    @Inject(method = "insert()Z", at = @At("HEAD"), cancellable = true)
-    private void barium$cullHopperLogic(CallbackInfoReturnable<Boolean> cir) {
-        HopperBlockEntity self = (HopperBlockEntity)(Object)this;
-        World world = self.getWorld();
-
-        if (world == null || !world.isClient || !BariumConfig.C.ENABLE_HOPPER_TICK_CULLING) {
+    @Inject(
+        method = "clientTick(Lnet/minecraft/world/World;Lnet/minecraft/util/math/BlockPos;Lnet/minecraft/block/BlockState;Lnet/minecraft/block/entity/HopperBlockEntity;)V",
+        at = @At("HEAD"),
+        cancellable = true
+    )
+    private static void barium$cullHopperClientTick(World world, BlockPos pos, BlockState state, HopperBlockEntity blockEntity, CallbackInfo ci) {
+        // Verificação inicial: só executa se a otimização estiver ligada.
+        if (!BariumConfig.C.ENABLE_HOPPER_TICK_CULLING) {
             return;
         }
 
-        // A lógica de culling só se aplica em ticks espaçados para reduzir a verificação de distância.
-        if (world.getTime() % 8 == 0) { // Verifica 1 vez a cada 8 ticks
-            BlockPos pos = self.getPos();
-            
-            // Verificação rápida: se não houver jogador por perto, pula a lógica cara.
-            // A distância de 64 é um bom valor padrão.
-            if (!world.isPlayerInRange(pos.getX(), pos.getY(), pos.getZ(), 64)) {
-                cir.setReturnValue(false); // Diz ao jogo que "nada foi inserido"
-                return;
-            }
+        // Pega o jogador do cliente.
+        MinecraftClient client = MinecraftClient.getInstance();
+        if (client.player == null) {
+            return; // Segurança: se não houver jogador, não faz nada.
+        }
 
-            // Verificação mais precisa se houver um jogador próximo.
-            // Esta lógica está correta, mas a chamada a `getClosestPlayer` pode ser cara.
-            // A verificação `isPlayerInRange` acima já filtra a maioria dos casos.
-            if (world.getClosestPlayer(pos.getX(), pos.getY(), pos.getZ(), 128, false) == null) {
-                // Se não há jogador mesmo em uma área maior, cancela.
-                cir.setReturnValue(false);
-            }
-            // Se um jogador for encontrado, a lógica de inserção do funil continua normalmente.
-            // Uma melhoria futura poderia ser adicionar a verificação de distância aqui, mas isso já
-            // resolve o crash e fornece uma otimização significativa.
+        // Calcula a distância ao quadrado entre o jogador e o funil.
+        double distanceSq = client.player.getPos().squaredDistanceTo(pos.toCenterPos());
+
+        // Se a distância for maior que a configurada, cancela o tick do funil.
+        // Isso impede animações e outras lógicas do lado do cliente.
+        if (distanceSq > BariumConfig.C.HOPPER_TICK_CULLING_DISTANCE_SQ) {
+            ci.cancel();
         }
     }
 }

@@ -17,7 +17,6 @@
 				"BuiltChunkRebuildMixin",
         "WorldRendererChunkPriorityMixin",
 		"ClientWorldMixin",
-		        "HopperBlockEntityMixin",
         "WorldMixin",
         "BeaconBlockEntityRendererMixin"
 	],
