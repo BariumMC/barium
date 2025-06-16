@@ -20,35 +20,42 @@ public abstract class ChunkRenderMixin {
 
     @Inject(method = "shouldBuild()Z", at = @At("HEAD"), cancellable = true)
     private void barium$onShouldBuild(CallbackInfoReturnable<Boolean> cir) {
-        // CORREÇÃO: Removemos a verificação da variável ENABLE_CHUNK_OPTIMIZATION,
-        // que não existe mais. A única verificação necessária aqui é a de frustum culling.
+        // Se a nova otimização estiver desligada, não faz nada.
         if (!BariumConfig.C.ENABLE_FRUSTUM_CHUNK_CULLING) {
             return;
         }
 
+        // Pega o BitSet com os chunks visíveis que calculamos anteriormente.
         BitSet chunksToRenderBitSet = ChunkRenderManager.getChunksToRender();
         if (chunksToRenderBitSet == null) {
-            return;
+            return; // Segurança, caso algo não tenha sido inicializado.
         }
 
+        // Pega as dimensões da nossa grade de renderização.
         final int minChunkX = ChunkRenderManager.getMinRenderChunkX();
         final int minChunkZ = ChunkRenderManager.getMinRenderChunkZ();
         final int gridSize = ChunkRenderManager.getRenderGridSize();
 
+        // Converte a posição deste chunk para coordenadas de chunk.
         final BlockPos origin = this.getOrigin();
         final int chunkX = origin.getX() >> 4;
         final int chunkZ = origin.getZ() >> 4;
 
+        // Calcula a posição local do chunk dentro da nossa grade.
         final int localX = chunkX - minChunkX;
         final int localZ = chunkZ - minChunkZ;
 
+        // Se o chunk estiver fora da nossa grade, ele definitivamente não deve ser construído.
         if (localX < 0 || localX >= gridSize || localZ < 0 || localZ >= gridSize) {
             cir.setReturnValue(false);
             return;
         }
 
+        // Calcula o índice no BitSet.
         final int chunkIndex = localX + localZ * gridSize;
 
+        // Define o valor de retorno do método para o valor no nosso BitSet.
+        // Se o chunk estiver na lista (true), o método continua. Se não (false), ele é cancelado.
         cir.setReturnValue(chunksToRenderBitSet.get(chunkIndex));
     }
 }

@@ -61,5 +61,8 @@
   "tooltip.barium.reduce_explosion_particles": "Greatly reduces the amount of particles from explosions to prevent lag spikes.",
   
   "option.barium.enable_beacon_culling": "Enable Beacon Beam Culling",
-  "tooltip.barium.enable_beacon_culling": "Prevents rendering of very distant beacon beams."
+  "tooltip.barium.enable_beacon_culling": "Prevents rendering of very distant beacon beams.",
+
+"option.barium.enable_frustum_culling": "Enable Frustum Chunk Culling",
+"tooltip.barium.enable_frustum_culling": "Prevents the game from rebuilding chunks that are not inside the camera's view.\nReduces CPU load when turning around."
 }

@@ -61,5 +61,8 @@
   "tooltip.barium.reduce_explosion_particles": "Reduz drasticamente a quantidade de partículas de explosões para prevenir picos de lag.",
   
   "option.barium.enable_beacon_culling": "Ativar Otimização de Sinalizadores",
-  "tooltip.barium.enable_beacon_culling": "Previne a renderização de raios de sinalizadores muito distantes."
+  "tooltip.barium.enable_beacon_culling": "Previne a renderização de raios de sinalizadores muito distantes.",
+
+"option.barium.enable_frustum_culling": "Ativar Otimização de Chunks por Frustum",
+"tooltip.barium.enable_frustum_culling": "Impede que o jogo reconstrua chunks que não estão dentro do campo de visão da câmera.\nReduz a carga na CPU ao virar a visão."
 }

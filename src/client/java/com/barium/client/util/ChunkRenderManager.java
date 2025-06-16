@@ -32,7 +32,7 @@ public class ChunkRenderManager {
                 int chunkX = minRenderChunkX + x;
                 int chunkZ = minRenderChunkZ + z;
 
-                // CORREÇÃO: Usamos getDimension().height() para obter a altura máxima do mundo.
+                // Usamos getDimension().height() para obter a altura máxima do mundo.
                 Box chunkBox = new Box(chunkX * 16, client.world.getBottomY(), chunkZ * 16,
                         chunkX * 16 + 16, client.world.getDimension().height() + client.world.getBottomY(), chunkZ * 16 + 16);
 

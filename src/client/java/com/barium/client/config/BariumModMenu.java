@@ -46,6 +46,12 @@ public class BariumModMenu implements ModMenuApi {
                     .setSaveConsumer(newValue -> BariumConfig.C.MAX_CHUNK_UPLOADS_PER_FRAME = newValue)
                     .build());
 
+            chunkPerformance.addEntry(entryBuilder.startBooleanToggle(Text.translatable("option.barium.enable_frustum_culling"), BariumConfig.C.ENABLE_FRUSTUM_CHUNK_CULLING)
+        .setDefaultValue(defaults.ENABLE_FRUSTUM_CHUNK_CULLING)
+        .setTooltip(Text.translatable("tooltip.barium.enable_frustum_culling"))
+        .setSaveConsumer(newValue -> BariumConfig.C.ENABLE_FRUSTUM_CHUNK_CULLING = newValue)
+        .build());
+
             // --- Categoria 2: Otimização e LOD (Level of Detail) ---
             ConfigCategory cullingLod = builder.getOrCreateCategory(Text.translatable("category.barium.culling_lod"));
 
