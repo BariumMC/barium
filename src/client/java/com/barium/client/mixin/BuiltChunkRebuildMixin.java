@@ -1,4 +1,3 @@
-// --- FINAL: Substitua o conteúdo em: src/client/java/com/barium/client/mixin/BuiltChunkRebuildMixin.java ---
 package com.barium.client.mixin;
 
 import com.barium.client.optimization.ChunkRebuildOptimizer;
@@ -14,11 +13,10 @@ public class BuiltChunkRebuildMixin {
     /**
      * Redireciona a chamada original `section.isEmpty()` para a nossa lógica mais robusta.
      * Esta é a forma mais eficiente de implementar o culling de seções vazias.
-     * O aviso de "Cannot find target" pode ser um problema de cache do ambiente de build.
-     * Esta assinatura está correta para o Minecraft 1.21.4.
+     * A assinatura do método alvo está correta para o Minecraft 1.21.4.
      */
     @Redirect(
-        method = "rebuild",
+        method = "rebuild(Lnet/minecraft/client/render/chunk/ChunkBuilder$RebuildTask;)Ljava/util/Set;",
         at = @At(value = "INVOKE", target = "Lnet/minecraft/world/chunk/ChunkSection;isEmpty()Z")
     )
     private boolean barium$cullEmptyChunkSections(ChunkSection section) {

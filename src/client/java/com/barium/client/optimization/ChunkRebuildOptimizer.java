@@ -12,39 +12,33 @@ public class ChunkRebuildOptimizer {
 
     /**
      * Verifica se uma determinada seção de chunk deve ser pulada durante a reconstrução.
-     * Uma seção deve ser pulada se a otimização estiver ativa e a seção for considerada vazia.
+     * Esta é a versão corrigida que respeita a configuração do usuário.
      *
      * @param section A ChunkSection a ser verificada.
      * @return true se a seção deve ser pulada (é vazia), false caso contrário.
      */
     public static boolean shouldSkipSection(ChunkSection section) {
-        // Se a otimização estiver desativada, nunca pulamos a seção.
-        // A lógica do vanilla (section.isEmpty()) cuidará do básico.
+        // Se a otimização estiver desativada, nós revertemos para a lógica original do vanilla.
         if (!BariumConfig.C.ENABLE_EMPTY_CHUNK_SECTION_CULLING) {
+            // A chamada original era section.isEmpty(), então retornamos exatamente isso.
             return section.isEmpty();
         }
 
-        // A verificação `section.isEmpty()` é um primeiro passo rápido que o vanilla faz.
-        // Ele verifica se a paleta de blocos contém apenas ar.
+        // Se a otimização está LIGADA, usamos nossa lógica aprimorada.
         if (section.isEmpty()) {
             return true;
         }
 
-        // Nossa verificação mais aprofundada. Itera por todos os 16*16*16 blocos.
-        // Isso é necessário para casos onde a paleta não está vazia, mas a seção ainda assim
-        // só contém ar.
+        // Nossa verificação mais aprofundada.
         for (int x = 0; x < 16; x++) {
             for (int y = 0; y < 16; y++) {
                 for (int z = 0; z < 16; z++) {
                     if (!section.getBlockState(x, y, z).isAir()) {
-                        // Encontrou um bloco que não é ar, então a seção não está vazia.
                         return false;
                     }
                 }
             }
         }
-
-        // Se o loop terminar sem encontrar nenhum bloco, a seção está de fato vazia.
         return true;
     }
 }
