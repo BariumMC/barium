@@ -5,14 +5,15 @@ import net.minecraft.block.BlockState;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.render.VertexConsumer;
 import net.minecraft.client.render.block.BlockModelRenderer;
-import net.minecraft.client.render.model.BakedModel; // Corrected import (if needed)
+// VERIFIQUE ESTES IMPORTS NO SEU IDE. ESTES SÃO OS CAMINHOS MAIS PROVÁVEIS.
+import net.minecraft.client.render.model.BakedModel;
 import net.minecraft.client.render.model.BakedQuad;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.util.math.random.Random;
-import net.minecraft.world.BlockRenderView; // Corrected import (if needed)
+import net.minecraft.world.BlockRenderView;
 import org.joml.Vector3f;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
@@ -28,7 +29,7 @@ public class BlockModelRendererMixin {
     private static BlockPos currentPos;
     private static int quadCounter = 0;
 
-    // Corrected signature for BlockModelRenderer.render
+    // Se esta assinatura estiver dando erro, ela pode ter mudado.
     @Inject(
         method = "render(Lnet/minecraft/world/BlockRenderView;Lnet/minecraft/client/render/model/BakedModel;Lnet/minecraft/block/BlockState;Lnet/minecraft/util/math/BlockPos;Lnet/minecraft/client/util/math/MatrixStack;Lnet/minecraft/client/render/VertexConsumer;ZLnet/minecraft/util/math/random/Random;JI)V",
         at = @At("HEAD")
@@ -39,7 +40,7 @@ public class BlockModelRendererMixin {
         quadCounter = 0;
     }
 
-    // Corrected signature for BlockModelRenderer.renderQuad
+    // Se esta assinatura estiver dando erro, ela também pode ter mudado.
     @Inject(
         method = "renderQuad(Lnet/minecraft/client/util/math/MatrixStack$Entry;Lnet/minecraft/client/render/VertexConsumer;FFFLjava/util/List;II)V",
         at = @At("HEAD"),
