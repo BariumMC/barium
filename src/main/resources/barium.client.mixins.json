@@ -14,7 +14,6 @@
 		"WorldRendererMixin",
 		"GameRendererMixin",
 		"BlockRenderManagerMixin",
-				"BuiltChunkRebuildMixin",
         "WorldRendererChunkPriorityMixin",
 		"ClientWorldMixin",
         "BeaconBlockEntityRendererMixin"
