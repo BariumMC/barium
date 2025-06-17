@@ -1,12 +1,12 @@
 package com.barium.client.mixin;
 
 import com.barium.config.BariumConfig;
+import net.minecraft.block.entity.BeaconBlockEntity;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.render.Camera;
 import net.minecraft.client.render.VertexConsumerProvider;
 import net.minecraft.client.render.block.entity.BeaconBlockEntityRenderer;
 import net.minecraft.client.util.math.MatrixStack;
-import net.minecraft.block.entity.BeaconBlockEntity;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -16,7 +16,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 public class BeaconBlockEntityRendererMixin {
 
     @Inject(
-        method = "render(Lnet/minecraft/block/entity/BeaconBlockEntity;FLnet/minecraft/client/util/math/MatrixStack;Lnet/minecraft/client/render/VertexConsumerProvider;II)V",
+        method = "render(Lnet/minecraft/block/entity/BeaconBlockEntity;FLnet/minecraft/client/util/math/MatrixStack;Lnet/minecraft/client/render/VertexConsumerProvider;II)V", // Keep this signature if it's confirmed correct, otherwise update
         at = @At("HEAD"),
         cancellable = true
     )
@@ -27,9 +27,10 @@ public class BeaconBlockEntityRendererMixin {
 
         Camera camera = MinecraftClient.getInstance().gameRenderer.getCamera();
         if (camera == null) return;
-        
+
         double distanceSq = beacon.getPos().getSquaredDistance(camera.getPos());
 
+        // Use the configured squared distance.
         if (distanceSq > BariumConfig.C.BEACON_BEAM_CULL_DISTANCE_SQ) {
             ci.cancel();
         }

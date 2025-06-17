@@ -7,8 +7,8 @@ import net.minecraft.client.render.VertexConsumer;
 import net.minecraft.client.render.block.BlockRenderManager;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.random.Random;
-import net.minecraft.world.BlockRenderView;
+import net.minecraft.util.math.random.Random; // Ensure this Random is the correct one (e.g., net.minecraft.util.math.random.Random)
+import net.minecraft.world.BlockRenderView; // Ensure this is the correct interface/class
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -20,7 +20,7 @@ import java.util.concurrent.ThreadLocalRandom;
 public class BlockRenderManagerMixin {
 
     @Inject(
-        method = "renderBlock(Lnet/minecraft/block/BlockState;Lnet/minecraft/util/math/BlockPos;Lnet/minecraft/world/BlockRenderView;Lnet/minecraft/client/util/math/MatrixStack;Lnet/minecraft/client/render/VertexConsumer;ZLnet/minecraft/util/math/random/Random;)V",
+        method = "renderBlock(Lnet/minecraft/block/BlockState;Lnet/minecraft/util/math/BlockPos;Lnet/minecraft/world/BlockRenderView;Lnet/minecraft/client/util/math/MatrixStack;Lnet/minecraft/client/render/VertexConsumer;ZLnet/minecraft/util/math/random/Random;)V", // Verify this signature
         at = @At("HEAD"),
         cancellable = true
     )
@@ -30,7 +30,8 @@ public class BlockRenderManagerMixin {
         }
 
         if (isDenseFoliage(state)) {
-            if (ThreadLocalRandom.current().nextInt(4) < BariumConfig.C.DENSE_FOLIAGE_CULLING_LEVEL) {
+            // Use the provided Random instance for better compatibility
+            if (random.nextInt(4) < BariumConfig.C.DENSE_FOLIAGE_CULLING_LEVEL) {
                 ci.cancel();
             }
         }

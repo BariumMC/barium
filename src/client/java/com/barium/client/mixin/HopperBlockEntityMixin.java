@@ -21,7 +21,7 @@ public class HopperBlockEntityMixin {
      * O próprio método `clientTick` nos fornece todos os parâmetros de que precisamos (world, pos).
      */
     @Inject(
-        method = "clientTick(Lnet/minecraft/world/World;Lnet/minecraft/util/math/BlockPos;Lnet/minecraft/block/BlockState;Lnet/minecraft/block/entity/HopperBlockEntity;)V",
+        method = "clientTick(Lnet/minecraft/world/World;Lnet/minecraft/util/math/BlockPos;Lnet/minecraft/block/BlockState;Lnet/minecraft/block/entity/HopperBlockEntity;)V", // Verifique esta assinatura exata
         at = @At("HEAD"),
         cancellable = true
     )
