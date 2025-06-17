@@ -28,6 +28,8 @@ public abstract class ClientWorldMixin {
 
         double distanceSq = entity.getPos().squaredDistanceTo(client.player.getPos());
         if (distanceSq > BariumConfig.C.ENTITY_TICK_CULLING_DISTANCE_SQ) {
+            // Reduz a frequência de tick para entidades distantes.
+            // A verificação de idade é uma forma simples de fazer isso.
             if (entity.age % 4 != 0) {
                 ci.cancel();
             }
