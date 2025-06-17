@@ -2,11 +2,14 @@ package com.barium.client.mixin;
 
 import com.barium.config.BariumConfig;
 import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.world.ClientWorld; // Import correto para a @Mixin
+import net.minecraft.client.world.ClientWorld;
 import net.minecraft.entity.Entity;
 import net.minecraft.particle.ParticleEffect;
 import net.minecraft.particle.ParticleTypes;
-import net.minecraft.world.World; // Import para usar .getTime()
+import net.minecraft.util.math.BlockPos; // Import necessário
+import net.minecraft.util.math.Vec3d; // Import necessário
+import net.minecraft.util.shape.VoxelShape; // Import necessário
+import net.minecraft.world.World;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -14,7 +17,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import java.util.concurrent.ThreadLocalRandom;
 
-@Mixin(ClientWorld.class) // <-- Aplicado à classe correta
+@Mixin(ClientWorld.class)
 public abstract class ClientWorldMixin {
 
     /**
@@ -24,18 +27,15 @@ public abstract class ClientWorldMixin {
     @Inject(method = "tickEntity", at = @At("HEAD"), cancellable = true)
     private void barium$cullDistantEntityTicks(Entity entity, CallbackInfo ci) {
         if (!BariumConfig.C.ENABLE_ENTITY_TICK_CULLING) return;
-        // Ignora jogadores e entidades que estão sendo passageiros/passageiros
         if (entity.isPlayer() || entity.hasPassengers() || entity.getVehicle() != null) return;
 
         MinecraftClient client = MinecraftClient.getInstance();
-        if (client.player == null) return; // Segurança caso o cliente não esteja pronto
+        if (client.player == null) return;
 
         double distanceSq = entity.getPos().squaredDistanceTo(client.player.getPos());
         if (distanceSq > BariumConfig.C.ENTITY_TICK_CULLING_DISTANCE_SQ) {
-            // Reduz a frequência de tick para entidades distantes.
-            // A verificação de idade é uma forma simples de fazer isso (executa a cada 4 ticks).
             if (entity.age % 4 != 0) {
-                ci.cancel(); // Cancela o tick desta entidade
+                ci.cancel();
             }
         }
     }
@@ -46,32 +46,29 @@ public abstract class ClientWorldMixin {
      */
     @Inject(method = "doRandomBlockDisplayTicks(III)V", at = @At("HEAD"), cancellable = true)
     private void barium$reduceAmbientParticles(int centerX, int centerY, int centerZ, CallbackInfo ci) {
-        // A verificação 'isClient' não é necessária, pois já estamos em ClientWorld.
         if (!BariumConfig.C.REDUCE_AMBIENT_PARTICLES) return;
 
-        // Pula a execução em ticks pares, cortando o custo de CPU pela metade.
-        // Usamos `(World)(Object)this` para poder chamar getTime().
         if (((World)(Object)this).getTime() % 2 == 0) {
-            ci.cancel(); // Cancela a execução deste método em ticks pares
+            ci.cancel();
         }
     }
 
     /**
      * Otimização de Partículas de Explosão.
-     * Alvo: ClientWorld.addParticle(ParticleEffect, DDDDDD)
-     * Este método agora está aqui pois pertence ao ClientWorld.
+     * Alvo: ClientWorld.addParticle(BlockPos, ParticleEffect, VoxelShape, double)
+     * Esta é a sobrecarga mais provável para interceptar a criação de partículas genéricas.
      */
     @Inject(
-        method = "addParticle(Lnet/minecraft/particle/ParticleEffect;DDDDDD)V", // Assinatura correta para ClientWorld
+        // Descritor para: addParticle(BlockPos pos, ParticleEffect parameters, VoxelShape shape, double y)
+        method = "addParticle(Lnet/minecraft/util/math/BlockPos;Lnet/minecraft/particle/ParticleEffect;Lnet/minecraft/util/shape/VoxelShape;D)V",
         at = @At("HEAD"),
         cancellable = true
     )
-    private void barium$reduceExplosionParticles(ParticleEffect parameters, double x, double y, double z, double velocityX, double velocityY, double velocityZ, CallbackInfo ci) {
-        // Acessamos o mundo como `this` pois estamos dentro de ClientWorld.
-        World world = (World)(Object)this;
-
-        // Verifica se estamos no cliente e se a otimização de explosão está ativa
-        if (!world.isClient || !BariumConfig.C.ENABLE_EXPLOSION_PARTICLE_REDUCTION) {
+    private void barium$reduceExplosionParticles(BlockPos pos, ParticleEffect parameters, VoxelShape shape, double y, CallbackInfo ci) {
+        // `this` aqui é um ClientWorld.
+        // Precisamos verificar se ele é um cliente e se a otimização está ativa.
+        // A verificação `!world.isClient` não é necessária porque estamos no ClientWorld.
+        if (!BariumConfig.C.ENABLE_EXPLOSION_PARTICLE_REDUCTION) {
             return;
         }
 
