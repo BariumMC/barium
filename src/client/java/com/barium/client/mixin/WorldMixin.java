@@ -15,13 +15,12 @@ import java.util.concurrent.ThreadLocalRandom;
 public abstract class WorldMixin {
 
     /**
-     * CORREÇÃO PARA 1.21.6+: A assinatura correta do método pode ter mudado.
-     * Verifique a assinatura exata para 'addParticle' na sua versão do Minecraft.
-     * Com base em versões recentes, a assinatura pode ser mais ou menos assim,
-     * mas o tipo 'ParticleEffect' é a parte crucial a ser verificada.
+     * CORREÇÃO PARA 1.21.6+: A assinatura do método 'addParticle' foi corrigida para usar 'D' para double.
+     * O descritor correto para um método que recebe ParticleEffect, e depois seis doubles, é:
+     * (Lnet/minecraft/particle/ParticleEffect;DDDDDD)V
      */
     @Inject(
-        method = "addParticle(Lnet/minecraft/particle/ParticleEffect;DDDddd)V", // Assinatura corrigida
+        method = "addParticle(Lnet/minecraft/particle/ParticleEffect;DDDDDD)V", // **CORRIGIDO DESCRITOR**
         at = @At("HEAD"),
         cancellable = true
     )
