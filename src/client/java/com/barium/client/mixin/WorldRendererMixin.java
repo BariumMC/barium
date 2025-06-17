@@ -33,7 +33,7 @@ public abstract class WorldRendererMixin {
         if (BariumConfig.C.ENABLE_HALF_RESOLUTION_ENTITY_OUTLINES) {
             Framebuffer entityOutlinesFramebuffer = this.getEntityOutlinesFramebuffer();
             if (entityOutlinesFramebuffer != null) {
-                // Ajusta o viewport para o tamanho do framebuffer de meia resolução
+                // CORREÇÃO: O método agora só aceita 4 argumentos.
                 RenderSystem.viewport(0, 0, entityOutlinesFramebuffer.textureWidth, entityOutlinesFramebuffer.textureHeight);
             }
         }
@@ -50,6 +50,7 @@ public abstract class WorldRendererMixin {
         // seja renderizado corretamente.
         if (BariumConfig.C.ENABLE_HALF_RESOLUTION_ENTITY_OUTLINES) {
             MinecraftClient client = MinecraftClient.getInstance();
+            // CORREÇÃO: O método agora só aceita 4 argumentos.
             RenderSystem.viewport(0, 0, client.getFramebuffer().textureWidth, client.getFramebuffer().textureHeight);
         }
     }

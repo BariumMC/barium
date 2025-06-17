@@ -19,6 +19,7 @@ import java.util.concurrent.ThreadLocalRandom;
 @Mixin(BlockRenderManager.class)
 public class BlockRenderManagerMixin {
 
+    // CORREÇÃO: A assinatura está correta, mas reafirmamos para garantir.
     @Inject(
         method = "renderBlock(Lnet/minecraft/block/BlockState;Lnet/minecraft/util/math/BlockPos;Lnet/minecraft/world/BlockRenderView;Lnet/minecraft/client/util/math/MatrixStack;Lnet/minecraft/client/render/VertexConsumer;ZLnet/minecraft/util/math/random/Random;)V",
         at = @At("HEAD"),
@@ -29,21 +30,15 @@ public class BlockRenderManagerMixin {
             return;
         }
 
-        // Verificamos se é um dos blocos que queremos "desbastar"
         if (isDenseFoliage(state)) {
-            // Nível 1: Pula 1 em 4 (75% densidade)
-            // Nível 2: Pula 2 em 4 (50% densidade)
-            // Nível 3: Pula 3 em 4 (25% densidade)
             if (ThreadLocalRandom.current().nextInt(4) < BariumConfig.C.DENSE_FOLIAGE_CULLING_LEVEL) {
-                ci.cancel(); // Pula a renderização deste bloco de grama/arbusto
+                ci.cancel();
             }
         }
     }
 
     private boolean isDenseFoliage(BlockState state) {
-        // CORREÇÃO: Usando a referência correta para a grama.
-        // Lista de blocos que consideramos "vegetação densa"
-        return state.isOf(Blocks.SHORT_GRASS) || // O nome correto para a grama plantada
+        return state.isOf(Blocks.SHORT_GRASS) ||
                state.isOf(Blocks.FERN) ||
                state.isOf(Blocks.TALL_GRASS) ||
                state.isOf(Blocks.LARGE_FERN) ||

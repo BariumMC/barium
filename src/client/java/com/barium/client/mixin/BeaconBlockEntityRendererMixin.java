@@ -15,6 +15,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 @Mixin(BeaconBlockEntityRenderer.class)
 public class BeaconBlockEntityRendererMixin {
 
+    // CORREÇÃO: A assinatura está correta, mas reafirmamos para garantir.
     @Inject(
         method = "render(Lnet/minecraft/block/entity/BeaconBlockEntity;FLnet/minecraft/client/util/math/MatrixStack;Lnet/minecraft/client/render/VertexConsumerProvider;II)V",
         at = @At("HEAD"),
@@ -25,8 +26,6 @@ public class BeaconBlockEntityRendererMixin {
             return;
         }
 
-        // Em vez de usar um @Shadow, pegamos a câmera diretamente do MinecraftClient.
-        // É mais seguro e robusto.
         Camera camera = MinecraftClient.getInstance().gameRenderer.getCamera();
         if (camera == null) return;
         
