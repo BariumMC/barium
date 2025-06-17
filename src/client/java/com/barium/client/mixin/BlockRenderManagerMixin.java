@@ -19,7 +19,6 @@ import java.util.concurrent.ThreadLocalRandom;
 @Mixin(BlockRenderManager.class)
 public class BlockRenderManagerMixin {
 
-    // CORREÇÃO: A assinatura está correta, mas reafirmamos para garantir.
     @Inject(
         method = "renderBlock(Lnet/minecraft/block/BlockState;Lnet/minecraft/util/math/BlockPos;Lnet/minecraft/world/BlockRenderView;Lnet/minecraft/client/util/math/MatrixStack;Lnet/minecraft/client/render/VertexConsumer;ZLnet/minecraft/util/math/random/Random;)V",
         at = @At("HEAD"),

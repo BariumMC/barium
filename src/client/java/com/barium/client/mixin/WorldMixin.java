@@ -14,15 +14,14 @@ import java.util.concurrent.ThreadLocalRandom;
 public abstract class WorldMixin {
 
     /**
-     * Injeta no início do método que adiciona QUALQUER partícula ao mundo.
-     * CORREÇÃO: A assinatura foi atualizada para a versão 1.21.5+, que inclui um booleano 'force'.
+     * CORREÇÃO PARA 1.21.6+: A assinatura correta do método não inclui o booleano 'force'.
      */
     @Inject(
-        method = "addParticle(Lnet/minecraft/particle/ParticleEffect;ZDDDDDD)V",
+        method = "addParticle(Lnet/minecraft/particle/ParticleEffect;DDDDDD)V",
         at = @At("HEAD"),
         cancellable = true
     )
-    private void barium$reduceExplosionParticles(net.minecraft.particle.ParticleEffect parameters, boolean force, double x, double y, double z, double velocityX, double velocityY, double velocityZ, CallbackInfo ci) {
+    private void barium$reduceExplosionParticles(net.minecraft.particle.ParticleEffect parameters, double x, double y, double z, double velocityX, double velocityY, double velocityZ, CallbackInfo ci) {
         World self = (World)(Object)this;
 
         if (!self.isClient || !BariumConfig.C.ENABLE_EXPLOSION_PARTICLE_REDUCTION) {
