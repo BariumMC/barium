@@ -5,7 +5,6 @@ import net.minecraft.block.BlockState;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.render.VertexConsumer;
 import net.minecraft.client.render.block.BlockModelRenderer;
-// VERIFIQUE ESTES IMPORTS NO SEU IDE. ESTES SÃO OS CAMINHOS MAIS PROVÁVEIS.
 import net.minecraft.client.render.model.BakedModel;
 import net.minecraft.client.render.model.BakedQuad;
 import net.minecraft.client.util.math.MatrixStack;
@@ -29,7 +28,6 @@ public class BlockModelRendererMixin {
     private static BlockPos currentPos;
     private static int quadCounter = 0;
 
-    // Se esta assinatura estiver dando erro, ela pode ter mudado.
     @Inject(
         method = "render(Lnet/minecraft/world/BlockRenderView;Lnet/minecraft/client/render/model/BakedModel;Lnet/minecraft/block/BlockState;Lnet/minecraft/util/math/BlockPos;Lnet/minecraft/client/util/math/MatrixStack;Lnet/minecraft/client/render/VertexConsumer;ZLnet/minecraft/util/math/random/Random;JI)V",
         at = @At("HEAD")
@@ -40,16 +38,13 @@ public class BlockModelRendererMixin {
         quadCounter = 0;
     }
 
-    // Se esta assinatura estiver dando erro, ela também pode ter mudado.
     @Inject(
         method = "renderQuad(Lnet/minecraft/client/util/math/MatrixStack$Entry;Lnet/minecraft/client/render/VertexConsumer;FFFLjava/util/List;II)V",
         at = @At("HEAD"),
         cancellable = true
     )
     private void barium$onRenderQuad(MatrixStack.Entry entry, VertexConsumer consumer, float red, float green, float blue, List<BakedQuad> quads, int light, int overlay, CallbackInfo ci) {
-        if (currentLod == FoliageOptimizer.FoliageLod.FULL) {
-            return;
-        }
+        if (currentLod == FoliageOptimizer.FoliageLod.FULL) return;
 
         BakedQuad quad = quads.get(0);
 
