@@ -55,7 +55,6 @@ public abstract class BlockModelRendererMixin {
 
         BakedQuad quad = quads.get(0);
 
-        // CORREÇÃO DO ERRO DE DIGITAÇÃO
         if (this.barium$currentLod == FoliageOptimizer.FoliageLod.CULLED) {
             ci.cancel();
             return;
@@ -69,8 +68,8 @@ public abstract class BlockModelRendererMixin {
         }
 
         if (this.barium$currentLod == FoliageOptimizer.FoliageLod.CROSS_WITH_CULLING) {
-            // CORREÇÃO DO MÉTODO
-            Direction faceDirection = quad.getSide();
+            // CORREÇÃO FINAL: O método correto é getDirection()
+            Direction faceDirection = quad.getDirection();
             if (faceDirection != null && (faceDirection.getAxis().isHorizontal() || faceDirection.getAxis().isVertical())) {
                 Vec3d cameraDirection = MinecraftClient.getInstance().gameRenderer.getCamera().getPos().subtract(this.barium$currentPos.toCenterPos()).normalize();
                 Vector3f faceNormal = faceDirection.getUnitVector();
