@@ -5,7 +5,6 @@ import net.minecraft.block.BlockState;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.render.VertexConsumer;
 import net.minecraft.client.render.block.BlockModelRenderer;
-// import net.minecraft.client.render.model.BakedModel; // << REMOVIDO
 import net.minecraft.client.render.model.BakedQuad;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.util.math.BlockPos;
@@ -33,39 +32,31 @@ public abstract class BlockModelRendererMixin {
     @Unique
     private int barium$quadCounter = 0;
 
-    /**
-     * Injeta ANTES do loop de renderização de faces.
-     * A assinatura do método usa 'Object model' para contornar o erro de compilação "cannot find symbol".
-     */
     @Inject(
-        // O descritor do Mixin ainda usa o caminho real da classe, pois ele opera no bytecode.
         method = "render(Lnet/minecraft/world/BlockRenderView;Lnet/minecraft/client/render/model/BakedModel;Lnet/minecraft/block/BlockState;Lnet/minecraft/util/math/BlockPos;Lnet/minecraft/client/util/math/MatrixStack;Lnet/minecraft/client/render/VertexConsumer;ZLnet/minecraft/util/math/random/Random;JI)V",
         at = @At(value = "INVOKE", target = "Lnet/minecraft/client/render/model/BakedModel;getQuads(Lnet/minecraft/block/BlockState;Lnet/minecraft/util/math/Direction;Lnet/minecraft/util/math/random/Random;)Ljava/util/List;"),
         locals = LocalCapture.CAPTURE_FAILHARD,
-        require = 0 // Torna opcional para evitar crash se a assinatura mudar.
+        require = 0
     )
     private void barium$beforeRenderQuads(BlockRenderView world, Object model, BlockState state, BlockPos pos, MatrixStack matrices, VertexConsumer vertexConsumer, boolean cull, Random random, long seed, int overlay, CallbackInfo ci) {
-        // A lógica permanece a mesma.
         this.barium$currentPos = pos;
         this.barium$currentLod = FoliageOptimizer.getFoliageLod(state, pos);
         this.barium$quadCounter = 0;
     }
 
-    /**
-     * Intercepta a renderização de cada face.
-     */
     @Inject(
         method = "renderQuad(Lnet/minecraft/client/util/math/MatrixStack$Entry;Lnet/minecraft/client/render/VertexConsumer;FFFLjava/util/List;II)V",
         at = @At("HEAD"),
         cancellable = true,
-        require = 0 // Torna opcional para segurança.
+        require = 0
     )
     private void barium$onRenderQuad(MatrixStack.Entry entry, VertexConsumer consumer, float red, float green, float blue, List<BakedQuad> quads, int light, int overlay, CallbackInfo ci) {
         if (this.barium$currentLod == FoliageOptimizer.FoliageLod.FULL) return;
 
         BakedQuad quad = quads.get(0);
 
-        if (this.barium$currentLod == FoliageOptimizer.FolageLod.CULLED) {
+        // CORREÇÃO DO ERRO DE DIGITAÇÃO
+        if (this.barium$currentLod == FoliageOptimizer.FoliageLod.CULLED) {
             ci.cancel();
             return;
         }
@@ -78,8 +69,9 @@ public abstract class BlockModelRendererMixin {
         }
 
         if (this.barium$currentLod == FoliageOptimizer.FoliageLod.CROSS_WITH_CULLING) {
-            Direction faceDirection = quad.getFace();
-            if (faceDirection.getAxis().isHorizontal() || faceDirection.getAxis().isVertical()) {
+            // CORREÇÃO DO MÉTODO
+            Direction faceDirection = quad.getSide();
+            if (faceDirection != null && (faceDirection.getAxis().isHorizontal() || faceDirection.getAxis().isVertical())) {
                 Vec3d cameraDirection = MinecraftClient.getInstance().gameRenderer.getCamera().getPos().subtract(this.barium$currentPos.toCenterPos()).normalize();
                 Vector3f faceNormal = faceDirection.getUnitVector();
                 if (cameraDirection.dotProduct(new Vec3d(faceNormal.x(), faceNormal.y(), faceNormal.z())) > 0.1) {
