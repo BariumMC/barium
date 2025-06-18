@@ -179,6 +179,26 @@ public class BariumModMenu implements ModMenuApi {
                     .setSaveConsumer(newValue -> BariumConfig.C.ENABLE_BEACON_BEAM_CULLING = newValue)
                     .build());
 
+                                // --- ENTRADAS DA NOVA OTIMIZAÇÃO DE NÉVOA ---
+            visualEffects.addEntry(entryBuilder.startBooleanToggle(Text.translatable("option.barium.enable_fog_optimization"), BariumConfig.C.ENABLE_FOG_OPTIMIZATION)
+                    .setDefaultValue(defaults.ENABLE_FOG_OPTIMIZATION)
+                    .setTooltip(Text.translatable("tooltip.barium.enable_fog_optimization"))
+                    .setSaveConsumer(newValue -> BariumConfig.C.ENABLE_FOG_OPTIMIZATION = newValue)
+                    .build());
+
+            visualEffects.addEntry(entryBuilder.startBooleanToggle(Text.translatable("option.barium.disable_fog"), BariumConfig.C.DISABLE_FOG)
+                    .setDefaultValue(defaults.DISABLE_FOG)
+                    .setTooltip(Text.translatable("tooltip.barium.disable_fog"))
+                    .setSaveConsumer(newValue -> BariumConfig.C.DISABLE_FOG = newValue)
+                    .build());
+
+            visualEffects.addEntry(entryBuilder.startIntSlider(Text.translatable("option.barium.fog_start_percentage"), BariumConfig.C.FOG_START_PERCENTAGE, 0, 100)
+                    .setDefaultValue(defaults.FOG_START_PERCENTAGE)
+                    .setTooltip(Text.translatable("tooltip.barium.fog_start_percentage"))
+                    .setTextGetter(value -> Text.of(value + "%")) // Mostra o valor como porcentagem
+                    .setSaveConsumer(newValue -> BariumConfig.C.FOG_START_PERCENTAGE = newValue)
+                    .build());
+
             return builder.build();
         };
     }

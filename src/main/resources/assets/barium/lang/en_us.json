@@ -64,5 +64,12 @@
   "tooltip.barium.enable_beacon_culling": "Prevents rendering of very distant beacon beams.",
 
 "option.barium.enable_frustum_culling": "Enable Frustum Chunk Culling",
-"tooltip.barium.enable_frustum_culling": "Prevents the game from rebuilding chunks that are not inside the camera's view.\nReduces CPU load when turning around."
+"tooltip.barium.enable_frustum_culling": "Prevents the game from rebuilding chunks that are not inside the camera's view.\nReduces CPU load when turning around.",
+
+  "option.barium.enable_fog_optimization": "Enable Fog Optimization",
+  "tooltip.barium.enable_fog_optimization": "Allows Barium to control fog distance for better visibility and performance.",
+  "option.barium.disable_fog": "Disable Fog",
+  "tooltip.barium.disable_fog": "Completely removes distance fog. Overrides the start percentage slider.",
+  "option.barium.fog_start_percentage": "Fog Start Distance",
+  "tooltip.barium.fog_start_percentage": "At what percentage of your render distance the fog should start. Vanilla is ~75%."
 }

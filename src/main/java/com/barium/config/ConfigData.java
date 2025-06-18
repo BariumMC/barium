@@ -52,4 +52,9 @@ public class ConfigData {
     // Apenas a otimização de Hopper é realmente nova aqui.
     public boolean ENABLE_HOPPER_TICK_CULLING = true;
     public double HOPPER_TICK_CULLING_DISTANCE_SQ = 48 * 48;
+
+        // --- NOVAS OPÇÕES DE NÉVOA ---
+    public boolean ENABLE_FOG_OPTIMIZATION = true;
+    public boolean DISABLE_FOG = false;
+    public int FOG_START_PERCENTAGE = 75; // 75% da render distance
 }

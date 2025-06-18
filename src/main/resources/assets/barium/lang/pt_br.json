@@ -64,5 +64,12 @@
   "tooltip.barium.enable_beacon_culling": "Previne a renderização de raios de sinalizadores muito distantes.",
 
 "option.barium.enable_frustum_culling": "Ativar Otimização de Chunks por Frustum",
-"tooltip.barium.enable_frustum_culling": "Impede que o jogo reconstrua chunks que não estão dentro do campo de visão da câmera.\nReduz a carga na CPU ao virar a visão."
+"tooltip.barium.enable_frustum_culling": "Impede que o jogo reconstrua chunks que não estão dentro do campo de visão da câmera.\nReduz a carga na CPU ao virar a visão.",
+
+  "option.barium.enable_fog_optimization": "Ativar Otimização de Névoa",
+  "tooltip.barium.enable_fog_optimization": "Permite que o Barium controle a distância da névoa para melhor visibilidade e desempenho.",
+  "option.barium.disable_fog": "Desativar Névoa",
+  "tooltip.barium.disable_fog": "Remove completamente a névoa de distância. Sobrescreve o controle de porcentagem.",
+  "option.barium.fog_start_percentage": "Distância de Início da Névoa",
+  "tooltip.barium.fog_start_percentage": "Em qual porcentagem da sua distância de renderização a névoa deve começar. O Padrão do jogo é ~75%."
 }
