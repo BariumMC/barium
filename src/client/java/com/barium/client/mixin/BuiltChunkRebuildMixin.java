@@ -21,11 +21,12 @@ public class BuiltChunkRebuildMixin {
      * em vez de ChunkBuilder$RebuildTask e retorna void.
      */
     @Redirect(
-        // Assinatura corrigida: mudou de rebuild(ChunkBuilder$RebuildTask)Set para rebuild(ChunkRendererRegionBuilder)void
+        // Assinatura corrigida: aponta para o método rebuild que recebe um ChunkRendererRegionBuilder
         method = "rebuild(Lnet/minecraft/client/render/chunk/ChunkRendererRegionBuilder;)V",
         at = @At(value = "INVOKE", target = "Lnet/minecraft/world/chunk/ChunkSection;isEmpty()Z")
     )
     private boolean barium$cullEmptyChunkSections(ChunkSection section) {
+        // Delega a decisão para nossa classe de otimização, que respeita a config do usuário
         return ChunkRebuildOptimizer.shouldSkipSection(section);
     }
 }
