@@ -1,4 +1,4 @@
-// --- Seu código atual para BlockRenderManagerMixin ---
+// --- Substitua o conteúdo em: src/client/java/com/barium/client/mixin/BlockRenderManagerMixin.java ---
 package com.barium.client.mixin;
 
 import com.barium.config.BariumConfig;
@@ -7,15 +7,16 @@ import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
 import net.minecraft.client.render.VertexConsumer;
 import net.minecraft.client.render.block.BlockRenderManager;
-import net.minecraft.client.util.math.MatrixStack;
+// IMPORTADO: net.minecraft.util.math.BlockPos; e outros já devem estar ok
 import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.BlockRenderView;
+import net.minecraft.client.util.math.MatrixStack; // Necessário para MatrixStack
+import net.minecraft.world.BlockRenderView; // Necessário para BlockRenderView
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-import java.util.List; // Pode ser mantida ou removida se não usada em outro lugar
+import java.util.List; // Necessário para List genérico
 // import java.util.Random; // REMOVIDO: Parâmetro não usado
 import java.util.concurrent.ThreadLocalRandom;
 
@@ -23,21 +24,21 @@ import java.util.concurrent.ThreadLocalRandom;
 public class BlockRenderManagerMixin {
 
     /**
-     * Corrigido: A assinatura do método renderBlock foi atualizada para remover o parâmetro List<BlockModelPart> parts,
-     * pois a classe BlockModelPart foi removida/movida e não é acessível.
+     * Corrigido: A assinatura do método renderBlock foi atualizada para usar os nomes ofuscados do Yarn
+     * para os tipos de parâmetros e para remover o parâmetro List<BlockModelPart> parts,
+     * assumindo que ele foi removido ou alterado para List<?> ou simplesmente List.
      *
-     * !!! ATENÇÃO: Se o erro de "Cannot find target method" para este método persistir,
-     * !!! verifique as assinaturas exatas no Yarn 1.21.6 ou o arquivo refmap.json.
+     * A assinatura na anotação 'method' foi ajustada para:
+     * renderBlock(Lnet/minecraft/block/BlockState;Lnet/minecraft/class_2338;Lnet/minecraft/class_1920;Lnet/minecraft/class_4587;Lnet/minecraft/class_4588;ZLjava/util/List;)V
      */
     @Inject(
-        // Assinatura corrigida: REMOVIDO o último parâmetro List<BlockModelPart> parts.
-        // O método alvo agora é renderBlock(...boolean cull)V
-        method = "renderBlock(Lnet/minecraft/block/BlockState;Lnet/minecraft/util/math/BlockPos;Lnet/minecraft/world/BlockRenderView;Lnet/minecraft/client/util/math/MatrixStack;Lnet/minecraft/client/render/VertexConsumer;Z)V",
+        // Assinatura corrigida com nomes ofuscados do Yarn e removendo BlockModelPart.
+        method = "renderBlock(Lnet/minecraft/block/BlockState;Lnet/minecraft/class_2338;Lnet/minecraft/class_1920;Lnet/minecraft/class_4587;Lnet/minecraft/class_4588;ZLjava/util/List;)V",
         at = @At("HEAD"),
         cancellable = true
     )
-    // O método Java precisa corresponder à nova assinatura, SEM List<BlockModelPart> parts
-    private void barium$cullDenseFoliage(BlockState state, BlockPos pos, BlockRenderView world, MatrixStack matrices, VertexConsumer vertexConsumer, boolean cull, CallbackInfo ci) { // Parâmetro List<BlockModelPart> parts removido
+    // O método Java precisa corresponder à nova assinatura, recebendo os tipos corretos
+    private void barium$cullDenseFoliage(BlockState state, BlockPos pos, BlockRenderView world, MatrixStack matrices, VertexConsumer vertexConsumer, boolean cull, List<?> parts, CallbackInfo ci) { // Parâmetro List<?> parts para acomodar a possível mudança de tipo genérico
         if (!BariumConfig.C.ENABLE_DENSE_FOLIAGE_CULLING || BariumConfig.C.DENSE_FOLIAGE_CULLING_LEVEL <= 0) {
             return;
         }
