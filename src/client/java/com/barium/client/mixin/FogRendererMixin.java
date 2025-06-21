@@ -23,9 +23,7 @@ public abstract class FogRendererMixin {
      *
      * Retorno do método Java: Vector4f
      */
-    @Inject(method = "applyFog"
-            at = @At("RETURN"), // Injete no RETURN para obter o valor retornado e modificá-lo
-            cancellable = true)
+    @Inject(method = "applyFog", at = @At(value = "RETURN"), cancellable = true)
     // O RETORNO DO MÉTODO JAVA DEVE SER o mesmo do método alvo, e recebemos o retorno original como parâmetro.
     private Vector4f barium$optimizeFogReturn(Vector4f originalFogValues, Camera camera, int viewDistance, RenderTickCounter tickCounter, float skyDarkness, ClientWorld world, boolean thick) {
         
