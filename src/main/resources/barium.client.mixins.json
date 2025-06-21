@@ -15,7 +15,8 @@
 		"GameRendererMixin",
 		"BlockRenderManagerMixin",
         "WorldRendererChunkPriorityMixin",
-		"ClientWorldMixin"
+		"ClientWorldMixin",
+		"ChunkBuilderMixin"
 	],
 	"injectors": {
 		"defaultRequire": 1
