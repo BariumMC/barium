@@ -1,4 +1,4 @@
-// --- Substitua o conteúdo em: src/client/java/com/barium/client/mixin/BlockRenderManagerMixin.java ---
+// --- Seu código atual para BlockRenderManagerMixin ---
 package com.barium.client.mixin;
 
 import com.barium.config.BariumConfig;
@@ -15,7 +15,7 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-import java.util.List; // A importação de List genérica ainda pode ser necessária se o método alvo usar List<?>
+import java.util.List; // Pode ser mantida ou removida se não usada em outro lugar
 // import java.util.Random; // REMOVIDO: Parâmetro não usado
 import java.util.concurrent.ThreadLocalRandom;
 
@@ -25,7 +25,9 @@ public class BlockRenderManagerMixin {
     /**
      * Corrigido: A assinatura do método renderBlock foi atualizada para remover o parâmetro List<BlockModelPart> parts,
      * pois a classe BlockModelPart foi removida/movida e não é acessível.
-     * A assinatura exata do método no Yarn 1.21.6 pode não incluir mais este parâmetro.
+     *
+     * !!! ATENÇÃO: Se o erro de "Cannot find target method" para este método persistir,
+     * !!! verifique as assinaturas exatas no Yarn 1.21.6 ou o arquivo refmap.json.
      */
     @Inject(
         // Assinatura corrigida: REMOVIDO o último parâmetro List<BlockModelPart> parts.
