@@ -15,8 +15,7 @@
 		"GameRendererMixin",
 		"BlockRenderManagerMixin",
         "WorldRendererChunkPriorityMixin",
-		"ClientWorldMixin",
-        "BeaconBlockEntityRendererMixin"
+		"ClientWorldMixin"
 	],
 	"injectors": {
 		"defaultRequire": 1
