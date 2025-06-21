@@ -15,8 +15,7 @@
 		"GameRendererMixin",
 		"BlockRenderManagerMixin",
         "WorldRendererChunkPriorityMixin",
-		"ClientWorldMixin",
-		"FogRendererMixin"
+		"ClientWorldMixin"
 	],
 	"injectors": {
 		"defaultRequire": 1
