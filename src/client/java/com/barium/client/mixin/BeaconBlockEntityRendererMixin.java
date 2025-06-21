@@ -1,4 +1,5 @@
-// --- Substitua o conteúdo em: src/client/java/com/barium/client/mixin/BeaconBlockEntityRendererMixin.java ---
+// --- Mantenha o código do seu BeaconBlockEntityRendererMixin.java como está ---
+// (Última versão com a assinatura corrigida)
 package com.barium.client.mixin;
 
 import com.barium.config.BariumConfig;
@@ -22,7 +23,8 @@ public class BeaconBlockEntityRendererMixin {
      * e a ordem dos parâmetros light/overlay foi ajustada conforme a documentação.
      */
     @Inject(
-        // Assinatura corrigida para incluir Vec3d cameraPos e ajustar a ordem de light/overlay
+        // Assinatura que parece correta com base na documentação fornecida.
+        // Se o erro persistir, pode ser um problema de mapeamento Yarn sutil ou configuração do Mixin.
         method = "render(Lnet/minecraft/block/entity/BeaconBlockEntity;FLnet/minecraft/client/util/math/MatrixStack;Lnet/minecraft/client/render/VertexConsumerProvider;IILnet/minecraft/util/math/Vec3d;)V",
         at = @At("HEAD"),
         cancellable = true
@@ -31,10 +33,6 @@ public class BeaconBlockEntityRendererMixin {
         if (!BariumConfig.C.ENABLE_BEACON_BEAM_CULLING) {
             return;
         }
-
-        // Usamos o cameraPos passado diretamente para o método
-        // Camera camera = MinecraftClient.getInstance().gameRenderer.getCamera(); // Não é mais necessário
-        // if (camera == null) return;
         
         double distanceSq = beacon.getPos().getSquaredDistance(cameraPos); // Usamos o cameraPos passado
 
