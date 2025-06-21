@@ -16,7 +16,7 @@
 		"BlockRenderManagerMixin",
         "WorldRendererChunkPriorityMixin",
 		"ClientWorldMixin",
-		"AtmosphericFogEnvironmentMixin"
+		"FogRendererMixin"
 	],
 	"injectors": {
 		"defaultRequire": 1
