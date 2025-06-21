@@ -4,6 +4,7 @@ package com.barium.client.mixin;
 import com.barium.config.BariumConfig;
 import net.minecraft.client.render.Camera;
 import net.minecraft.client.render.RenderTickCounter;
+import net.minecraft.client.render.fog.FogRenderer;
 // Import corrgido para ClientWorld
 import net.minecraft.client.world.ClientWorld; 
 // Import JOML para Vector4f
