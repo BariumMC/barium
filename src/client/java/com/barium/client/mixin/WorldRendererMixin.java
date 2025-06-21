@@ -2,7 +2,7 @@
 package com.barium.client.mixin;
 
 import com.barium.config.BariumConfig;
-import com.mojang.blaze3d.systems.RenderSystem;
+import com.mojang.blaze3d.systems.RenderSystem; // Import necessário para setViewport
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gl.Framebuffer;
 import net.minecraft.client.render.WorldRenderer;
@@ -34,7 +34,8 @@ public abstract class WorldRendererMixin {
             Framebuffer entityOutlinesFramebuffer = this.getEntityOutlinesFramebuffer();
             if (entityOutlinesFramebuffer != null) {
                 // Ajusta o viewport para o tamanho do framebuffer de meia resolução
-                RenderSystem.viewport(0, 0, entityOutlinesFramebuffer.textureWidth, entityOutlinesFramebuffer.textureHeight);
+                // RenderSystem.viewport(0, 0, entityOutlinesFramebuffer.textureWidth, entityOutlinesFramebuffer.textureHeight); // REMOVIDO
+                RenderSystem.setViewport(0, 0, entityOutlinesFramebuffer.textureWidth, entityOutlinesFramebuffer.textureHeight); // ADICIONADO
             }
         }
     }
@@ -50,7 +51,8 @@ public abstract class WorldRendererMixin {
         // seja renderizado corretamente.
         if (BariumConfig.C.ENABLE_HALF_RESOLUTION_ENTITY_OUTLINES) {
             MinecraftClient client = MinecraftClient.getInstance();
-            RenderSystem.viewport(0, 0, client.getFramebuffer().textureWidth, client.getFramebuffer().textureHeight);
+            // RenderSystem.viewport(0, 0, client.getFramebuffer().textureWidth, client.getFramebuffer().textureHeight); // REMOVIDO
+            RenderSystem.setViewport(0, 0, client.getFramebuffer().textureWidth, client.getFramebuffer().textureHeight); // ADICIONADO
         }
     }
 }
