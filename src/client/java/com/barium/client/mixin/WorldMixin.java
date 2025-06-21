@@ -2,6 +2,7 @@
 package com.barium.client.mixin;
 
 import com.barium.config.BariumConfig;
+import net.minecraft.particle.ParticleEffect; // Importar ParticleEffect
 import net.minecraft.particle.ParticleTypes;
 import net.minecraft.world.World;
 import org.spongepowered.asm.mixin.Mixin;
@@ -19,11 +20,11 @@ public abstract class WorldMixin {
      * Esta é a abordagem mais robusta para otimizar partículas de explosão.
      */
     @Inject(
-        method = "addParticle(Lnet/minecraft/particle/ParticleEffect;DDDDDD)V",
+        method = "addParticle(Lnet/minecraft/particle/ParticleEffect;DDDDDD)V", // Mantendo a assinatura que o Yarn espera
         at = @At("HEAD"),
         cancellable = true
     )
-    private void barium$reduceExplosionParticles(net.minecraft.particle.ParticleEffect parameters, double x, double y, double z, double velocityX, double velocityY, double velocityZ, CallbackInfo ci) {
+    private void barium$reduceExplosionParticles(ParticleEffect parameters, double x, double y, double z, double velocityX, double velocityY, double velocityZ, CallbackInfo ci) {
         World self = (World)(Object)this;
 
         // A otimização só deve rodar no cliente.
@@ -37,6 +38,9 @@ public abstract class WorldMixin {
         }
 
         // Verificamos se a partícula que está sendo adicionada é uma das partículas de explosão.
+        // É crucial usar o tipo correto para ParticleEffect.
+        // ParticleTypes.EXPLOSION é um ParticleEffect.
+        // A comparação direta deve funcionar se ParticleEffect for uma superclasse.
         if (parameters.getType() == ParticleTypes.EXPLOSION || parameters.getType() == ParticleTypes.EXPLOSION_EMITTER) {
             // Tem 75% de chance de pular a criação da partícula.
             if (ThreadLocalRandom.current().nextInt(4) != 0) {
