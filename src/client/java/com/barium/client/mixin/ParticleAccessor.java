@@ -1,3 +1,4 @@
+// --- Substitua o conteúdo em: src/client/java/com/barium/client/mixin/ParticleAccessor.java ---
 package com.barium.client.mixin;
 
 import net.minecraft.client.particle.Particle;

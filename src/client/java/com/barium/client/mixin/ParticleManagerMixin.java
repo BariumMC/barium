@@ -1,3 +1,4 @@
+// --- Substitua o conteúdo em: src/client/java/com/barium/client/mixin/ParticleManagerMixin.java ---
 package com.barium.client.mixin;
 
 import com.barium.config.BariumConfig;

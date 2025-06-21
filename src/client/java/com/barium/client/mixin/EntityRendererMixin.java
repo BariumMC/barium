@@ -1,3 +1,4 @@
+// --- Substitua o conteúdo em: src/client/java/com/barium/client/mixin/EntityRendererMixin.java ---
 package com.barium.client.mixin;
 
 import com.barium.client.optimization.EntityOptimizer;
@@ -26,12 +27,12 @@ public abstract class EntityRendererMixin<T extends Entity> {
     )
     private void barium$cullDistantEntity(T entity, Frustum frustum, double x, double y, double z, CallbackInfoReturnable<Boolean> cir) {
         if (this.dispatcher.camera == null) return;
-
+        
         if (!EntityOptimizer.shouldRenderEntity(entity, this.dispatcher.camera)) {
             cir.setReturnValue(false);
         }
     }
-
+    
     // O método barium$cullNameTag foi completamente removido para resolver o crash
     // causado por um conflito de assinatura com o mod Lithium.
 }

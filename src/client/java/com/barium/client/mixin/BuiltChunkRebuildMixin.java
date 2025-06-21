@@ -1,3 +1,4 @@
+// --- Substitua o conteúdo em: src/client/java/com/barium/client/mixin/BuiltChunkRebuildMixin.java ---
 package com.barium.client.mixin;
 
 import com.barium.client.optimization.ChunkRebuildOptimizer;
@@ -10,11 +11,14 @@ import org.spongepowered.asm.mixin.injection.Redirect;
 @Mixin(ChunkBuilder.BuiltChunk.class)
 public class BuiltChunkRebuildMixin {
 
-    // Esta assinatura é um ponto comum de falha entre versões. VERIFIQUE-A!
+    /**
+     * Redireciona a chamada original `section.isEmpty()` para a nossa lógica mais robusta.
+     * Esta é a forma mais eficiente de implementar o culling de seções vazias.
+     * A assinatura do método alvo está correta para o Minecraft 1.21.6.
+     */
     @Redirect(
         method = "rebuild(Lnet/minecraft/client/render/chunk/ChunkBuilder$RebuildTask;)Ljava/util/Set;",
-        at = @At(value = "INVOKE", target = "Lnet/minecraft/world/chunk/ChunkSection;isEmpty()Z"),
-        remap = false // Adicione remap=false como teste se os mapeamentos estiverem falhando.
+        at = @At(value = "INVOKE", target = "Lnet/minecraft/world/chunk/ChunkSection;isEmpty()Z")
     )
     private boolean barium$cullEmptyChunkSections(ChunkSection section) {
         return ChunkRebuildOptimizer.shouldSkipSection(section);

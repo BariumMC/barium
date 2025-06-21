@@ -1,3 +1,4 @@
+// --- Substitua o conteúdo em: src/client/java/com/barium/client/mixin/BlockEntityRenderDispatcherMixin.java ---
 package com.barium.client.mixin;
 
 import com.barium.client.optimization.ChunkOptimizer;
