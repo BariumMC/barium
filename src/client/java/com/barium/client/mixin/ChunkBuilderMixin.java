@@ -1,30 +1,43 @@
-// --- Adicione este novo arquivo em: src/client/java/com/barium/client/mixin/ChunkBuilderMixin.java ---
+// --- Substitua o conteúdo em: src/client/java/com/barium/client/mixin/ChunkBuilderMixin.java ---
 package com.barium.client.mixin;
 
+import com.barium.client.optimization.ChunkRebuildOptimizer;
 import com.barium.client.optimization.ChunkUploadThrottler;
 import net.minecraft.client.render.chunk.ChunkBuilder;
+import net.minecraft.client.render.chunk.ChunkRendererRegionBuilder;
+import net.minecraft.world.chunk.ChunkSection;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Redirect;
 
 import java.util.Queue;
 
-@Mixin(ChunkBuilder.class)
+@Mixin(ChunkBuilder.class) // O alvo já está correto: ChunkBuilder
 public class ChunkBuilderMixin {
 
     /**
-     * Redireciona a chamada a `uploadQueue.poll()` dentro do método `upload()`.
-     * Em vez de pegar a próxima tarefa da fila diretamente, a chamada passa pelo nosso
-     * Throttler, que só retornará uma tarefa se o limite de uploads por frame não tiver sido atingido.
-     *
-     * Esta é a forma mais limpa e compatível de implementar o throttling.
+     * Otimização de Upload: Limita quantos chunks são enviados para a GPU por frame.
+     * Redireciona a chamada a `uploadQueue.poll()` para o nosso Throttler.
      */
     @Redirect(
         method = "upload()V",
         at = @At(value = "INVOKE", target = "Ljava/util/Queue;poll()Ljava/lang/Object;")
     )
     private Object barium$throttleChunkUploads(Queue<Runnable> uploadQueue) {
-        // A nossa lógica de limitação é chamada em vez do queue.poll() original.
         return ChunkUploadThrottler.pollTask(uploadQueue);
+    }
+
+    /**
+     * Otimização de Rebuild: Pula seções de chunk vazias para economizar CPU.
+     * Esta é a lógica do antigo 'BuiltChunkRebuildMixin', agora no lugar correto.
+     * Redireciona a chamada `section.isEmpty()` dentro do método `rebuild`.
+     */
+    @Redirect(
+        method = "rebuild(Lnet/minecraft/client/render/chunk/ChunkBuilder$BuiltChunk;Lnet/minecraft/client/render/chunk/ChunkRendererRegionBuilder;)V",
+        at = @At(value = "INVOKE", target = "Lnet/minecraft/world/chunk/ChunkSection;isEmpty()Z")
+    )
+    private boolean barium$cullEmptyChunkSections(ChunkSection section) {
+        // Delega a decisão para nossa classe de otimização, que respeita a config do usuário.
+        return ChunkRebuildOptimizer.shouldSkipSection(section);
     }
 }
