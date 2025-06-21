@@ -2,17 +2,12 @@
 package com.barium.client.mixin;
 
 import com.barium.config.BariumConfig;
-// --- Imports Corrigidos e Ajustados ---
 import net.minecraft.client.render.Camera;
 import net.minecraft.client.render.RenderTickCounter;
-// FogRenderer já é importado pelo @Mixin
-import net.minecraft.client.render.fog.FogRenderer;
-// Import ClientWorld de forma padrão, se não encontrar, é um problema de mapeamento
-import net.minecraft.world.ClientWorld;
-// Import Vector4f de org.joml
-import org.joml.Vector4f;
-// --- Outros imports necessários ---
-import net.minecraft.util.math.BlockPos;
+// Import corrgido para ClientWorld
+import net.minecraft.client.world.ClientWorld; 
+// Import JOML para Vector4f
+import org.joml.Vector4f; 
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
@@ -23,26 +18,36 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 public abstract class FogRendererMixin {
 
     // --- Campos Shadow ---
-    // Removidos os campos @Shadow que referenciam tipos não encontrados.
-    // Se FogDensityFunction for necessário e pudermos encontrar seu tipo, podemos reativá-los.
+    // Estes campos @Shadow ainda referenciam tipos que podem não ser encontrados se FogDensityFunction for removido.
+    // Vamos comentá-los novamente para garantir a compilação, e focar na otimização do método applyFog.
     // @Shadow private FogDensityFunction fogFunction; // REMOVIDO
     // @Shadow private BlockPos fogPos; // REMOVIDO
 
     /**
-     * Tenta otimizar a névoa interceptando o retorno do método applyFog.
-     * O método alvo é applyFog(Camera, int, boolean, RenderTickCounter, float, ClientWorld)
-     * que retorna Vector4f.
-     *
-     * Assumindo a seguinte assinatura baseada na documentação e no erro anterior:
+     * Otimiza a névoa interceptando o retorno do método applyFog.
+     * Assinatura corrigida com base nos mapeamentos Yarn 'named':
      * applyFog(Lnet/minecraft/client/render/Camera;ILnet/minecraft/client/render/RenderTickCounter;FLnet/minecraft/client/world/ClientWorld;Z)Lnet/minecraft/util/math/Vector4f;
      *
-     * Este Mixin tentará modificar a distância da névoa.
+     * Onde os parâmetros são:
+     * 0: Camera camera
+     * 1: int viewDistance
+     * 2: boolean thick  <-- Note que 'thick' vem antes de 'skyDarkness'
+     * 3: RenderTickCounter tickCounter
+     * 4: float skyDarkness
+     * 5: ClientWorld world
+     *
+     * Retorno: Vector4f
+     *
+     * !!! IMPORTANTE: A ordem dos parâmetros é crucial para o Mixin.
+     * !!! O erro anterior foi em parte devido à ordem e possivelmente à assinatura do método alvo.
+     * !!! A assinatura corrigida abaixo tenta alinhar com os mapeamentos Yarn.
      */
     @Inject(method = "applyFog(Lnet/minecraft/client/render/Camera;ILnet/minecraft/client/render/RenderTickCounter;FLnet/minecraft/client/world/ClientWorld;Z)Lnet/minecraft/util/math/Vector4f;",
             at = @At("RETURN"), // Injete no RETURN para obter o valor retornado
             cancellable = true)
-    private CallbackInfoReturnable<Vector4f> barium$optimizeFogReturn(CallbackInfoReturnable<Vector4f> cir, Camera camera, int viewDistance, RenderTickCounter tickCounter, float skyDarkness, ClientWorld world, boolean thick) {
-        
+    private CallbackInfoReturnable<Vector4f> barium$optimizeFogReturn(CallbackInfoReturnable<Vector4f> cir, Camera camera, int viewDistance, RenderTickCounter tickCounter, float skyDarkness, ClientWorld world, boolean thick) { // A ordem dos parâmetros aqui DEVE corresponder à assinatura na anotação 'method'
+        // --- Lógica de Otimização ---
+
         // Verifica se a otimização geral de névoa está ativada
         if (!BariumConfig.C.ENABLE_FOG_OPTIMIZATION) {
             return cir; // Retorna o valor original se a otimização geral estiver desativada
@@ -50,22 +55,16 @@ public abstract class FogRendererMixin {
 
         // Se a névoa deve ser completamente desativada
         if (BariumConfig.C.DISABLE_FOG) {
-            // Retorna um Vector4f que efetivamente desativa a névoa.
-            // Assumindo que X=start, Y=end, definimos para 0.
             return cir.setReturnValue(new Vector4f(0.0f, 0.0f, 0.0f, 0.0f));
         }
 
         // Se a otimização de distância está ativa e a névoa não está desativada completamente:
-        // Modifica a distância de início da névoa com base na configuração.
-        
         Vector4f originalFogValues = cir.getReturnValue();
         if (originalFogValues == null) {
             return cir; // Segurança: se o valor retornado for nulo, não faz nada.
         }
 
         // Obtém a render distance do jogo em blocos.
-        // O parâmetro 'viewDistance' no método applyFog é em chunks.
-        // Precisamos converter para blocos (viewDistance * 16) para aplicar a porcentagem.
         MinecraftClient client = MinecraftClient.getInstance();
         if (client == null || client.options == null) {
              return cir; // Segurança: se algo não estiver inicializado, retorna o original.
