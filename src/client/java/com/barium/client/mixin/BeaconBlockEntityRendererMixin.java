@@ -1,5 +1,5 @@
 // --- Mantenha o código do seu BeaconBlockEntityRendererMixin.java como está ---
-// (Última versão com a assinatura corrigida)
+// (Com a assinatura que parece correta com base na documentação)
 package com.barium.client.mixin;
 
 import com.barium.config.BariumConfig;
@@ -21,10 +21,10 @@ public class BeaconBlockEntityRendererMixin {
     /**
      * Corrigido: A assinatura do método render foi atualizada para incluir Vec3d cameraPos
      * e a ordem dos parâmetros light/overlay foi ajustada conforme a documentação.
+     * Se este erro persistir, investigue o refmap e os mapeamentos exatos do Yarn 1.21.6.
      */
     @Inject(
         // Assinatura que parece correta com base na documentação fornecida.
-        // Se o erro persistir, pode ser um problema de mapeamento Yarn sutil ou configuração do Mixin.
         method = "render(Lnet/minecraft/block/entity/BeaconBlockEntity;FLnet/minecraft/client/util/math/MatrixStack;Lnet/minecraft/client/render/VertexConsumerProvider;IILnet/minecraft/util/math/Vec3d;)V",
         at = @At("HEAD"),
         cancellable = true
