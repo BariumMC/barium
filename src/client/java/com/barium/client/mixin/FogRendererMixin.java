@@ -2,44 +2,52 @@
 package com.barium.client.mixin;
 
 import com.barium.config.BariumConfig;
-// --- IMPORTS NECESSÁRIOS ---
-import net.minecraft.client.MinecraftClient;
+// --- Imports Corrigidos ---
+import net.minecraft.client.MinecraftClient; // Necessário para getInstance()
 import net.minecraft.client.render.Camera;
 import net.minecraft.client.render.RenderTickCounter;
 import net.minecraft.client.render.fog.FogRenderer;
-import net.minecraft.client.world.ClientWorld; // Import corrgido
-import org.joml.Vector4f; // Import JOML
+// Import corrgido para ClientWorld
+import net.minecraft.client.world.ClientWorld; 
+// Import JOML para Vector4f
+import org.joml.Vector4f; 
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
-import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
+// Import corrgido para CallbackInfoReturnable
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable; 
 
 @Mixin(FogRenderer.class)
 public abstract class FogRendererMixin {
 
     // --- Campos @Shadow ---
-    // Removidos para evitar erros de compilação, pois os tipos não foram resolvidos.
+    // Mantidos comentados, pois os tipos referenciados (FogDensityFunction) podem não ser encontrados.
     // @Shadow private FogDensityFunction fogFunction;
     // @Shadow private BlockPos fogPos;
 
     /**
-     * Intercepta o retorno do método applyFog para modificar os parâmetros de névoa.
+     * Tenta otimizar a névoa interceptando o retorno do método applyFog e modificando os valores.
      *
-     * Assinatura corrigida com base na documentação fornecida e mapeamentos Yarn 'named':
-     * applyFog(Lnet/minecraft/client/render/Camera;IZLnet/minecraft/client/render/RenderTickCounter;FLnet/minecraft/client/world/ClientWorld;)Lnet/minecraft/util/math/Vector4f;
+     * Assinatura corrigida com base nos mapeamentos Yarn 'named':
+     * applyFog(Lnet/minecraft/client/render/Camera;ILnet/minecraft/client/render/RenderTickCounter;FLnet/minecraft/client/world/ClientWorld;Z)Lnet/minecraft/util/math/Vector4f;
      *
-     * Parâmetros (ordem correta): Camera, int viewDistance, boolean thick, RenderTickCounter tickCounter, float skyDarkness, ClientWorld world
+     * Parâmetros (ordem corrigida): Camera, int viewDistance, RenderTickCounter tickCounter, float skyDarkness, ClientWorld world, boolean thick
      * Retorno: Vector4f
+     *
+     * !!! ATENÇÃO: Se o erro "Cannot find target method" persistir APÓS esta correção,
+     * !!! significa que a assinatura do método alvo é DIFERENTE do que esperávamos.
+     * !!! Precisaremos verificar os mapeamentos exatos do Yarn 1.21.6 para FogRenderer.applyFog.
      */
     @Inject(method = "applyFog(Lnet/minecraft/client/render/Camera;ILnet/minecraft/client/render/RenderTickCounter;FLnet/minecraft/client/world/ClientWorld;Z)Lnet/minecraft/util/math/Vector4f;",
             at = @At("RETURN"), // Injete no RETURN para obter o valor retornado e modificá-lo
             cancellable = true)
-    private CallbackInfoReturnable<Vector4f> barium$optimizeFogReturn(CallbackInfoReturnable<Vector4f> cir, Camera camera, int viewDistance, RenderTickCounter tickCounter, float skyDarkness, ClientWorld world, boolean thick) {
+    // O retorno do método Java DEVE ser CallbackInfoReturnable<Vector4f>
+    private CallbackInfoReturnable<Vector4f> barium$optimizeFogReturn(CallbackInfoReturnable<Vector4f> cir, Camera camera, int viewDistance, boolean thick, RenderTickCounter tickCounter, float skyDarkness, ClientWorld world) {
         
         // Verifica se a otimização geral de névoa está ativada
         if (!BariumConfig.C.ENABLE_FOG_OPTIMIZATION) {
-            return cir;
+            return cir; 
         }
 
         // Se a névoa deve ser completamente desativada
@@ -58,14 +66,13 @@ public abstract class FogRendererMixin {
         if (client == null || client.options == null) {
              return cir; 
         }
-        // viewDistance é em chunks. Converte para blocos.
         int playerRenderDistanceInChunks = client.options.getViewDistance().getValue();
         float baseRenderDistanceInBlocks = (float)playerRenderDistanceInChunks * 16.0f;
 
-        // Calcula o novo valor de start da névoa baseado na porcentagem configurada.
+        // Calcula o novo valor de start da névoa.
         float newFogStart = baseRenderDistanceInBlocks * (BariumConfig.C.FOG_START_PERCENTAGE / 100.0f);
 
-        // Modifica o Vector4f retornado. Assume que x é start, y é end.
+        // Modifica o Vector4f retornado. Assumimos que x é start, y é end.
         Vector4f modifiedFogValues = new Vector4f(newFogStart, originalFogValues.y, originalFogValues.z, originalFogValues.w);
         
         return cir.setReturnValue(modifiedFogValues);
