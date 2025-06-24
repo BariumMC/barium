@@ -1,3 +1,4 @@
+// Em: src/client/java/com/barium/client/util/ChunkRenderManager.java
 package com.barium.client.util;
 
 import net.minecraft.client.MinecraftClient;
@@ -9,45 +10,54 @@ import java.util.BitSet;
 import java.util.concurrent.atomic.AtomicReference;
 
 public class ChunkRenderManager {
-    private static final AtomicReference<BitSet> chunksToRender = new AtomicReference<>(new BitSet());
-    private static int minRenderChunkX = 0;
-    private static int minRenderChunkZ = 0;
-    private static int renderGridSize = 0;
+    // Singleton para fácil acesso
+    private static final ChunkRenderManager INSTANCE = new ChunkRenderManager();
+    
+    private final AtomicReference<BitSet> chunksToRender = new AtomicReference<>(new BitSet());
+    private int minRenderChunkX = 0;
+    private int minRenderChunkZ = 0;
+    private int renderGridSize = 0;
 
+    public static ChunkRenderManager getInstance() {
+        return INSTANCE;
+    }
+    
     public void calculateChunksToRender(MinecraftClient client, Frustum frustum) {
-        if (client.player == null || client.world == null) {
+        if (client.player == null || client.world == null || frustum == null) {
             return;
         }
 
         BitSet newChunksToRender = new BitSet();
-        int currentRenderDistanceChunks = client.options.getViewDistance().getValue();
+        int renderDistance = client.options.getViewDistance().getValue();
         ChunkPos playerChunkPos = client.player.getChunkPos();
 
-        minRenderChunkX = playerChunkPos.x - currentRenderDistanceChunks;
-        minRenderChunkZ = playerChunkPos.z - currentRenderDistanceChunks;
-        renderGridSize = currentRenderDistanceChunks * 2 + 1;
+        this.minRenderChunkX = playerChunkPos.x - renderDistance;
+        this.minRenderChunkZ = playerChunkPos.z - renderDistance;
+        this.renderGridSize = renderDistance * 2 + 1;
 
-        for (int x = 0; x < renderGridSize; x++) {
-            for (int z = 0; z < renderGridSize; z++) {
-                int chunkX = minRenderChunkX + x;
-                int chunkZ = minRenderChunkZ + z;
+        for (int x = 0; x < this.renderGridSize; x++) {
+            for (int z = 0; z < this.renderGridSize; z++) {
+                int chunkX = this.minRenderChunkX + x;
+                int chunkZ = this.minRenderChunkZ + z;
 
-                // Usamos getDimension().height() para obter a altura máxima do mundo.
-                Box chunkBox = new Box(chunkX * 16, client.world.getBottomY(), chunkZ * 16,
-                        chunkX * 16 + 16, client.world.getDimension().height() + client.world.getBottomY(), chunkZ * 16 + 16);
-
+                Box chunkBox = new Box(
+                    chunkX * 16, client.world.getBottomY(), chunkZ * 16,
+                    chunkX * 16 + 16, client.world.getTopY(), chunkZ * 16 + 16
+                );
+                
                 if (frustum.isVisible(chunkBox)) {
-                    int index = x + z * renderGridSize;
+                    int index = x + z * this.renderGridSize;
                     newChunksToRender.set(index);
                 }
             }
         }
         
-        chunksToRender.set(newChunksToRender);
+        this.chunksToRender.set(newChunksToRender);
     }
 
-    public static BitSet getChunksToRender() { return chunksToRender.get(); }
-    public static int getMinRenderChunkX() { return minRenderChunkX; }
-    public static int getMinRenderChunkZ() { return minRenderChunkZ; }
-    public static int getRenderGridSize() { return renderGridSize; }
+    // Métodos estáticos para fácil acesso a partir dos mixins
+    public static BitSet getChunksToRender() { return INSTANCE.chunksToRender.get(); }
+    public static int getMinRenderChunkX() { return INSTANCE.minRenderChunkX; }
+    public static int getMinRenderChunkZ() { return INSTANCE.minRenderChunkZ; }
+    public static int getRenderGridSize() { return INSTANCE.renderGridSize; }
 }
