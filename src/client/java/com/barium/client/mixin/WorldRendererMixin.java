@@ -5,19 +5,21 @@ import com.barium.client.util.ChunkRenderManager;
 import com.barium.config.BariumConfig;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.render.Camera;
+import net.minecraft.client.render.Frustum;
 import net.minecraft.client.render.GameRenderer;
 import net.minecraft.client.render.LightmapTextureManager;
 import net.minecraft.client.render.WorldRenderer;
 import net.minecraft.client.render.chunk.ChunkBuilder;
 import net.minecraft.client.util.math.MatrixStack;
-import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.Box;
 import org.joml.Matrix4f;
+import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
-import org.spongepowered.asm.mixin.injection.callback.LocalCapture;
 
 import java.util.BitSet;
 
@@ -28,102 +30,81 @@ import java.util.BitSet;
 @Mixin(WorldRenderer.class)
 public abstract class WorldRendererMixin {
 
-    // Precisamos de uma sombra para o chunkBuilder para obter o frustum
+    @Shadow @Final private MinecraftClient client;
     @Shadow private ChunkBuilder chunkBuilder;
-    
-    @Shadow private MinecraftClient client;
 
     /**
-     * Otimização para pular renderização de chunks fora do frustum.
-     * Este é o ponto de preparação. Antes de qualquer renderização de chunk,
-     * nós calculamos quais chunks estão visíveis.
+     * Passo 1: Preparação.
+     * Antes de qualquer renderização de chunk, calculamos quais chunks estão visíveis.
+     * Esta parte permanece a mesma e está correta.
      */
     @Inject(
         method = "render",
         at = @At(
             value = "INVOKE",
             target = "Lnet/minecraft/client/render/WorldRenderer;setupTerrain(Lnet/minecraft/client/render/Camera;Lnet/minecraft/client/render/Frustum;ZZ)V",
-            shift = At.Shift.AFTER // Injetamos logo APÓS o setupTerrain, para que o frustum esteja pronto
+            shift = At.Shift.AFTER
         )
     )
-    private void barium$prepareVisibleChunkSet(MatrixStack matrices, float tickDelta, 
-                                             long limitTime, boolean renderBlockOutline, 
-                                             Camera camera, GameRenderer gameRenderer, 
-                                             LightmapTextureManager lightmapTextureManager, 
-                                             Matrix4f positionMatrix, CallbackInfo ci) {
-        
-        // Se a otimização estiver ligada, calculamos o BitSet de chunks visíveis.
-        if (BariumConfig.C.ENABLE_FRUSTUM_CHUNK_CULLING) {
-            // Passamos o frustum que acabou de ser calculado no setupTerrain
+    private void barium$prepareVisibleChunkSet(MatrixStack matrices, float tickDelta, long limitTime, boolean renderBlockOutline, Camera camera, GameRenderer gameRenderer, LightmapTextureManager lightmapTextureManager, Matrix4f positionMatrix, CallbackInfo ci) {
+        if (BariumConfig.C.ENABLE_FRUSTUM_CHUNK_CULLING && this.client != null) {
             ChunkRenderManager.getInstance().calculateChunksToRender(this.client, this.chunkBuilder.getFrustum());
         }
     }
 
     /**
-     * Otimização principal: Aplica o culling.
-     * Injetamos ANTES da chamada a `Frustum.isVisible`. Se o nosso BitSet já diz
-     * que o chunk não é visível, cancelamos a verificação e toda a lógica de renderização para ele.
+     * Passo 2: Otimização com @Redirect.
+     * Agora que temos a assinatura exata de 'renderMain', podemos redirecionar a chamada
+     * a 'Frustum.isVisible' para a nossa própria lógica, que é muito mais rápida.
      *
-     * @param renderChunk O chunk que está prestes a ser verificado e renderizado.
-     * @param ci A CallbackInfo que nos permite cancelar a operação.
+     * @param frustum A instância do Frustum na qual 'isVisible' seria chamada.
+     * @param box A Bounding Box do chunk que está sendo testada.
+     * @return true se o chunk deve ser renderizado, false caso contrário.
      */
-    @Inject(
-        method = "renderMain(Lnet/minecraft/client/util/math/MatrixStack;Lorg/joml/Matrix4f;FJZLnet/minecraft/client/render/Camera;Lnet/minecraft/client/render/GameRenderer;Lnet/minecraft/client/render/LightmapTextureManager;)V",
+    @Redirect(
+        // Usamos o seletor exato que você forneceu para o método 'renderMain'.
+        method = "renderMain(Lnet/minecraft/client/render/FrameGraphBuilder;Lnet/minecraft/client/render/Frustum;Lnet/minecraft/client/render/Camera;Lorg/joml/Matrix4f;Lcom/mojang/blaze3d/buffers/GpuBufferSlice;ZZLnet/minecraft/client/render/RenderTickCounter;Lnet/minecraft/util/profiler/Profiler;)V",
         at = @At(
             value = "INVOKE",
-            target = "Lnet/minecraft/client/render/Frustum;isVisible(Lnet/minecraft/util/math/Box;)Z",
-            shift = At.Shift.BEFORE
-        ),
-        cancellable = true,
-        locals = LocalCapture.CAPTURE_FAILHARD
+            target = "Lnet/minecraft/client/render/Frustum;isVisible(Lnet/minecraft/util/math/Box;)Z"
+        )
     )
-    private void barium$cullChunksWithBitSet(
-            // Parâmetros do método original (não precisamos usá-los, mas devem estar na assinatura)
-            MatrixStack matrices, Matrix4f positionMatrix, float tickDelta, long limitTime,
-            boolean renderBlockOutline, Camera camera, GameRenderer gameRenderer,
-            LightmapTextureManager lightmapTextureManager,
-            // Parâmetros de injeção e locais capturados
-            CallbackInfo ci,
-            // ... (outras variáveis locais que o Mixin captura automaticamente) ...
-            WorldRenderer.RenderChunk renderChunk // Esta é a variável local que nos interessa!
-    ) {
-        
+    private boolean barium$cullChunksWithBitSetRedirect(Frustum frustum, Box box) {
+        // Se a otimização estiver desligada, apenas chamamos o método original.
         if (!BariumConfig.C.ENABLE_FRUSTUM_CHUNK_CULLING) {
-            return;
+            return frustum.isVisible(box);
         }
 
-        // Pega o BitSet com os chunks visíveis que calculamos anteriormente.
+        // Pega o nosso BitSet pré-calculado.
         BitSet chunksToRenderBitSet = ChunkRenderManager.getChunksToRender();
         if (chunksToRenderBitSet == null) {
-            return; // Segurança, caso algo não tenha sido inicializado.
+            // Como fallback, usa a lógica original se o nosso manager não estiver pronto.
+            return frustum.isVisible(box);
         }
 
-        // Pega as dimensões da nossa grade de renderização.
+        // Pega as dimensões da nossa grade.
         final int minChunkX = ChunkRenderManager.getMinRenderChunkX();
         final int minChunkZ = ChunkRenderManager.getMinRenderChunkZ();
         final int gridSize = ChunkRenderManager.getRenderGridSize();
 
-        // Converte a posição do chunk para coordenadas de chunk.
-        final BlockPos origin = renderChunk.getOrigin();
-        final int chunkX = origin.getX() >> 4;
-        final int chunkZ = origin.getZ() >> 4;
+        // Extrai as coordenadas do chunk a partir da sua Bounding Box.
+        final int chunkX = (int) box.minX >> 4;
+        final int chunkZ = (int) box.minZ >> 4;
 
-        // Calcula a posição local do chunk dentro da nossa grade.
+        // Calcula a posição local na grade.
         final int localX = chunkX - minChunkX;
         final int localZ = chunkZ - minChunkZ;
 
-        // Se o chunk estiver fora da nossa grade, ele definitivamente não deve ser renderizado.
+        // Verifica se está dentro dos limites da grade.
         if (localX < 0 || localX >= gridSize || localZ < 0 || localZ >= gridSize) {
-            ci.cancel(); // OTIMIZAÇÃO: Pula o resto do código para este chunk.
-            return;
+            return false; // Fora da nossa área de interesse, não renderiza.
         }
 
-        // Calcula o índice no BitSet.
+        // Calcula o índice e verifica no BitSet.
         final int chunkIndex = localX + localZ * gridSize;
-
-        // Se o bit para este chunk não estiver definido no nosso BitSet, cancelamos.
-        if (!chunksToRenderBitSet.get(chunkIndex)) {
-            ci.cancel(); // OTIMIZAÇÃO: Pula o resto do código para este chunk.
-        }
+        
+        // Retorna true se o bit estiver definido, false caso contrário.
+        // Isso substitui completamente a chamada a `frustum.isVisible(box)`.
+        return chunksToRenderBitSet.get(chunkIndex);
     }
 }
