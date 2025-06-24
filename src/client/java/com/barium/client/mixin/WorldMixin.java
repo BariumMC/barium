@@ -1,8 +1,8 @@
-// --- Substitua o conteúdo em: src/client/java/com/barium/client/mixin/WorldMixin.java ---
+// --- Substitua o conteúdo de: src/client/java/com/barium/client/mixin/WorldMixin.java ---
 package com.barium.client.mixin;
 
 import com.barium.config.BariumConfig;
-import net.minecraft.particle.ParticleEffect; // Importar ParticleEffect
+import net.minecraft.particle.ParticleEffect;
 import net.minecraft.particle.ParticleTypes;
 import net.minecraft.world.World;
 import org.spongepowered.asm.mixin.Mixin;
@@ -17,32 +17,29 @@ public abstract class WorldMixin {
 
     /**
      * Injeta no início do método que adiciona QUALQUER partícula ao mundo.
-     * Esta é a abordagem mais robusta para otimizar partículas de explosão.
+     * CORREÇÃO: A assinatura mudou em 1.21.6+ para incluir um booleano 'ignoreRange'.
      */
     @Inject(
-        method = "addParticle(Lnet/minecraft/particle/ParticleEffect;DDDDDD)V", // Mantendo a assinatura que o Yarn espera
+        method = "addParticle(Lnet/minecraft/particle/ParticleEffect;ZDDDDDD)V",
         at = @At("HEAD"),
         cancellable = true
     )
-    private void barium$reduceExplosionParticles(ParticleEffect parameters, double x, double y, double z, double velocityX, double velocityY, double velocityZ, CallbackInfo ci) {
+    private void barium$reduceExplosionParticles(ParticleEffect parameters, boolean ignoreRange, double x, double y, double z, double velocityX, double velocityY, double velocityZ, CallbackInfo ci) {
         World self = (World)(Object)this;
 
-        // A otimização só deve rodar no cliente.
+        // A otimização só deve rodar no lado do cliente.
         if (!self.isClient) {
             return;
         }
 
-        // Se a otimização estiver desligada, não fazemos nada.
         if (!BariumConfig.C.ENABLE_EXPLOSION_PARTICLE_REDUCTION) {
             return;
         }
 
-        // Verificamos se a partícula que está sendo adicionada é uma das partículas de explosão.
-        // É crucial usar o tipo correto para ParticleEffect.
-        // ParticleTypes.EXPLOSION é um ParticleEffect.
-        // A comparação direta deve funcionar se ParticleEffect for uma superclasse.
+        // Verifica se a partícula é de uma explosão.
         if (parameters.getType() == ParticleTypes.EXPLOSION || parameters.getType() == ParticleTypes.EXPLOSION_EMITTER) {
             // Tem 75% de chance de pular a criação da partícula.
+            // Apenas 1 em cada 4 partículas será criada.
             if (ThreadLocalRandom.current().nextInt(4) != 0) {
                 ci.cancel(); // Cancela a adição desta partícula.
             }
