@@ -1,23 +1,26 @@
-// --- Replace the entire content of: src/client/java/com/barium/client/mixin/WorldRendererMixin.java ---
+// --- Substitua o conteúdo em: src/client/java/com/barium/client/mixin/WorldRendererMixin.java ---
 package com.barium.client.mixin;
 
 import com.barium.client.util.ChunkRenderManager;
 import com.barium.config.BariumConfig;
 import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.render.*;
-import net.minecraft.client.util.math.MatrixStack;
-import net.minecraft.util.math.BlockPos;
+import net.minecraft.client.render.Camera;
+import net.minecraft.client.render.Frustum;
+import net.minecraft.client.render.RenderTickCounter;
+import net.minecraft.client.render.WorldRenderer;
+import net.minecraft.util.math.Box;
+import net.minecraft.util.profiler.Profiler;
 import org.joml.Matrix4f;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
-import org.spongepowered.asm.mixin.injection.callback.LocalCapture;
 
+import com.mojang.blaze3d.buffers.GpuBufferSlice;
 import java.util.BitSet;
-import java.util.Iterator;
 
 @Mixin(WorldRenderer.class)
 public abstract class WorldRendererMixin {
@@ -27,7 +30,7 @@ public abstract class WorldRendererMixin {
     /**
      * Passo 1: Preparação.
      * Injetamos no `setupTerrain` para capturar o Frustum e calcular nosso BitSet.
-     * Esta parte está funcionando e é a nossa base confiável.
+     * Esta é a abordagem mais estável e está correta.
      */
     @Inject(method = "setupTerrain(Lnet/minecraft/client/render/Camera;Lnet/minecraft/client/render/Frustum;ZZ)V", at = @At("HEAD"))
     private void barium$updateChunkRenderManager(Camera camera, Frustum frustum, boolean hasForcedFrustum, boolean spectator, CallbackInfo ci) {
@@ -37,67 +40,43 @@ public abstract class WorldRendererMixin {
     }
 
     /**
-     * Passo 2: Otimização.
-     * REMOVIDO: O @Redirect em renderMain era muito frágil.
-     * NOVA ABORDAGEM: Injetamos no método `renderLayer`. Este método é chamado para
-     * renderizar os chunks de um tipo de layer específico (e.g., solid, translucent).
-     * Nós capturamos a variável local 'renderChunk' e usamos nosso BitSet para
-     * decidir se pulamos a renderização dele.
-     *
-     * @param ci A CallbackInfo que nos permite cancelar.
-     * @param renderChunk A variável local `RenderChunk` capturada do loop.
+     * Passo 2: Otimização com @Redirect no `renderMain`.
+     * CORREÇÃO: Revertemos para esta abordagem, pois é mais limpa e agora temos a assinatura correta para o método 'renderMain'.
+     * A injeção em 'renderLayer' com captura de locais era muito frágil.
      */
-    @Inject(
-        method = "renderLayer(Lnet/minecraft/client/render/RenderLayer;Lnet/minecraft/client/util/math/MatrixStack;DDDLorg/joml/Matrix4f;)V",
+    @Redirect(
+        method = "renderMain(Lnet/minecraft/client/render/FrameGraphBuilder;Lnet/minecraft/client/render/Frustum;Lnet/minecraft/client/render/Camera;Lorg/joml/Matrix4f;Lcom/mojang/blaze3d/buffers/GpuBufferSlice;ZZLnet/minecraft/client/render/RenderTickCounter;Lnet/minecraft/util/profiler/Profiler;)V",
         at = @At(
             value = "INVOKE",
-            // Este é o ponto onde o chunk é retirado da fila para ser renderizado.
-            // Injetamos logo ANTES de ele ser processado.
-            target = "Lnet/minecraft/client/render/chunk/ChunkBuilder$BuiltChunk;getOrigin()Lnet/minecraft/util/math/BlockPos;",
-            shift = At.Shift.BEFORE
-        ),
-        cancellable = true,
-        locals = LocalCapture.CAPTURE_FAILHARD
+            target = "Lnet/minecraft/client/render/Frustum;isVisible(Lnet/minecraft/util/math/Box;)Z"
+        )
     )
-    private void barium$cullChunksWithBitSet(
-            // Parâmetros do método original
-            RenderLayer renderLayer, MatrixStack matrices, double cameraX, double cameraY, double cameraZ, Matrix4f positionMatrix,
-            // Parâmetros da injeção
-            CallbackInfo ci,
-            // Variáveis locais capturadas (a ordem e tipo devem ser exatos)
-            boolean bl, RenderPhase.Transparency transparency, Iterator<?> iterator,
-            WorldRenderer.RenderChunk renderChunk // A variável que queremos
-    ) {
+    private boolean barium$cullChunksWithBitSetRedirect(Frustum frustumInstance, Box box) {
         if (!BariumConfig.C.ENABLE_FRUSTUM_CHUNK_CULLING) {
-            return;
+            return frustumInstance.isVisible(box);
         }
 
         BitSet chunksToRenderBitSet = ChunkRenderManager.getChunksToRender();
         if (chunksToRenderBitSet == null) {
-            return; // Segurança
+            return frustumInstance.isVisible(box);
         }
 
         final int minChunkX = ChunkRenderManager.getMinRenderChunkX();
         final int minChunkZ = ChunkRenderManager.getMinRenderChunkZ();
         final int gridSize = ChunkRenderManager.getRenderGridSize();
 
-        final BlockPos origin = renderChunk.getOrigin();
-        final int chunkX = origin.getX() >> 4;
-        final int chunkZ = origin.getZ() >> 4;
+        final int chunkX = (int) box.minX >> 4;
+        final int chunkZ = (int) box.minZ >> 4;
 
         final int localX = chunkX - minChunkX;
         final int localZ = chunkZ - minChunkZ;
 
         if (localX < 0 || localX >= gridSize || localZ < 0 || localZ >= gridSize) {
-            ci.cancel(); // Pula a renderização se estiver fora da nossa grade
-            return;
+            return false;
         }
 
         final int chunkIndex = localX + localZ * gridSize;
-
-        // Se o bit não estiver definido, cancelamos a renderização para este chunk.
-        if (!chunksToRenderBitSet.get(chunkIndex)) {
-            ci.cancel();
-        }
+        
+        return chunksToRenderBitSet.get(chunkIndex);
     }
 }
