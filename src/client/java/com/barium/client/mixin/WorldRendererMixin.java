@@ -1,16 +1,19 @@
-// --- Replace the content of: src/client/java/com/barium/client/mixin/WorldRendererMixin.java ---
+// --- Substitua o conteúdo em: src/client/java/com/barium/client/mixin/WorldRendererMixin.java ---
 package com.barium.client.mixin;
 
 import com.barium.client.util.ChunkRenderManager;
 import com.barium.config.BariumConfig;
-import com.mojang.blaze3d.systems.RenderSystem; // Needed for FrameGraphBuilder
+import com.mojang.blaze3d.buffers.GpuBufferSlice;
 import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.render.*;
-import net.minecraft.client.util.math.MatrixStack;
+import net.minecraft.client.render.Camera;
+import net.minecraft.client.render.Frustum;
+import net.minecraft.client.render.RenderTickCounter;
+import net.minecraft.client.render.WorldRenderer;
+import net.minecraft.client.util.ObjectAllocator;
 import net.minecraft.util.math.Box;
-import net.minecraft.util.profiler.Profiler; // Needed for renderMain
+import net.minecraft.util.profiler.Profiler;
 import org.joml.Matrix4f;
-import org.joml.Vector4f; // Needed for the new render signature
+import org.joml.Vector4f;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -19,65 +22,52 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-import com.mojang.blaze3d.buffers.GpuBufferSlice; // Needed for the new signatures
 import java.util.BitSet;
 
 @Mixin(WorldRenderer.class)
 public abstract class WorldRendererMixin {
 
     @Shadow @Final private MinecraftClient client;
+    @Shadow private Frustum frustum; // Adicionamos uma sombra para acessar o frustum após ele ser atualizado
 
     /**
      * Passo 1: Preparação.
-     * Injetamos no método 'render' usando a assinatura exata fornecida pelo log de erro.
-     * O nosso objetivo é o mesmo: chamar nossa lógica de cálculo DEPOIS que o setupTerrain for chamado.
+     * Injetamos no método 'render' usando a assinatura exata para 1.21.6.
+     * Nosso ponto de injeção é logo após a chamada a 'setupTerrain', garantindo que
+     * o campo 'this.frustum' esteja atualizado para o frame atual.
      */
     @Inject(
-        // The method name to inject into
-        method = "render(Lnet/minecraft/client/render/FrameGraphBuilder;Lnet/minecraft/client/render/RenderTickCounter;ZLnet/minecraft/client/render/Camera;Lorg/joml/Matrix4f;Lorg/joml/Matrix4f;Lcom/mojang/blaze3d/buffers/GpuBufferSlice;Lorg/joml/Vector4f;Z)V",
-        // The point of injection
+        // Usamos a assinatura exata que você forneceu.
+        method = "render(Lnet/minecraft/client/util/ObjectAllocator;Lnet/minecraft/client/render/RenderTickCounter;ZLnet/minecraft/client/render/Camera;Lorg/joml/Matrix4f;Lorg/joml/Matrix4f;Lcom/mojang/blaze3d/buffers/GpuBufferSlice;Lorg/joml/Vector4f;Z)V",
         at = @At(
             value = "INVOKE",
             target = "Lnet/minecraft/client/render/WorldRenderer;setupTerrain(Lnet/minecraft/client/render/Camera;Lnet/minecraft/client/render/Frustum;ZZ)V",
             shift = At.Shift.AFTER
         )
     )
-    private void barium$captureFrustumAndPrepare(
-            // Parameters of the target method, must match the signature exactly
-            FrameGraphBuilder frameGraphBuilder,
+    private void barium$prepareVisibleChunkSet(
+            // Parâmetros do método 'render' (devem corresponder à assinatura)
+            ObjectAllocator allocator,
             RenderTickCounter tickCounter,
-            boolean hasWorld,
-            Camera camera,
-            Matrix4f projectionMatrix,
-            Matrix4f positionMatrix,
-            GpuBufferSlice fog,
-            Vector4f skyColor,
             boolean renderBlockOutline,
-            // The callback info object
+            Camera camera,
+            Matrix4f positionMatrix,
+            Matrix4f projectionMatrix,
+            GpuBufferSlice fog,
+            Vector4f fogColor,
+            boolean shouldRenderSky,
+            // Objeto de callback da injeção
             CallbackInfo ci
     ) {
         if (BariumConfig.C.ENABLE_FRUSTUM_CHUNK_CULLING && this.client != null) {
-            // A lógica aqui depende de como obter o Frustum. O `setupTerrain` atualiza um campo interno.
-            // Para maior compatibilidade, vamos injetar diretamente no `setupTerrain` como na solução anterior.
-            // Esta injeção em `render` é muito complexa e frágil.
+            // Agora que setupTerrain foi chamado, 'this.frustum' está pronto para uso.
+            ChunkRenderManager.getInstance().calculateChunksToRender(this.client, this.frustum);
         }
     }
-
-    /**
-     * APROXIMAÇÃO MAIS SIMPLES E ROBUSTA (Revertendo para a solução anterior que estava quase correta)
-     * Injetamos diretamente no `setupTerrain` para capturar o Frustum. Isso evita a assinatura complexa do método 'render'.
-     */
-    @Inject(method = "setupTerrain(Lnet/minecraft/client/render/Camera;Lnet/minecraft/client/render/Frustum;ZZ)V", at = @At("HEAD"))
-    private void barium$updateChunkRenderManager(Camera camera, Frustum frustum, boolean hasForcedFrustum, boolean spectator, CallbackInfo ci) {
-        if (BariumConfig.C.ENABLE_FRUSTUM_CHUNK_CULLING && this.client != null) {
-            ChunkRenderManager.getInstance().calculateChunksToRender(this.client, frustum);
-        }
-    }
-
 
     /**
      * Passo 2: Otimização com @Redirect no `renderMain`.
-     * Esta parte permanece a mesma, pois sua lógica e assinaturas de alvo estão corretas.
+     * Esta parte já estava correta e vai funcionar agora que a preparação é feita corretamente.
      */
     @Redirect(
         method = "renderMain(Lnet/minecraft/client/render/FrameGraphBuilder;Lnet/minecraft/client/render/Frustum;Lnet/minecraft/client/render/Camera;Lorg/joml/Matrix4f;Lcom/mojang/blaze3d/buffers/GpuBufferSlice;ZZLnet/minecraft/client/render/RenderTickCounter;Lnet/minecraft/util/profiler/Profiler;)V",
@@ -86,14 +76,14 @@ public abstract class WorldRendererMixin {
             target = "Lnet/minecraft/client/render/Frustum;isVisible(Lnet/minecraft/util/math/Box;)Z"
         )
     )
-    private boolean barium$cullChunksWithBitSetRedirect(Frustum frustum, Box box) {
+    private boolean barium$cullChunksWithBitSetRedirect(Frustum frustumInstance, Box box) {
         if (!BariumConfig.C.ENABLE_FRUSTUM_CHUNK_CULLING) {
-            return frustum.isVisible(box);
+            return frustumInstance.isVisible(box);
         }
 
         BitSet chunksToRenderBitSet = ChunkRenderManager.getChunksToRender();
         if (chunksToRenderBitSet == null) {
-            return frustum.isVisible(box);
+            return frustumInstance.isVisible(box);
         }
 
         final int minChunkX = ChunkRenderManager.getMinRenderChunkX();
