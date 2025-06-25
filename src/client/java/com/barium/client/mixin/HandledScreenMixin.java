@@ -8,7 +8,7 @@ import net.minecraft.client.gui.screen.ingame.HandledScreen;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.tooltip.TooltipType;
-import net.minecraft.screen.slot.Slot;
+// The 'Slot' import is no longer needed here
 import net.minecraft.text.Text;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
@@ -25,18 +25,17 @@ public abstract class HandledScreenMixin {
         method = "render(Lnet/minecraft/client/gui/DrawContext;IIF)V",
         at = @At(
             value = "INVOKE",
-            // --- CORREÇÃO: O target foi atualizado para incluir ItemStack na assinatura ---
             target = "Lnet/minecraft/client/gui/screen/ingame/HandledScreen;renderTooltip(Lnet/minecraft/client/gui/DrawContext;Lnet/minecraft/item/ItemStack;II)V"
         ),
         cancellable = true,
         locals = LocalCapture.CAPTURE_FAILHARD
     )
+    // --- CORREÇÃO: O parâmetro 'Slot slot' foi removido porque não existe como uma variável local para captura. ---
     private void barium$cacheAndRenderTooltip(
         DrawContext context, int mouseX, int mouseY, float delta,
         CallbackInfo ci,
         int i, int j,
-        Slot slot,
-        ItemStack itemStack
+        ItemStack itemStack // Apenas o itemStack é capturado como um novo local.
     ) {
         if (!BariumConfig.C.ENABLE_TOOLTIP_CACHING) return;
 
