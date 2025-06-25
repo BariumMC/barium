@@ -145,6 +145,15 @@ public class BariumModMenu implements ModMenuApi {
                     .setSaveConsumer(newValue -> BariumConfig.C.ENABLE_EXPLOSION_PARTICLE_REDUCTION = newValue)
                     .build());
 
+            ConfigCategory guiOptimizations = builder.getOrCreateCategory(Text.translatable("category.barium.gui_optimizations"));
+
+            uiOptimizations.addEntry(entryBuilder.startBooleanToggle(Text.translatable("option.barium.enable_tooltip_caching"), BariumConfig.C.ENABLE_TOOLTIP_CACHING)
+                    .setDefaultValue(defaults.ENABLE_TOOLTIP_CACHING)
+                    .setTooltip(Text.translatable("tooltip.barium.enable_tooltip_caching"))
+                    .setSaveConsumer(newValue -> BariumConfig.C.ENABLE_TOOLTIP_CACHING = newValue)
+                    .build());
+
+                    
             // ===================================================================
             // Categoria 4: Efeitos Visuais e HUD
             // ===================================================================

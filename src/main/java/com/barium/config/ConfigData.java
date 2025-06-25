@@ -45,6 +45,7 @@ public class ConfigData {
     public boolean ENABLE_HUD_OPTIMIZATION = true;
     public boolean CACHE_DEBUG_HUD = true;
     public boolean DISABLE_TOASTS = true;
+    public boolean ENABLE_TOOLTIP_CACHING = true;
 
     // ================== Visual Effects & Rendering ================== //
     public boolean DISABLE_ENTITY_OUTLINES = false;
