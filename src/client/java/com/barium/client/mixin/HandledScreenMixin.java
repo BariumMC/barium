@@ -1,4 +1,3 @@
-// --- Substitua o conteúdo de HandledScreenMixin.java por este ---
 package com.barium.client.mixin;
 
 import com.barium.client.util.TooltipManager;
@@ -7,8 +6,8 @@ import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.ingame.HandledScreen;
 import net.minecraft.item.ItemStack;
-import net.minecraft.item.Item.TooltipContext;
-import net.minecraft.item.tooltip.TooltipType; // Import necessário
+import net.minecraft.item.TooltipContext;
+import net.minecraft.item.TooltipType;
 import net.minecraft.screen.slot.Slot;
 import net.minecraft.text.Text;
 import org.spongepowered.asm.mixin.Mixin;
@@ -47,12 +46,14 @@ public abstract class HandledScreenMixin {
             } else {
                 MinecraftClient client = MinecraftClient.getInstance();
 
-                // --- CORREÇÃO DA API ---
-                // 1. Crie o TooltipContext correto.
-                TooltipContext tooltipContext = client.options.advancedItemTooltips ? TooltipContext.BASIC.withAdvancedDetails() : TooltipContext.BASIC;
-                // 2. Crie o TooltipType correto.
-                TooltipType tooltipType = TooltipType.BASIC;
-                // 3. Chame o método getTooltip com os 3 argumentos na ordem correta.
+                // --- CORREÇÃO FINAL DA API ---
+                // 1. A classe interna `Default` contém as instâncias padrão.
+                TooltipContext tooltipContext = client.options.advancedItemTooltips ? TooltipContext.Default.ADVANCED : TooltipContext.Default.BASIC;
+                
+                // 2. O tipo da tooltip (se está em um menu, etc.)
+                TooltipType tooltipType = new TooltipType.Builder().build(); // Constrói um tipo padrão.
+                
+                // 3. Chama o método com os argumentos corretos.
                 List<Text> tooltipLines = itemStack.getTooltip(tooltipContext, client.player, tooltipType);
                 
                 TooltipManager.cacheTooltip(itemStack, tooltipLines);
