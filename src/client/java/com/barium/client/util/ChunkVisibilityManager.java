@@ -6,7 +6,7 @@ import it.unimi.dsi.fastutil.longs.LongSet;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.util.hit.HitResult;
-import net.minecraft.util.math.BlockPos; // <-- IMPORT ADICIONADO AQUI
+import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.ChunkPos;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.RaycastContext;
@@ -18,7 +18,7 @@ public class ChunkVisibilityManager {
     public static ChunkVisibilityManager getInstance() { return INSTANCE; }
 
     private static final int RAYS_TO_CAST = 128;
-    private static final double MAX_RAY_DISTANCE = 96.0;
+    private static final double MAX_RAY_DISTANCE = 128.0; // Aumentar um pouco a distância do raio
 
     private final AtomicReference<LongSet> visibleChunkKeys = new AtomicReference<>(new LongOpenHashSet());
     private long lastUpdateTime = 0;
@@ -60,15 +60,46 @@ public class ChunkVisibilityManager {
             RaycastContext context = new RaycastContext(cameraPos, targetPos, RaycastContext.ShapeType.COLLIDER, RaycastContext.FluidHandling.NONE, client.player);
             BlockHitResult hitResult = client.world.raycast(context);
 
-            if (hitResult.getType() == HitResult.Type.BLOCK) {
-                newVisibleChunks.add(new ChunkPos(hitResult.getBlockPos()).toLong());
-            } else if (hitResult.getType() == HitResult.Type.MISS) {
-                // A linha com erro agora funcionará, pois BlockPos foi importado.
-                newVisibleChunks.add(new ChunkPos(new BlockPos((int)targetPos.x, (int)targetPos.y, (int)targetPos.z)).toLong());
-            }
+            // --- A GRANDE CORREÇÃO ESTÁ AQUI ---
+            traceRayAndAddChunks(cameraPos, hitResult.getPos(), newVisibleChunks);
         }
         
         visibleChunkKeys.set(newVisibleChunks);
+    }
+
+    /**
+     * "Caminha" ao longo de um raio e adiciona todos os chunks que ele atravessa.
+     * @param start Posição inicial do raio (câmera).
+     * @param end Posição final do raio (onde ele atingiu um bloco ou a distância máxima).
+     * @param chunkSet O conjunto para adicionar os chunks visíveis.
+     */
+    private void traceRayAndAddChunks(Vec3d start, Vec3d end, LongSet chunkSet) {
+        int startChunkX = (int)start.getX() >> 4;
+        int startChunkZ = (int)start.getZ() >> 4;
+        int endChunkX = (int)end.getX() >> 4;
+        int endChunkZ = (int)end.getZ() >> 4;
+
+        chunkSet.add(ChunkPos.toLong(startChunkX, startChunkZ));
+        
+        int dx = Math.abs(endChunkX - startChunkX);
+        int dz = Math.abs(endChunkZ - startChunkZ);
+        int sx = startChunkX < endChunkX ? 1 : -1;
+        int sz = startChunkZ < endChunkZ ? 1 : -1;
+        int err = dx - dz;
+
+        while(startChunkX != endChunkX || startChunkZ != endChunkZ) {
+            chunkSet.add(ChunkPos.toLong(startChunkX, startChunkZ));
+            int e2 = 2 * err;
+            if (e2 > -dz) {
+                err -= dz;
+                startChunkX += sx;
+            }
+            if (e2 < dx) {
+                err += dx;
+                startChunkZ += sz;
+            }
+        }
+        chunkSet.add(ChunkPos.toLong(endChunkX, endChunkZ));
     }
 
     public boolean isChunkPotentiallyVisible(int chunkX, int chunkZ) {
