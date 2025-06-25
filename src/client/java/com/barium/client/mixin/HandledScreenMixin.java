@@ -25,7 +25,8 @@ public abstract class HandledScreenMixin {
         method = "render(Lnet/minecraft/client/gui/DrawContext;IIF)V",
         at = @At(
             value = "INVOKE",
-            target = "Lnet/minecraft/client/gui/screen/ingame/HandledScreen;renderTooltip(Lnet/minecraft/client/gui/DrawContext;II)V"
+            // --- CORREÇÃO: O target foi atualizado para incluir ItemStack na assinatura ---
+            target = "Lnet/minecraft/client/gui/screen/ingame/HandledScreen;renderTooltip(Lnet/minecraft/client/gui/DrawContext;Lnet/minecraft/item/ItemStack;II)V"
         ),
         cancellable = true,
         locals = LocalCapture.CAPTURE_FAILHARD
@@ -50,14 +51,8 @@ public abstract class HandledScreenMixin {
         } else {
             MinecraftClient client = MinecraftClient.getInstance();
 
-            // --- CORREÇÃO ---
-            // 1. O TooltipContext padrão é agora uma interface estática dentro de Item.
             Item.TooltipContext tooltipContext = Item.TooltipContext.DEFAULT;
-
-            // 2. O TooltipType.Builder foi removido. Use TooltipType.BASIC para tooltips de inventário.
-            TooltipType tooltipType = TooltipType.BASIC;
-
-            // 3. Chamamos o método getTooltip com os argumentos corretos.
+            TooltipType tooltipType = client.options.advancedItemTooltips ? TooltipType.ADVANCED : TooltipType.BASIC;
             List<Text> tooltipLines = itemStack.getTooltip(tooltipContext, client.player, tooltipType);
 
             TooltipManager.cacheTooltip(itemStack, tooltipLines);
