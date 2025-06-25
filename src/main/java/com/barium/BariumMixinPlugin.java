@@ -1,5 +1,4 @@
-// --- Crie este novo arquivo em: src/main/java/com/barium/BariumMixinPlugin.java ---
-// (Note: Coloque na pasta 'main', não 'client', pois o plugin é carregado antes)
+// --- Substitua o conteúdo em: src/main/java/com/barium/BariumMixinPlugin.java ---
 package com.barium;
 
 import net.fabricmc.loader.api.FabricLoader;
@@ -12,23 +11,27 @@ import java.util.Set;
 
 public class BariumMixinPlugin implements IMixinConfigPlugin {
 
-    private boolean isSodiumLoaded = false;
+    private boolean isPerformanceModLoaded = false;
 
     @Override
     public void onLoad(String mixinPackage) {
-        // Verifica se o Sodium está carregado assim que o plugin é inicializado
-        this.isSodiumLoaded = FabricLoader.getInstance().isModLoaded("sodium");
+        // Verifica se o Sodium OU o ImmediatelyFast está carregado.
+        this.isPerformanceModLoaded = FabricLoader.getInstance().isModLoaded("sodium") ||
+                                      FabricLoader.getInstance().isModLoaded("immediatelyfast");
     }
 
     @Override
     public boolean shouldApplyMixin(String targetClassName, String mixinClassName) {
-        // Se o Sodium estiver carregado, desativa nosso mixin que conflita com ele.
-        if (this.isSodiumLoaded && mixinClassName.endsWith("BuiltChunkRebuildMixin")) {
-            System.out.println("[Barium] Sodium detected. Disabling incompatible mixin: " + mixinClassName);
-            return false; // Não aplique este mixin
+        // Se um mod de performance incompatível for detectado...
+        if (this.isPerformanceModLoaded) {
+            // ...e o mixin for o que mexe no rebuild do chunk...
+            if (mixinClassName.endsWith("BuiltChunkRebuildMixin")) {
+                System.out.println("[Barium] Incompatible performance mod detected. Disabling mixin: " + mixinClassName);
+                return false; // ...NÃO APLIQUE o mixin.
+            }
         }
 
-        // Para todos os outros mixins, aplique normalmente.
+        // Para todos os outros mixins e situações, aplique normalmente.
         return true;
     }
 
@@ -40,8 +43,7 @@ public class BariumMixinPlugin implements IMixinConfigPlugin {
     }
 
     @Override
-    public void acceptTargets(Set<String> myTargets, Set<String> otherTargets) {
-    }
+    public void acceptTargets(Set<String> myTargets, Set<String> otherTargets) { }
 
     @Override
     public List<String> getMixins() {
@@ -49,10 +51,8 @@ public class BariumMixinPlugin implements IMixinConfigPlugin {
     }
 
     @Override
-    public void preApply(String targetClassName, ClassNode targetClass, String mixinClassName, IMixinInfo mixinInfo) {
-    }
+    public void preApply(String targetClassName, ClassNode targetClass, String mixinClassName, IMixinInfo mixinInfo) { }
 
     @Override
-    public void postApply(String targetClassName, ClassNode targetClass, String mixinClassName, IMixinInfo mixinInfo) {
-    }
+    public void postApply(String targetClassName, ClassNode targetClass, String mixinClassName, IMixinInfo mixinInfo) { }
 }
