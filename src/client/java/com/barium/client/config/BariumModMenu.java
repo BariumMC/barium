@@ -16,17 +16,27 @@ public class BariumModMenu implements ModMenuApi {
     @Override
     public ConfigScreenFactory<?> getModConfigScreenFactory() {
         return parent -> {
+            // Cria o construtor da tela de configuração
             ConfigBuilder builder = ConfigBuilder.create()
                     .setParentScreen(parent)
                     .setTitle(Text.translatable("title.barium.config"));
 
+            // Define a ação a ser executada quando o usuário clica em "Salvar"
             builder.setSavingRunnable(ConfigManager::saveConfig);
 
-            ConfigData defaults = new ConfigData();
+            ConfigData defaults = new ConfigData(); // Usado para os valores padrão de "reset"
             ConfigEntryBuilder entryBuilder = builder.entryBuilder();
 
+            // ===================================================================
             // --- Categoria 1: Desempenho de Chunks ---
+            // ===================================================================
             ConfigCategory chunkPerformance = builder.getOrCreateCategory(Text.translatable("category.barium.chunk_performance"));
+
+            chunkPerformance.addEntry(entryBuilder.startBooleanToggle(Text.translatable("option.barium.enable_frustum_culling"), BariumConfig.C.ENABLE_FRUSTUM_CHUNK_CULLING)
+                    .setDefaultValue(defaults.ENABLE_FRUSTUM_CHUNK_CULLING)
+                    .setTooltip(Text.translatable("tooltip.barium.enable_frustum_culling"))
+                    .setSaveConsumer(newValue -> BariumConfig.C.ENABLE_FRUSTUM_CHUNK_CULLING = newValue)
+                    .build());
 
             chunkPerformance.addEntry(entryBuilder.startBooleanToggle(Text.translatable("option.barium.cull_empty_sections"), BariumConfig.C.ENABLE_EMPTY_CHUNK_SECTION_CULLING)
                     .setDefaultValue(defaults.ENABLE_EMPTY_CHUNK_SECTION_CULLING)
@@ -46,13 +56,9 @@ public class BariumModMenu implements ModMenuApi {
                     .setSaveConsumer(newValue -> BariumConfig.C.MAX_CHUNK_UPLOADS_PER_FRAME = newValue)
                     .build());
 
-            chunkPerformance.addEntry(entryBuilder.startBooleanToggle(Text.translatable("option.barium.enable_frustum_culling"), BariumConfig.C.ENABLE_FRUSTUM_CHUNK_CULLING)
-        .setDefaultValue(defaults.ENABLE_FRUSTUM_CHUNK_CULLING)
-        .setTooltip(Text.translatable("tooltip.barium.enable_frustum_culling"))
-        .setSaveConsumer(newValue -> BariumConfig.C.ENABLE_FRUSTUM_CHUNK_CULLING = newValue)
-        .build());
-
+            // ===================================================================
             // --- Categoria 2: Otimização e LOD (Level of Detail) ---
+            // ===================================================================
             ConfigCategory cullingLod = builder.getOrCreateCategory(Text.translatable("category.barium.culling_lod"));
 
             cullingLod.addEntry(entryBuilder.startBooleanToggle(Text.translatable("option.barium.enable_block_entity_culling"), BariumConfig.C.ENABLE_BLOCK_ENTITY_CULLING)
@@ -68,7 +74,6 @@ public class BariumModMenu implements ModMenuApi {
                     .setSaveConsumer(newValue -> BariumConfig.C.MAX_BLOCK_ENTITY_RENDER_DISTANCE_SQ = newValue * newValue)
                     .build());
 
-            // NOVA SEÇÃO PARA A OTIMIZAÇÃO DE OCLUSÃO CORRIGIDA
             cullingLod.addEntry(entryBuilder.startBooleanToggle(Text.translatable("option.barium.enable_block_entity_occlusion_culling"), BariumConfig.C.ENABLE_BLOCK_ENTITY_OCCLUSION_CULLING)
                     .setDefaultValue(defaults.ENABLE_BLOCK_ENTITY_OCCLUSION_CULLING)
                     .setTooltip(Text.translatable("tooltip.barium.enable_block_entity_occlusion_culling"))
@@ -82,7 +87,6 @@ public class BariumModMenu implements ModMenuApi {
                     .setSaveConsumer(newValue -> BariumConfig.C.BLOCK_ENTITY_OCCLUSION_MIN_DISTANCE_SQ = newValue * newValue)
                     .build());
 
-
             cullingLod.addEntry(entryBuilder.startBooleanToggle(Text.translatable("option.barium.enable_dense_foliage_culling"), BariumConfig.C.ENABLE_DENSE_FOLIAGE_CULLING)
                     .setDefaultValue(defaults.ENABLE_DENSE_FOLIAGE_CULLING)
                     .setTooltip(Text.translatable("tooltip.barium.enable_dense_foliage_culling"))
@@ -94,23 +98,46 @@ public class BariumModMenu implements ModMenuApi {
                     .setTooltip(Text.translatable("tooltip.barium.dense_foliage_culling_level"))
                     .setSaveConsumer(newValue -> BariumConfig.C.DENSE_FOLIAGE_CULLING_LEVEL = newValue)
                     .build());
+                    
+            cullingLod.addEntry(entryBuilder.startBooleanToggle(Text.translatable("option.barium.enable_beacon_culling"), BariumConfig.C.ENABLE_BEACON_BEAM_CULLING)
+                    .setDefaultValue(defaults.ENABLE_BEACON_BEAM_CULLING)
+                    .setTooltip(Text.translatable("tooltip.barium.enable_beacon_culling"))
+                    .setSaveConsumer(newValue -> BariumConfig.C.ENABLE_BEACON_BEAM_CULLING = newValue)
+                    .build());
 
+            // ===================================================================
             // --- Categoria 3: Partículas ---
+            // ===================================================================
             ConfigCategory particles = builder.getOrCreateCategory(Text.translatable("category.barium.particles"));
 
             particles.addEntry(entryBuilder.startBooleanToggle(Text.translatable("option.barium.enable_particle_optimizations"), BariumConfig.C.ENABLE_PARTICLE_OPTIMIZATION)
                     .setDefaultValue(defaults.ENABLE_PARTICLE_OPTIMIZATION)
                     .setSaveConsumer(newValue -> BariumConfig.C.ENABLE_PARTICLE_OPTIMIZATION = newValue)
                     .build());
-
-            particles.addEntry(entryBuilder.startIntSlider(Text.translatable("option.barium.max_global_particles"), BariumConfig.C.MAX_GLOBAL_PARTICLES, 0, 10000)
+            
+            particles.addEntry(entryBuilder.startBooleanToggle(Text.translatable("option.barium.reduce_explosion_particles"), BariumConfig.C.ENABLE_EXPLOSION_PARTICLE_REDUCTION)
+                    .setDefaultValue(defaults.ENABLE_EXPLOSION_PARTICLE_REDUCTION)
+                    .setTooltip(Text.translatable("tooltip.barium.reduce_explosion_particles"))
+                    .setSaveConsumer(newValue -> BariumConfig.C.ENABLE_EXPLOSION_PARTICLE_REDUCTION = newValue)
+                    .build());
+            
+            particles.addEntry(entryBuilder.startBooleanToggle(Text.translatable("option.barium.enable_global_particle_limit"), BariumConfig.C.ENABLE_GLOBAL_PARTICLE_LIMIT)
+                    .setDefaultValue(defaults.ENABLE_GLOBAL_PARTICLE_LIMIT)
+                    .setTooltip(Text.translatable("tooltip.barium.enable_global_particle_limit"))
+                    .setSaveConsumer(newValue -> BariumConfig.C.ENABLE_GLOBAL_PARTICLE_LIMIT = newValue)
+                    .build());
+            
+            particles.addEntry(entryBuilder.startIntSlider(Text.translatable("option.barium.max_global_particles"), BariumConfig.C.MAX_GLOBAL_PARTICLES, 0, 16384)
                     .setDefaultValue(defaults.MAX_GLOBAL_PARTICLES)
+                    .setTooltip(Text.translatable("tooltip.barium.max_global_particles"))
                     .setSaveConsumer(newValue -> BariumConfig.C.MAX_GLOBAL_PARTICLES = newValue)
                     .build());
 
-            // --- Categoria 4: Pós-Processamento e HUD ---
+            // ===================================================================
+            // --- Categoria 4: Efeitos Visuais e HUD ---
+            // ===================================================================
             ConfigCategory visualEffects = builder.getOrCreateCategory(Text.translatable("category.barium.visual_effects"));
-
+            
             visualEffects.addEntry(entryBuilder.startBooleanToggle(Text.translatable("option.barium.disable_entity_outlines"), BariumConfig.C.DISABLE_ENTITY_OUTLINES)
                     .setDefaultValue(defaults.DISABLE_ENTITY_OUTLINES)
                     .setTooltip(Text.translatable("tooltip.barium.disable_entity_outlines"))
@@ -122,21 +149,22 @@ public class BariumModMenu implements ModMenuApi {
                     .setTooltip(Text.translatable("tooltip.barium.enable_half_res_outlines"))
                     .setSaveConsumer(newValue -> BariumConfig.C.ENABLE_HALF_RESOLUTION_ENTITY_OUTLINES = newValue)
                     .build());
-            
+
             visualEffects.addEntry(entryBuilder.startBooleanToggle(Text.translatable("option.barium.disable_vignette"), BariumConfig.C.DISABLE_VIGNETTE)
                     .setDefaultValue(defaults.DISABLE_VIGNETTE)
                     .setTooltip(Text.translatable("tooltip.barium.disable_vignette"))
                     .setSaveConsumer(newValue -> BariumConfig.C.DISABLE_VIGNETTE = newValue)
                     .build());
-
+                    
             visualEffects.addEntry(entryBuilder.startBooleanToggle(Text.translatable("option.barium.disable_toasts"), BariumConfig.C.DISABLE_TOASTS)
                     .setDefaultValue(defaults.DISABLE_TOASTS)
                     .setTooltip(Text.translatable("tooltip.barium.disable_toasts"))
                     .setSaveConsumer(newValue -> BariumConfig.C.DISABLE_TOASTS = newValue)
                     .build());
 
-
-            // --- Categoria 5: Lógica do Jogo / Ticks ---
+            // ===================================================================
+            // --- Categoria 5: Lógica do Jogo e Ticks ---
+            // ===================================================================
             ConfigCategory gameLogic = builder.getOrCreateCategory(Text.translatable("category.barium.game_logic"));
 
             gameLogic.addEntry(entryBuilder.startBooleanToggle(Text.translatable("option.barium.enable_entity_tick_culling"), BariumConfig.C.ENABLE_ENTITY_TICK_CULLING)
@@ -157,48 +185,14 @@ public class BariumModMenu implements ModMenuApi {
                     .setTooltip(Text.translatable("tooltip.barium.reduce_ambient_particles"))
                     .setSaveConsumer(newValue -> BariumConfig.C.REDUCE_AMBIENT_PARTICLES = newValue)
                     .build());
-
-            // --- Categoria 6: Otimizações Específicas ---
-            ConfigCategory specificLogic = builder.getOrCreateCategory(Text.translatable("category.barium.specific_optimizations"));
-
-            specificLogic.addEntry(entryBuilder.startBooleanToggle(Text.translatable("option.barium.enable_hopper_culling"), BariumConfig.C.ENABLE_HOPPER_TICK_CULLING)
+                    
+            gameLogic.addEntry(entryBuilder.startBooleanToggle(Text.translatable("option.barium.enable_hopper_culling"), BariumConfig.C.ENABLE_HOPPER_TICK_CULLING)
                     .setDefaultValue(defaults.ENABLE_HOPPER_TICK_CULLING)
                     .setTooltip(Text.translatable("tooltip.barium.enable_hopper_culling"))
                     .setSaveConsumer(newValue -> BariumConfig.C.ENABLE_HOPPER_TICK_CULLING = newValue)
                     .build());
-            
-            specificLogic.addEntry(entryBuilder.startBooleanToggle(Text.translatable("option.barium.reduce_explosion_particles"), BariumConfig.C.ENABLE_EXPLOSION_PARTICLE_REDUCTION)
-                    .setDefaultValue(defaults.ENABLE_EXPLOSION_PARTICLE_REDUCTION)
-                    .setTooltip(Text.translatable("tooltip.barium.reduce_explosion_particles"))
-                    .setSaveConsumer(newValue -> BariumConfig.C.ENABLE_EXPLOSION_PARTICLE_REDUCTION = newValue)
-                    .build());
 
-            specificLogic.addEntry(entryBuilder.startBooleanToggle(Text.translatable("option.barium.enable_beacon_culling"), BariumConfig.C.ENABLE_BEACON_BEAM_CULLING)
-                    .setDefaultValue(defaults.ENABLE_BEACON_BEAM_CULLING)
-                    .setTooltip(Text.translatable("tooltip.barium.enable_beacon_culling"))
-                    .setSaveConsumer(newValue -> BariumConfig.C.ENABLE_BEACON_BEAM_CULLING = newValue)
-                    .build());
-
-                                // --- ENTRADAS DA NOVA OTIMIZAÇÃO DE NÉVOA ---
-            visualEffects.addEntry(entryBuilder.startBooleanToggle(Text.translatable("option.barium.enable_fog_optimization"), BariumConfig.C.ENABLE_FOG_OPTIMIZATION)
-                    .setDefaultValue(defaults.ENABLE_FOG_OPTIMIZATION)
-                    .setTooltip(Text.translatable("tooltip.barium.enable_fog_optimization"))
-                    .setSaveConsumer(newValue -> BariumConfig.C.ENABLE_FOG_OPTIMIZATION = newValue)
-                    .build());
-
-            visualEffects.addEntry(entryBuilder.startBooleanToggle(Text.translatable("option.barium.disable_fog"), BariumConfig.C.DISABLE_FOG)
-                    .setDefaultValue(defaults.DISABLE_FOG)
-                    .setTooltip(Text.translatable("tooltip.barium.disable_fog"))
-                    .setSaveConsumer(newValue -> BariumConfig.C.DISABLE_FOG = newValue)
-                    .build());
-
-            visualEffects.addEntry(entryBuilder.startIntSlider(Text.translatable("option.barium.fog_start_percentage"), BariumConfig.C.FOG_START_PERCENTAGE, 0, 100)
-                    .setDefaultValue(defaults.FOG_START_PERCENTAGE)
-                    .setTooltip(Text.translatable("tooltip.barium.fog_start_percentage"))
-                    .setTextGetter(value -> Text.of(value + "%")) // Mostra o valor como porcentagem
-                    .setSaveConsumer(newValue -> BariumConfig.C.FOG_START_PERCENTAGE = newValue)
-                    .build());
-
+            // Constrói e retorna a tela final
             return builder.build();
         };
     }

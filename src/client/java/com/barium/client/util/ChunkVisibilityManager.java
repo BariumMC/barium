@@ -6,6 +6,7 @@ import it.unimi.dsi.fastutil.longs.LongSet;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.util.hit.HitResult;
+import net.minecraft.util.math.BlockPos; // <-- IMPORT ADICIONADO AQUI
 import net.minecraft.util.math.ChunkPos;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.RaycastContext;
@@ -16,8 +17,8 @@ public class ChunkVisibilityManager {
     private static final ChunkVisibilityManager INSTANCE = new ChunkVisibilityManager();
     public static ChunkVisibilityManager getInstance() { return INSTANCE; }
 
-    private static final int RAYS_TO_CAST = 128; // Número de raios a disparar
-    private static final double MAX_RAY_DISTANCE = 96.0; // Distância máxima do raio
+    private static final int RAYS_TO_CAST = 128;
+    private static final double MAX_RAY_DISTANCE = 96.0;
 
     private final AtomicReference<LongSet> visibleChunkKeys = new AtomicReference<>(new LongOpenHashSet());
     private long lastUpdateTime = 0;
@@ -29,7 +30,6 @@ public class ChunkVisibilityManager {
         long now = System.currentTimeMillis();
         Vec3d playerPos = client.player.getPos();
 
-        // Atualiza apenas a cada 500ms ou se o jogador se moveu mais de 16 blocos
         if (now - lastUpdateTime < 500 && playerPos.squaredDistanceTo(lastPlayerPos) < 256) {
             return;
         }
@@ -40,10 +40,8 @@ public class ChunkVisibilityManager {
         LongSet newVisibleChunks = new LongOpenHashSet();
         Vec3d cameraPos = client.cameraEntity.getEyePos();
         
-        // Adiciona o chunk do próprio jogador como sempre visível
         newVisibleChunks.add(new ChunkPos(client.player.getBlockPos()).toLong());
 
-        // Padrão de amostragem em esfera (Fibonacci sphere/golden angle)
         double goldenRatio = (1.0 + Math.sqrt(5.0)) / 2.0;
         double angleIncrement = Math.PI * 2.0 * goldenRatio;
 
@@ -63,10 +61,9 @@ public class ChunkVisibilityManager {
             BlockHitResult hitResult = client.world.raycast(context);
 
             if (hitResult.getType() == HitResult.Type.BLOCK) {
-                // Adiciona o chunk do bloco atingido à lista de visíveis
                 newVisibleChunks.add(new ChunkPos(hitResult.getBlockPos()).toLong());
             } else if (hitResult.getType() == HitResult.Type.MISS) {
-                // Se o raio não acertou nada, podemos adicionar o chunk no final do raio
+                // A linha com erro agora funcionará, pois BlockPos foi importado.
                 newVisibleChunks.add(new ChunkPos(new BlockPos((int)targetPos.x, (int)targetPos.y, (int)targetPos.z)).toLong());
             }
         }
@@ -77,7 +74,7 @@ public class ChunkVisibilityManager {
     public boolean isChunkPotentiallyVisible(int chunkX, int chunkZ) {
         LongSet visibleSet = visibleChunkKeys.get();
         if (visibleSet == null || visibleSet.isEmpty()) {
-            return true; // Se não temos dados, não otimiza
+            return true;
         }
         return visibleSet.contains(ChunkPos.toLong(chunkX, chunkZ));
     }
