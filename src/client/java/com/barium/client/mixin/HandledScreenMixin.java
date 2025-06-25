@@ -5,9 +5,8 @@ import com.barium.config.BariumConfig;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.ingame.HandledScreen;
-import net.minecraft.item.Item; // Import necessário para acessar o TooltipContext
+import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
-import net.minecraft.item.Item.TooltipContext;
 import net.minecraft.item.tooltip.TooltipType;
 import net.minecraft.screen.slot.Slot;
 import net.minecraft.text.Text;
@@ -39,7 +38,7 @@ public abstract class HandledScreenMixin {
         ItemStack itemStack
     ) {
         if (!BariumConfig.C.ENABLE_TOOLTIP_CACHING) return;
-        
+
         if (itemStack.isEmpty()) {
             TooltipManager.clearCache();
             return;
@@ -51,18 +50,16 @@ public abstract class HandledScreenMixin {
         } else {
             MinecraftClient client = MinecraftClient.getInstance();
 
-            // --- CORREÇÃO FINAL E SIMPLIFICADA DA API DE TOOLTIP ---
-            
+            // --- CORREÇÃO ---
             // 1. O TooltipContext padrão é agora uma interface estática dentro de Item.
-            // A verificação de 'advanced tooltips' é feita pelo próprio método.
             Item.TooltipContext tooltipContext = Item.TooltipContext.DEFAULT;
-            
-            // 2. O TooltipType descreve o contexto da interação.
-            TooltipType tooltipType = new TooltipType.Builder().build();
+
+            // 2. O TooltipType.Builder foi removido. Use TooltipType.BASIC para tooltips de inventário.
+            TooltipType tooltipType = TooltipType.BASIC;
 
             // 3. Chamamos o método getTooltip com os argumentos corretos.
             List<Text> tooltipLines = itemStack.getTooltip(tooltipContext, client.player, tooltipType);
-            
+
             TooltipManager.cacheTooltip(itemStack, tooltipLines);
         }
     }
