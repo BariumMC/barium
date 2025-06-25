@@ -60,6 +60,12 @@ public class BariumModMenu implements ModMenuApi {
                     .setSaveConsumer(newValue -> BariumConfig.C.MAX_CHUNK_UPLOADS_PER_FRAME = newValue)
                     .build());
 
+           chunkPerformance.addEntry(entryBuilder.startBooleanToggle(Text.translatable("option.barium.enable_distance_throttling"), BariumConfig.C.ENABLE_DISTANCE_THROTTLING)
+                    .setDefaultValue(defaults.ENABLE_DISTANCE_THROTTLING)
+                    .setTooltip(Text.translatable("tooltip.barium.enable_distance_throttling"))
+                    .setSaveConsumer(newValue -> BariumConfig.C.ENABLE_DISTANCE_THROTTLING = newValue)
+                    .build());
+
             // ===================================================================
             // Categoria 2: Otimização e LOD (Level of Detail)
             // ===================================================================

@@ -12,6 +12,7 @@ public class ConfigData {
     public boolean ENABLE_EMPTY_CHUNK_SECTION_CULLING = true;
     public boolean ENABLE_CHUNK_UPDATE_THROTTLING = true;
     public int MAX_CHUNK_UPLOADS_PER_FRAME = 2;
+    public boolean ENABLE_DISTANCE_THROTTLING = true;
     // Adicionando a nova otimização de chunk
     public boolean ENABLE_VISIBILITY_GRAPH_CULLING = true;
 
