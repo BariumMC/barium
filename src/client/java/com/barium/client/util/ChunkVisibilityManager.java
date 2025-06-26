@@ -2,8 +2,12 @@ package com.barium.client.util;
 
 import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
 import it.unimi.dsi.fastutil.longs.LongSet;
+import net.minecraft.block.BlockState;
+import net.minecraft.block.Blocks;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.util.hit.BlockHitResult;
+import net.minecraft.util.hit.HitResult;
+import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.ChunkPos;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.RaycastContext;
@@ -22,7 +26,7 @@ public class ChunkVisibilityManager {
 
     private final AtomicReference<LongSet> visibleChunkKeys = new AtomicReference<>(new LongOpenHashSet());
     private long lastUpdateTime = 0;
-    private Vec3d lastPlayerPos = Vec3d.ZERO;
+    private Vec3d lastCameraPos = Vec3d.ZERO;
 
     public void update(MinecraftClient client) {
         if (client.player == null || client.world == null || client.cameraEntity == null) return;
@@ -31,37 +35,28 @@ public class ChunkVisibilityManager {
         Vec3d cameraPos = client.cameraEntity.getEyePos();
 
         boolean needsUpdate = (now - lastUpdateTime > UPDATE_INTERVAL_MS) ||
-                              (cameraPos.squaredDistanceTo(lastPlayerPos) > MIN_MOVE_DISTANCE_SQ);
+                              (cameraPos.squaredDistanceTo(lastCameraPos) > MIN_MOVE_DISTANCE_SQ);
 
         if (!needsUpdate) {
             return;
         }
 
         this.lastUpdateTime = now;
-        this.lastPlayerPos = cameraPos;
+        this.lastCameraPos = cameraPos;
 
         LongSet newVisibleChunks = new LongOpenHashSet();
 
-        // ==================================================================
-        // INÍCIO DA CORREÇÃO PARA MONTANHAS DESAPARECENDO
-        // ==================================================================
-        // Antes de qualquer ray-casting, forçamos a visibilidade de uma área
-        // quadrada ao redor do jogador. Isso cria um "chão" seguro que nunca
-        // será removido pelo culling, corrigindo o bug.
-
-        final int forceVisibleRadius = 2; // Força um quadrado de 5x5 chunks (2+1+2)
+        // Regra de segurança para o chão próximo ao jogador (sempre visível)
+        final int forceVisibleRadius = 2;
         ChunkPos playerChunkPos = new ChunkPos(client.cameraEntity.getBlockPos());
-
         for (int x = -forceVisibleRadius; x <= forceVisibleRadius; x++) {
             for (int z = -forceVisibleRadius; z <= forceVisibleRadius; z++) {
                 newVisibleChunks.add(ChunkPos.toLong(playerChunkPos.x + x, playerChunkPos.z + z));
             }
         }
-        // ==================================================================
-        // FIM DA CORREÇÃO
-        // ==================================================================
 
-        // Agora, o ray-casting vai ADICIONAR a este conjunto base de chunks.
+        // Lógica de Ray-casting
+        boolean isSpectator = client.player.isSpectator();
         double goldenRatio = (1.0 + Math.sqrt(5.0)) / 2.0;
         double angleIncrement = Math.PI * 2.0 * goldenRatio;
 
@@ -75,12 +70,63 @@ public class ChunkVisibilityManager {
             double z = Math.cos(inclination);
 
             Vec3d direction = new Vec3d(x, y, z);
-            Vec3d targetPos = cameraPos.add(direction.multiply(MAX_RAY_DISTANCE));
+            Vec3d endPos;
 
-            RaycastContext context = new RaycastContext(cameraPos, targetPos, RaycastContext.ShapeType.COLLIDER, RaycastContext.FluidHandling.NONE, client.player);
-            BlockHitResult hitResult = client.world.raycast(context);
+            if (isSpectator) {
+                // ==================================================================
+                // INÍCIO DA LÓGICA AVANÇADA PARA ESPECTADOR
+                // ==================================================================
+                // ESTÁGIO 1: Raio de Escape - viaja através de blocos sólidos
+                RaycastContext escapeContext = new RaycastContext(
+                    cameraPos,
+                    cameraPos.add(direction.multiply(MAX_RAY_DISTANCE)),
+                    RaycastContext.ShapeType.COLLIDER,
+                    RaycastContext.FluidHandling.NONE,
+                    client.player
+                ) {
+                    // Aqui está a mágica: Nós mentimos para o ray-caster.
+                    @Override
+                    public BlockState getBlockState(BlockPos pos) {
+                        BlockState realState = client.world.getBlockState(pos);
+                        // Se for um bloco sólido, finja que é ar para o raio passar.
+                        return realState.isOpaqueFullCube(client.world, pos) ? Blocks.AIR.getDefaultState() : realState;
+                    }
+                };
+                BlockHitResult escapeHit = client.world.raycast(escapeContext);
 
-            traceRayAndAddChunks(cameraPos, hitResult.getPos(), newVisibleChunks);
+                // Se o raio de escape não encontrou ar, não há nada a renderizar nessa direção.
+                if (escapeHit.getType() == HitResult.Type.MISS) {
+                    continue;
+                }
+                
+                // ESTÁGIO 2: Raio de Visibilidade - começa onde encontramos ar e se comporta normalmente.
+                Vec3d visibilityStartPos = escapeHit.getPos();
+                RaycastContext visibilityContext = new RaycastContext(
+                    visibilityStartPos,
+                    visibilityStartPos.add(direction.multiply(MAX_RAY_DISTANCE)),
+                    RaycastContext.ShapeType.COLLIDER,
+                    RaycastContext.FluidHandling.NONE,
+                    client.player
+                );
+                BlockHitResult visibilityHit = client.world.raycast(visibilityContext);
+                endPos = visibilityHit.getPos();
+                // ==================================================================
+                // FIM DA LÓGICA AVANÇADA PARA ESPECTADOR
+                // ==================================================================
+            } else {
+                // Comportamento normal para outros modos de jogo
+                RaycastContext context = new RaycastContext(
+                    cameraPos,
+                    cameraPos.add(direction.multiply(MAX_RAY_DISTANCE)),
+                    RaycastContext.ShapeType.COLLIDER,
+                    RaycastContext.FluidHandling.NONE,
+                    client.player
+                );
+                BlockHitResult hitResult = client.world.raycast(context);
+                endPos = hitResult.getPos();
+            }
+
+            traceRayAndAddChunks(cameraPos, endPos, newVisibleChunks);
         }
 
         visibleChunkKeys.set(newVisibleChunks);
