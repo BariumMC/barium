@@ -1,12 +1,10 @@
+// Em: src/client/java/com/barium/client/util/ChunkVisibilityManager.java
 package com.barium.client.util;
 
-import com.barium.config.BariumConfig;
 import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
 import it.unimi.dsi.fastutil.longs.LongSet;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.util.hit.BlockHitResult;
-import net.minecraft.util.hit.HitResult;
-import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.ChunkPos;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.RaycastContext;
@@ -17,35 +15,44 @@ public class ChunkVisibilityManager {
     private static final ChunkVisibilityManager INSTANCE = new ChunkVisibilityManager();
     public static ChunkVisibilityManager getInstance() { return INSTANCE; }
 
-    private static final int RAYS_TO_CAST = 128;
-    private static final double MAX_RAY_DISTANCE = 128.0; // Aumentar um pouco a distância do raio
+    // Configurações da otimização
+    private static final int RAYS_TO_CAST = 128; // Número de raios a disparar. Mais raios = mais preciso, mais pesado.
+    private static final double MAX_RAY_DISTANCE = 128.0; // Distância máxima dos raios.
+    private static final long UPDATE_INTERVAL_MS = 250; // Atualiza a visibilidade a cada 250ms
+    private static final double MIN_MOVE_DISTANCE_SQ = 16.0; // Ou se o jogador se mover 4 blocos (4*4=16)
 
     private final AtomicReference<LongSet> visibleChunkKeys = new AtomicReference<>(new LongOpenHashSet());
     private long lastUpdateTime = 0;
     private Vec3d lastPlayerPos = Vec3d.ZERO;
 
     public void update(MinecraftClient client) {
-        if (client.player == null || client.world == null) return;
+        if (client.player == null || client.world == null || client.cameraEntity == null) return;
 
         long now = System.currentTimeMillis();
-        Vec3d playerPos = client.player.getPos();
+        Vec3d cameraPos = client.cameraEntity.getEyePos();
 
-        if (now - lastUpdateTime < 500 && playerPos.squaredDistanceTo(lastPlayerPos) < 256) {
+        // Evita recalcular constantemente se o jogador estiver parado
+        boolean needsUpdate = (now - lastUpdateTime > UPDATE_INTERVAL_MS) || 
+                              (cameraPos.squaredDistanceTo(lastPlayerPos) > MIN_MOVE_DISTANCE_SQ);
+
+        if (!needsUpdate) {
             return;
         }
 
         this.lastUpdateTime = now;
-        this.lastPlayerPos = playerPos;
+        this.lastPlayerPos = cameraPos;
 
         LongSet newVisibleChunks = new LongOpenHashSet();
-        Vec3d cameraPos = client.cameraEntity.getEyePos();
         
-        newVisibleChunks.add(new ChunkPos(client.player.getBlockPos()).toLong());
+        // Sempre adiciona o chunk em que a câmera está
+        newVisibleChunks.add(new ChunkPos(client.cameraEntity.getBlockPos()).toLong());
 
+        // Usa uma Esfera de Fibonacci para distribuir os raios uniformemente
         double goldenRatio = (1.0 + Math.sqrt(5.0)) / 2.0;
         double angleIncrement = Math.PI * 2.0 * goldenRatio;
 
         for (int i = 0; i < RAYS_TO_CAST; i++) {
+            // Matemática para gerar pontos em uma esfera
             double t = (double) i / RAYS_TO_CAST;
             double inclination = Math.acos(1 - 2 * t);
             double azimuth = angleIncrement * i;
@@ -60,7 +67,7 @@ public class ChunkVisibilityManager {
             RaycastContext context = new RaycastContext(cameraPos, targetPos, RaycastContext.ShapeType.COLLIDER, RaycastContext.FluidHandling.NONE, client.player);
             BlockHitResult hitResult = client.world.raycast(context);
 
-            // --- A GRANDE CORREÇÃO ESTÁ AQUI ---
+            // AQUI ESTÁ A CORREÇÃO CRÍTICA: Traçamos o caminho do raio
             traceRayAndAddChunks(cameraPos, hitResult.getPos(), newVisibleChunks);
         }
         
@@ -68,42 +75,44 @@ public class ChunkVisibilityManager {
     }
 
     /**
-     * "Caminha" ao longo de um raio e adiciona todos os chunks que ele atravessa.
-     * @param start Posição inicial do raio (câmera).
-     * @param end Posição final do raio (onde ele atingiu um bloco ou a distância máxima).
-     * @param chunkSet O conjunto para adicionar os chunks visíveis.
+     * Usa uma variação do algoritmo de linha de Bresenham para "caminhar" ao longo de um raio 
+     * e adicionar todos os chunks que ele atravessa ao conjunto de visíveis.
      */
     private void traceRayAndAddChunks(Vec3d start, Vec3d end, LongSet chunkSet) {
-        int startChunkX = (int)start.getX() >> 4;
-        int startChunkZ = (int)start.getZ() >> 4;
-        int endChunkX = (int)end.getX() >> 4;
-        int endChunkZ = (int)end.getZ() >> 4;
+        int x1 = (int)start.getX() >> 4;
+        int z1 = (int)start.getZ() >> 4;
+        int x2 = (int)end.getX() >> 4;
+        int z2 = (int)end.getZ() >> 4;
 
-        chunkSet.add(ChunkPos.toLong(startChunkX, startChunkZ));
-        
-        int dx = Math.abs(endChunkX - startChunkX);
-        int dz = Math.abs(endChunkZ - startChunkZ);
-        int sx = startChunkX < endChunkX ? 1 : -1;
-        int sz = startChunkZ < endChunkZ ? 1 : -1;
+        int dx = Math.abs(x2 - x1);
+        int dz = Math.abs(z2 - z1);
+        int sx = x1 < x2 ? 1 : -1;
+        int sz = z1 < z2 ? 1 : -1;
         int err = dx - dz;
 
-        while(startChunkX != endChunkX || startChunkZ != endChunkZ) {
-            chunkSet.add(ChunkPos.toLong(startChunkX, startChunkZ));
+        while(true) {
+            chunkSet.add(ChunkPos.toLong(x1, z1));
+            if (x1 == x2 && z1 == z2) break;
+            
             int e2 = 2 * err;
             if (e2 > -dz) {
                 err -= dz;
-                startChunkX += sx;
+                x1 += sx;
             }
             if (e2 < dx) {
                 err += dx;
-                startChunkZ += sz;
+                z1 += sz;
             }
         }
-        chunkSet.add(ChunkPos.toLong(endChunkX, endChunkZ));
     }
 
+    /**
+     * Verifica se um chunk está na lista de chunks potencialmente visíveis.
+     * Chamado pelo nosso Mixin.
+     */
     public boolean isChunkPotentiallyVisible(int chunkX, int chunkZ) {
         LongSet visibleSet = visibleChunkKeys.get();
+        // Se o cálculo ainda não rodou, considera tudo como visível para evitar problemas.
         if (visibleSet == null || visibleSet.isEmpty()) {
             return true;
         }

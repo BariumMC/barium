@@ -1,3 +1,4 @@
+// Em: src/client/java/com/barium/client/mixin/WorldRendererMixin.java
 package com.barium.client.mixin;
 
 import com.barium.client.util.ChunkRenderManager;
@@ -27,6 +28,7 @@ public abstract class WorldRendererMixin {
     private void barium$updateChunkOptimizationManagers(Camera camera, Frustum frustum, boolean hasForcedFrustum, boolean spectator, CallbackInfo ci) {
         // Atualiza o manager de frustum culling, se habilitado.
         if (BariumConfig.C.ENABLE_FRUSTUM_CHUNK_CULLING && this.client != null) {
+            // Você já tinha uma classe para isso, vamos torná-la um singleton para consistência
             ChunkRenderManager.getInstance().calculateChunksToRender(this.client, frustum);
         }
 
