@@ -3,10 +3,8 @@ package com.barium.client.util;
 import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
 import it.unimi.dsi.fastutil.longs.LongSet;
 import net.minecraft.block.BlockState;
-import net.minecraft.block.Blocks;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.util.hit.BlockHitResult;
-import net.minecraft.util.hit.HitResult;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.ChunkPos;
 import net.minecraft.util.math.Vec3d;
@@ -18,7 +16,6 @@ public class ChunkVisibilityManager {
     private static final ChunkVisibilityManager INSTANCE = new ChunkVisibilityManager();
     public static ChunkVisibilityManager getInstance() { return INSTANCE; }
 
-    // Configurações da otimização
     private static final int RAYS_TO_CAST = 128;
     private static final double MAX_RAY_DISTANCE = 160.0;
     private static final long UPDATE_INTERVAL_MS = 250;
@@ -46,7 +43,6 @@ public class ChunkVisibilityManager {
 
         LongSet newVisibleChunks = new LongOpenHashSet();
 
-        // Regra de segurança para o chão próximo ao jogador (sempre visível)
         final int forceVisibleRadius = 2;
         ChunkPos playerChunkPos = new ChunkPos(client.cameraEntity.getBlockPos());
         for (int x = -forceVisibleRadius; x <= forceVisibleRadius; x++) {
@@ -55,7 +51,6 @@ public class ChunkVisibilityManager {
             }
         }
 
-        // Lógica de Ray-casting
         boolean isSpectator = client.player.isSpectator();
         double goldenRatio = (1.0 + Math.sqrt(5.0)) / 2.0;
         double angleIncrement = Math.PI * 2.0 * goldenRatio;
@@ -70,66 +65,54 @@ public class ChunkVisibilityManager {
             double z = Math.cos(inclination);
 
             Vec3d direction = new Vec3d(x, y, z);
-            Vec3d endPos;
+            Vec3d finalHitPos;
 
             if (isSpectator) {
-                // ==================================================================
-                // INÍCIO DA LÓGICA AVANÇADA PARA ESPECTADOR
-                // ==================================================================
-                // ESTÁGIO 1: Raio de Escape - viaja através de blocos sólidos
-                RaycastContext escapeContext = new RaycastContext(
-                    cameraPos,
-                    cameraPos.add(direction.multiply(MAX_RAY_DISTANCE)),
-                    RaycastContext.ShapeType.COLLIDER,
-                    RaycastContext.FluidHandling.NONE,
-                    client.player
-                ) {
-                    // Aqui está a mágica: Nós mentimos para o ray-caster.
-                    @Override
-                    public BlockState getBlockState(BlockPos pos) {
-                        BlockState realState = client.world.getBlockState(pos);
-                        // Se for um bloco sólido, finja que é ar para o raio passar.
-                        return realState.isOpaqueFullCube(client.world, pos) ? Blocks.AIR.getDefaultState() : realState;
-                    }
-                };
-                BlockHitResult escapeHit = client.world.raycast(escapeContext);
-
-                // Se o raio de escape não encontrou ar, não há nada a renderizar nessa direção.
-                if (escapeHit.getType() == HitResult.Type.MISS) {
-                    continue;
+                // Lógica de escape manual para o modo espectador
+                Vec3d escapePoint = findFirstNonOpaqueBlock(client, cameraPos, direction);
+                if (escapePoint == null) {
+                    continue; // Raio não encontrou ar, pular
                 }
-                
-                // ESTÁGIO 2: Raio de Visibilidade - começa onde encontramos ar e se comporta normalmente.
-                Vec3d visibilityStartPos = escapeHit.getPos();
-                RaycastContext visibilityContext = new RaycastContext(
-                    visibilityStartPos,
-                    visibilityStartPos.add(direction.multiply(MAX_RAY_DISTANCE)),
-                    RaycastContext.ShapeType.COLLIDER,
-                    RaycastContext.FluidHandling.NONE,
-                    client.player
-                );
+
+                // A partir do ponto de escape, faz um ray-cast normal
+                RaycastContext visibilityContext = new RaycastContext(escapePoint, escapePoint.add(direction.multiply(MAX_RAY_DISTANCE)), RaycastContext.ShapeType.COLLIDER, RaycastContext.FluidHandling.NONE, client.player);
                 BlockHitResult visibilityHit = client.world.raycast(visibilityContext);
-                endPos = visibilityHit.getPos();
-                // ==================================================================
-                // FIM DA LÓGICA AVANÇADA PARA ESPECTADOR
-                // ==================================================================
+                finalHitPos = visibilityHit.getPos();
+
             } else {
                 // Comportamento normal para outros modos de jogo
-                RaycastContext context = new RaycastContext(
-                    cameraPos,
-                    cameraPos.add(direction.multiply(MAX_RAY_DISTANCE)),
-                    RaycastContext.ShapeType.COLLIDER,
-                    RaycastContext.FluidHandling.NONE,
-                    client.player
-                );
+                RaycastContext context = new RaycastContext(cameraPos, cameraPos.add(direction.multiply(MAX_RAY_DISTANCE)), RaycastContext.ShapeType.COLLIDER, RaycastContext.FluidHandling.NONE, client.player);
                 BlockHitResult hitResult = client.world.raycast(context);
-                endPos = hitResult.getPos();
+                finalHitPos = hitResult.getPos();
             }
 
-            traceRayAndAddChunks(cameraPos, endPos, newVisibleChunks);
+            traceRayAndAddChunks(cameraPos, finalHitPos, newVisibleChunks);
         }
 
         visibleChunkKeys.set(newVisibleChunks);
+    }
+
+    /**
+     * "Marcha" ao longo de um raio para encontrar o primeiro ponto que não está dentro de um bloco opaco.
+     * Esta é a correção para o modo espectador.
+     */
+    private Vec3d findFirstNonOpaqueBlock(MinecraftClient client, Vec3d start, Vec3d direction) {
+        final double step = 0.5; // Tamanho do passo em blocos
+        for (double d = 0; d < MAX_RAY_DISTANCE; d += step) {
+            Vec3d currentPos = start.add(direction.multiply(d));
+            BlockPos blockPos = BlockPos.ofFloored(currentPos);
+
+            if (!client.world.isChunkLoaded(blockPos)) {
+                return null; // Parar se o chunk não estiver carregado
+            }
+
+            BlockState state = client.world.getBlockState(blockPos);
+            // CORREÇÃO: Usamos isOpaque() sem argumentos.
+            if (!state.isOpaque()) {
+                return currentPos; // Encontramos ar! Este é o nosso ponto de escape.
+            }
+        }
+        return null; // Não encontrou ar dentro da distância máxima.
     }
 
     private void traceRayAndAddChunks(Vec3d start, Vec3d end, LongSet chunkSet) {
