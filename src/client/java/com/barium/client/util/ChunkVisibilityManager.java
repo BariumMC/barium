@@ -1,4 +1,3 @@
-// Em: src/client/java/com/barium/client/util/ChunkVisibilityManager.java
 package com.barium.client.util;
 
 import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
@@ -16,10 +15,10 @@ public class ChunkVisibilityManager {
     public static ChunkVisibilityManager getInstance() { return INSTANCE; }
 
     // Configurações da otimização
-    private static final int RAYS_TO_CAST = 128; // Número de raios a disparar. Mais raios = mais preciso, mais pesado.
-    private static final double MAX_RAY_DISTANCE = 128.0; // Distância máxima dos raios.
-    private static final long UPDATE_INTERVAL_MS = 250; // Atualiza a visibilidade a cada 250ms
-    private static final double MIN_MOVE_DISTANCE_SQ = 16.0; // Ou se o jogador se mover 4 blocos (4*4=16)
+    private static final int RAYS_TO_CAST = 128;
+    private static final double MAX_RAY_DISTANCE = 160.0;
+    private static final long UPDATE_INTERVAL_MS = 250;
+    private static final double MIN_MOVE_DISTANCE_SQ = 16.0;
 
     private final AtomicReference<LongSet> visibleChunkKeys = new AtomicReference<>(new LongOpenHashSet());
     private long lastUpdateTime = 0;
@@ -31,8 +30,7 @@ public class ChunkVisibilityManager {
         long now = System.currentTimeMillis();
         Vec3d cameraPos = client.cameraEntity.getEyePos();
 
-        // Evita recalcular constantemente se o jogador estiver parado
-        boolean needsUpdate = (now - lastUpdateTime > UPDATE_INTERVAL_MS) || 
+        boolean needsUpdate = (now - lastUpdateTime > UPDATE_INTERVAL_MS) ||
                               (cameraPos.squaredDistanceTo(lastPlayerPos) > MIN_MOVE_DISTANCE_SQ);
 
         if (!needsUpdate) {
@@ -43,16 +41,31 @@ public class ChunkVisibilityManager {
         this.lastPlayerPos = cameraPos;
 
         LongSet newVisibleChunks = new LongOpenHashSet();
-        
-        // Sempre adiciona o chunk em que a câmera está
-        newVisibleChunks.add(new ChunkPos(client.cameraEntity.getBlockPos()).toLong());
 
-        // Usa uma Esfera de Fibonacci para distribuir os raios uniformemente
+        // ==================================================================
+        // INÍCIO DA CORREÇÃO PARA MONTANHAS DESAPARECENDO
+        // ==================================================================
+        // Antes de qualquer ray-casting, forçamos a visibilidade de uma área
+        // quadrada ao redor do jogador. Isso cria um "chão" seguro que nunca
+        // será removido pelo culling, corrigindo o bug.
+
+        final int forceVisibleRadius = 2; // Força um quadrado de 5x5 chunks (2+1+2)
+        ChunkPos playerChunkPos = new ChunkPos(client.cameraEntity.getBlockPos());
+
+        for (int x = -forceVisibleRadius; x <= forceVisibleRadius; x++) {
+            for (int z = -forceVisibleRadius; z <= forceVisibleRadius; z++) {
+                newVisibleChunks.add(ChunkPos.toLong(playerChunkPos.x + x, playerChunkPos.z + z));
+            }
+        }
+        // ==================================================================
+        // FIM DA CORREÇÃO
+        // ==================================================================
+
+        // Agora, o ray-casting vai ADICIONAR a este conjunto base de chunks.
         double goldenRatio = (1.0 + Math.sqrt(5.0)) / 2.0;
         double angleIncrement = Math.PI * 2.0 * goldenRatio;
 
         for (int i = 0; i < RAYS_TO_CAST; i++) {
-            // Matemática para gerar pontos em uma esfera
             double t = (double) i / RAYS_TO_CAST;
             double inclination = Math.acos(1 - 2 * t);
             double azimuth = angleIncrement * i;
@@ -60,24 +73,19 @@ public class ChunkVisibilityManager {
             double x = Math.sin(inclination) * Math.cos(azimuth);
             double y = Math.sin(inclination) * Math.sin(azimuth);
             double z = Math.cos(inclination);
-            
+
             Vec3d direction = new Vec3d(x, y, z);
             Vec3d targetPos = cameraPos.add(direction.multiply(MAX_RAY_DISTANCE));
 
             RaycastContext context = new RaycastContext(cameraPos, targetPos, RaycastContext.ShapeType.COLLIDER, RaycastContext.FluidHandling.NONE, client.player);
             BlockHitResult hitResult = client.world.raycast(context);
 
-            // AQUI ESTÁ A CORREÇÃO CRÍTICA: Traçamos o caminho do raio
             traceRayAndAddChunks(cameraPos, hitResult.getPos(), newVisibleChunks);
         }
-        
+
         visibleChunkKeys.set(newVisibleChunks);
     }
 
-    /**
-     * Usa uma variação do algoritmo de linha de Bresenham para "caminhar" ao longo de um raio 
-     * e adicionar todos os chunks que ele atravessa ao conjunto de visíveis.
-     */
     private void traceRayAndAddChunks(Vec3d start, Vec3d end, LongSet chunkSet) {
         int x1 = (int)start.getX() >> 4;
         int z1 = (int)start.getZ() >> 4;
@@ -93,7 +101,7 @@ public class ChunkVisibilityManager {
         while(true) {
             chunkSet.add(ChunkPos.toLong(x1, z1));
             if (x1 == x2 && z1 == z2) break;
-            
+
             int e2 = 2 * err;
             if (e2 > -dz) {
                 err -= dz;
@@ -106,13 +114,8 @@ public class ChunkVisibilityManager {
         }
     }
 
-    /**
-     * Verifica se um chunk está na lista de chunks potencialmente visíveis.
-     * Chamado pelo nosso Mixin.
-     */
     public boolean isChunkPotentiallyVisible(int chunkX, int chunkZ) {
         LongSet visibleSet = visibleChunkKeys.get();
-        // Se o cálculo ainda não rodou, considera tudo como visível para evitar problemas.
         if (visibleSet == null || visibleSet.isEmpty()) {
             return true;
         }
