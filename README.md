@@ -1,4 +1,4 @@
-# 📦 Barium (for Minecraft 1.21.6)
+# 🚀 Barium (for Minecraft 1.21.6)
 Barium is a lightweight performance optimization mod for Minecraft 1.21.6. It improves rendering efficiency, chunk loading, and overall game performance while preserving visual quality. Whether you're playing in modded environments or large vanilla worlds, Barium helps ensure smoother gameplay.
 
 ## ✅ Key Features:
