@@ -21,22 +21,21 @@ import java.util.List;
 public abstract class HandledScreenMixin {
 
     @Inject(
-        // --- CORREÇÃO: O alvo da injeção foi alterado para o método correto. ---
-        // A lógica da tooltip não está mais em 'render', mas sim em 'drawMouseoverTooltip'.
+        // Target the correct method where tooltip logic now resides
         method = "drawMouseoverTooltip(Lnet/minecraft/client/gui/DrawContext;II)V",
         at = @At(
             value = "INVOKE",
-            // Este target para a chamada de renderTooltip está correto dentro do novo método.
+            // Find the call to renderTooltip inside drawMouseoverTooltip
             target = "Lnet/minecraft/client/gui/screen/ingame/HandledScreen;renderTooltip(Lnet/minecraft/client/gui/DrawContext;Lnet/minecraft/item/ItemStack;II)V"
         ),
         cancellable = true,
         locals = LocalCapture.CAPTURE_FAILHARD
     )
-    // A assinatura do método foi atualizada para corresponder a 'drawMouseoverTooltip', removendo o float 'delta'.
+    // Update the signature to match the target method (no float delta)
     private void barium$cacheAndRenderTooltip(
         DrawContext context, int mouseX, int mouseY,
         CallbackInfo ci,
-        ItemStack itemStack // A captura da variável local 'itemStack' ainda é necessária e correta.
+        ItemStack itemStack // Capture the local ItemStack
     ) {
         if (!BariumConfig.C.ENABLE_TOOLTIP_CACHING) return;
 
