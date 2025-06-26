@@ -5,11 +5,11 @@
   "name": "Barium",
   "description": "Mod de otimização para Minecraft 1.21.4",
   "authors": [
-    "Barium Team"
+    "PedrixzZDev"
   ],
   "contact": {
-    "homepage": "https://github.com/bariumteam/barium",
-    "sources": "https://github.com/bariumteam/barium"
+    "homepage": "https://github.com/BariumMC/barium",
+    "sources": "https://github.com/BariumMC/barium"
   },
   "license": "CC0-1.0",
   "icon": "assets/barium/icon.png",
