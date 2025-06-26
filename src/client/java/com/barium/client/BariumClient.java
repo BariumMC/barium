@@ -23,7 +23,6 @@ public class BariumClient implements ClientModInitializer {
         
         HudOptimizer.init();
         ParticleOptimizer.init();
-        ChunkOptimizer.init();
     }
 
     public static BariumClient getInstance() {
