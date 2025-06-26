@@ -16,7 +16,7 @@ public class ChunkVisibilityManager {
     private static final ChunkVisibilityManager INSTANCE = new ChunkVisibilityManager();
     public static ChunkVisibilityManager getInstance() { return INSTANCE; }
 
-    private static final int RAYS_TO_CAST = 128;
+    private static final int RAYS_TO_CAST = 128; // Suficiente com o preenchimento de lacunas
     private static final double MAX_RAY_DISTANCE = 160.0;
     private static final long UPDATE_INTERVAL_MS = 250;
     private static final double MIN_MOVE_DISTANCE_SQ = 16.0;
@@ -68,51 +68,50 @@ public class ChunkVisibilityManager {
             Vec3d finalHitPos;
 
             if (isSpectator) {
-                // Lógica de escape manual para o modo espectador
                 Vec3d escapePoint = findFirstNonOpaqueBlock(client, cameraPos, direction);
-                if (escapePoint == null) {
-                    continue; // Raio não encontrou ar, pular
-                }
-
-                // A partir do ponto de escape, faz um ray-cast normal
+                if (escapePoint == null) continue;
                 RaycastContext visibilityContext = new RaycastContext(escapePoint, escapePoint.add(direction.multiply(MAX_RAY_DISTANCE)), RaycastContext.ShapeType.COLLIDER, RaycastContext.FluidHandling.NONE, client.player);
-                BlockHitResult visibilityHit = client.world.raycast(visibilityContext);
-                finalHitPos = visibilityHit.getPos();
-
+                finalHitPos = client.world.raycast(visibilityContext).getPos();
             } else {
-                // Comportamento normal para outros modos de jogo
                 RaycastContext context = new RaycastContext(cameraPos, cameraPos.add(direction.multiply(MAX_RAY_DISTANCE)), RaycastContext.ShapeType.COLLIDER, RaycastContext.FluidHandling.NONE, client.player);
-                BlockHitResult hitResult = client.world.raycast(context);
-                finalHitPos = hitResult.getPos();
+                finalHitPos = client.world.raycast(context).getPos();
             }
-
             traceRayAndAddChunks(cameraPos, finalHitPos, newVisibleChunks);
         }
+
+        // ==================================================================
+        // INÍCIO DA CORREÇÃO (PREENCHIMENTO DE LACUNAS)
+        // ==================================================================
+        // Após encontrar todos os chunks visíveis pelos raios, preenchemos os
+        // buracos entre eles adicionando seus vizinhos.
+
+        LongSet neighborsToAdd = new LongOpenHashSet();
+        for (long key : newVisibleChunks) {
+            int x = ChunkPos.getPackedX(key);
+            int z = ChunkPos.getPackedZ(key);
+            neighborsToAdd.add(ChunkPos.toLong(x + 1, z));
+            neighborsToAdd.add(ChunkPos.toLong(x - 1, z));
+            neighborsToAdd.add(ChunkPos.toLong(x, z + 1));
+            neighborsToAdd.add(ChunkPos.toLong(x, z - 1));
+        }
+        newVisibleChunks.addAll(neighborsToAdd);
+        // ==================================================================
+        // FIM DA CORREÇÃO
+        // ==================================================================
 
         visibleChunkKeys.set(newVisibleChunks);
     }
 
-    /**
-     * "Marcha" ao longo de um raio para encontrar o primeiro ponto que não está dentro de um bloco opaco.
-     * Esta é a correção para o modo espectador.
-     */
     private Vec3d findFirstNonOpaqueBlock(MinecraftClient client, Vec3d start, Vec3d direction) {
-        final double step = 0.5; // Tamanho do passo em blocos
+        final double step = 0.5;
         for (double d = 0; d < MAX_RAY_DISTANCE; d += step) {
             Vec3d currentPos = start.add(direction.multiply(d));
             BlockPos blockPos = BlockPos.ofFloored(currentPos);
-
-            if (!client.world.isChunkLoaded(blockPos)) {
-                return null; // Parar se o chunk não estiver carregado
-            }
-
+            if (!client.world.isChunkLoaded(blockPos)) return null;
             BlockState state = client.world.getBlockState(blockPos);
-            // CORREÇÃO: Usamos isOpaque() sem argumentos.
-            if (!state.isOpaque()) {
-                return currentPos; // Encontramos ar! Este é o nosso ponto de escape.
-            }
+            if (!state.isOpaque()) return currentPos;
         }
-        return null; // Não encontrou ar dentro da distância máxima.
+        return null;
     }
 
     private void traceRayAndAddChunks(Vec3d start, Vec3d end, LongSet chunkSet) {
@@ -120,34 +119,23 @@ public class ChunkVisibilityManager {
         int z1 = (int)start.getZ() >> 4;
         int x2 = (int)end.getX() >> 4;
         int z2 = (int)end.getZ() >> 4;
-
         int dx = Math.abs(x2 - x1);
         int dz = Math.abs(z2 - z1);
         int sx = x1 < x2 ? 1 : -1;
         int sz = z1 < z2 ? 1 : -1;
         int err = dx - dz;
-
         while(true) {
             chunkSet.add(ChunkPos.toLong(x1, z1));
             if (x1 == x2 && z1 == z2) break;
-
             int e2 = 2 * err;
-            if (e2 > -dz) {
-                err -= dz;
-                x1 += sx;
-            }
-            if (e2 < dx) {
-                err += dx;
-                z1 += sz;
-            }
+            if (e2 > -dz) { err -= dz; x1 += sx; }
+            if (e2 < dx) { err += dx; z1 += sz; }
         }
     }
 
     public boolean isChunkPotentiallyVisible(int chunkX, int chunkZ) {
         LongSet visibleSet = visibleChunkKeys.get();
-        if (visibleSet == null || visibleSet.isEmpty()) {
-            return true;
-        }
+        if (visibleSet == null || visibleSet.isEmpty()) return true;
         return visibleSet.contains(ChunkPos.toLong(chunkX, chunkZ));
     }
 }
