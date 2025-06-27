@@ -1,4 +1,3 @@
-// --- Edit this file: src/client/java/com/barium/client/optimization/ChunkUploadThrottler.java ---
 package com.barium.client.optimization;
 
 import com.barium.config.BariumConfig;
@@ -9,37 +8,35 @@ public class ChunkUploadThrottler {
     private static int uploadsThisFrame = 0;
 
     /**
-     * Resets the counter. Should be called once at the beginning of each frame.
+     * Reseta o contador. Deve ser chamado uma vez no início de cada frame.
      */
     public static void resetCounter() {
         uploadsThisFrame = 0;
     }
 
     /**
-     * Attempts to get a task from the queue, respecting the per-frame upload limit.
-     * This method replaces the direct call to `queue.poll()`.
+     * Tenta pegar uma tarefa da fila, respeitando o limite de uploads por frame.
+     * Este método substitui a chamada direta para `queue.poll()`.
+     * A assinatura genérica garante compatibilidade.
      *
-     * CORRECTION: The method now works with a generic Queue<?> and returns an Object
-     * to perfectly match the signature of the method it is redirecting.
-     *
-     * @param queue The queue of upload tasks.
-     * @return A task object if the limit has not been exceeded, or null otherwise.
+     * @param queue A fila de tarefas de upload.
+     * @return Uma tarefa se o limite não foi excedido, ou null caso contrário.
      */
-    public static Object pollTask(Queue<?> queue) { // Changed to Queue<?>
-        // If the optimization is turned off, just return the next item.
+    public static Object pollTask(Queue<?> queue) {
+        // Se a otimização estiver desligada, apenas retorna o próximo item.
         if (!BariumConfig.C.ENABLE_CHUNK_UPDATE_THROTTLING) {
             return queue.poll();
         }
 
-        // If we have already reached the upload limit for this frame, do nothing more.
+        // Se já atingimos o limite de uploads para este frame, não faz mais nada.
         if (uploadsThisFrame >= BariumConfig.C.MAX_CHUNK_UPLOADS_PER_FRAME) {
             return null;
         }
 
-        // Get the next task from the queue.
-        Object task = queue.poll(); // Changed to Object
+        // Pega a próxima tarefa da fila.
+        Object task = queue.poll();
 
-        // If a task was successfully retrieved, increment our counter.
+        // Se uma tarefa foi pega com sucesso, incrementa nosso contador.
         if (task != null) {
             uploadsThisFrame++;
         }

@@ -23,7 +23,4 @@ public class ChunkBuilderMixin {
     private Object barium$throttleChunkUploads(Queue<?> uploadQueue) {
         return ChunkUploadThrottler.pollTask(uploadQueue);
     }
-
-    // A lógica de rebuild e de distância foram removidas daqui,
-    // pois a de rebuild tem seu próprio Mixin e a de distância era instável.
 }
