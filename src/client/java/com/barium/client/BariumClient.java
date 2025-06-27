@@ -1,7 +1,10 @@
 package com.barium.client;
 
+import com.barium.BariumMod; // <-- IMPORTAÇÃO CORRIGIDA/ADICIONADA
 import com.barium.client.optimization.HudOptimizer;
 import com.barium.client.optimization.ParticleOptimizer;
+import com.barium.client.optimization.ChunkOptimizer;
+import com.barium.client.util.ChunkRenderManager; // <-- IMPORTAÇÃO ADICIONADA
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
@@ -14,12 +17,15 @@ public class BariumClient implements ClientModInitializer {
 
     private static BariumClient instance;
     
-    // AQUI ESTÁ A NOSSA THREAD DE TRABALHO
+    // A thread de trabalho para o culling de visibilidade
     public static final ExecutorService RENDER_THREAD_POOL = Executors.newSingleThreadExecutor(r -> {
         Thread t = new Thread(r, "Barium Render Thread");
-        t.setDaemon(true); // Garante que a thread não impeça o jogo de fechar
+        t.setDaemon(true);
         return t;
     });
+
+    // O ChunkRenderManager foi adicionado de volta
+    private final ChunkRenderManager chunkRenderManager = new ChunkRenderManager();
 
     @Override
     public void onInitializeClient() {
@@ -28,10 +34,15 @@ public class BariumClient implements ClientModInitializer {
         
         HudOptimizer.init();
         ParticleOptimizer.init();
-        // Não precisamos mais do ChunkOptimizer.init()
+        ChunkOptimizer.init();
     }
 
     public static BariumClient getInstance() {
         return instance;
+    }
+
+    // O método getter foi adicionado de volta para que os mixins possam usá-lo
+    public ChunkRenderManager getChunkRenderManager() {
+        return chunkRenderManager;
     }
 }
