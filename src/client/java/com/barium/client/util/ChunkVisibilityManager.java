@@ -1,5 +1,6 @@
 package com.barium.client.util;
 
+import com.barium.client.BariumClient;
 import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
 import it.unimi.dsi.fastutil.longs.LongSet;
 import net.minecraft.block.BlockState;
@@ -10,51 +11,60 @@ import net.minecraft.util.math.ChunkPos;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.RaycastContext;
 
+import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicReference;
 
 public class ChunkVisibilityManager {
     private static final ChunkVisibilityManager INSTANCE = new ChunkVisibilityManager();
     public static ChunkVisibilityManager getInstance() { return INSTANCE; }
 
-    // Configurações da otimização
-    private static final int RAYS_TO_CAST = 128;
+    private static final int RAYS_TO_CAST = 100; // Reduzido um pouco, pois a fluidez é mais importante
     private static final double MAX_RAY_DISTANCE = 160.0;
     private static final long UPDATE_INTERVAL_MS = 250;
-    private static final double MIN_MOVE_DISTANCE_SQ = 16.0;
 
-    private final AtomicReference<LongSet> visibleChunkKeys = new AtomicReference<>(new LongOpenHashSet());
+    private final AtomicReference<LongSet> visibleChunkKeys = new AtomicReference<>(null);
     private long lastUpdateTime = 0;
-    private Vec3d lastCameraPos = Vec3d.ZERO;
+    private Future<?> visibilityTask = null; // Rastreia nossa tarefa em segundo plano
 
     public void update(MinecraftClient client) {
-        if (client.player == null || client.world == null || client.cameraEntity == null) return;
+        if (client.player == null || client.world == null) return;
 
         long now = System.currentTimeMillis();
-        Vec3d cameraPos = client.cameraEntity.getEyePos();
+        if (now - lastUpdateTime < UPDATE_INTERVAL_MS) return;
 
-        boolean needsUpdate = (now - lastUpdateTime > UPDATE_INTERVAL_MS) || (cameraPos.squaredDistanceTo(lastCameraPos) > MIN_MOVE_DISTANCE_SQ);
-        if (!needsUpdate) return;
+        // Se a tarefa anterior ainda estiver rodando, não enfileira outra.
+        if (visibilityTask != null && !visibilityTask.isDone()) return;
 
         this.lastUpdateTime = now;
-        this.lastCameraPos = cameraPos;
+        
+        // Submete o trabalho pesado para a nossa thread do Barium e retorna IMEDIATAMENTE.
+        // O jogo não espera, não há stutter.
+        this.visibilityTask = BariumClient.RENDER_THREAD_POOL.submit(() -> 
+            rebuildVisibilityMap(client)
+        );
+    }
 
-        LongSet initialChunks = new LongOpenHashSet();
+    // ESTE MÉTODO RODA NA THREAD DO BARIUM, NÃO NA DO JOGO.
+    private void rebuildVisibilityMap(MinecraftClient client) {
+        if (client.player == null || client.world == null || client.cameraEntity == null) return;
+        
+        Vec3d cameraPos = client.cameraEntity.getEyePos();
+        LongSet newVisibleChunks = new LongOpenHashSet();
 
-        // ESTÁGIO 1: O TAPETE DE SEGURANÇA (Corrige chão desaparecendo)
-        final int forceVisibleRadius = 2;
+        final int forceVisibleRadius = 3; // Aumentado para garantir o chão perto
         ChunkPos playerChunkPos = client.player.getChunkPos();
         for (int x = -forceVisibleRadius; x <= forceVisibleRadius; x++) {
             for (int z = -forceVisibleRadius; z <= forceVisibleRadius; z++) {
-                initialChunks.add(ChunkPos.toLong(playerChunkPos.x + x, playerChunkPos.z + z));
+                newVisibleChunks.add(ChunkPos.toLong(playerChunkPos.x + x, playerChunkPos.z + z));
             }
         }
-
-        // ESTÁGIO 2: RAY-CASTING INTELIGENTE (Encontra chunks distantes e lida com espectador)
+        
+        // ... (resto da lógica de ray-casting como antes)
         boolean isSpectator = client.player.isSpectator();
-        double goldenRatio = (1.0 + Math.sqrt(5.0)) / 2.0;
-        double angleIncrement = Math.PI * 2.0 * goldenRatio;
-
         for (int i = 0; i < RAYS_TO_CAST; i++) {
+            // ... (cálculo de direção do raio)
+            double goldenRatio = (1.0 + Math.sqrt(5.0)) / 2.0;
+            double angleIncrement = Math.PI * 2.0 * goldenRatio;
             double t = (double) i / RAYS_TO_CAST;
             double inclination = Math.acos(1 - 2 * t);
             double azimuth = angleIncrement * i;
@@ -64,30 +74,21 @@ public class ChunkVisibilityManager {
             if (isSpectator) {
                 Vec3d escapePoint = findFirstNonOpaqueBlock(client, cameraPos, direction);
                 if (escapePoint == null) continue;
-                RaycastContext visibilityContext = new RaycastContext(escapePoint, escapePoint.add(direction.multiply(MAX_RAY_DISTANCE)), RaycastContext.ShapeType.COLLIDER, RaycastContext.FluidHandling.NONE, client.player);
-                finalHitPos = client.world.raycast(visibilityContext).getPos();
+                RaycastContext context = new RaycastContext(escapePoint, escapePoint.add(direction.multiply(MAX_RAY_DISTANCE)), RaycastContext.ShapeType.COLLIDER, RaycastContext.FluidHandling.NONE, client.player);
+                finalHitPos = client.world.raycast(context).getPos();
             } else {
                 RaycastContext context = new RaycastContext(cameraPos, cameraPos.add(direction.multiply(MAX_RAY_DISTANCE)), RaycastContext.ShapeType.COLLIDER, RaycastContext.FluidHandling.NONE, client.player);
                 finalHitPos = client.world.raycast(context).getPos();
             }
-            traceRayAndAddChunks(cameraPos, finalHitPos, initialChunks);
+            traceRayAndAddChunks(cameraPos, finalHitPos, newVisibleChunks);
         }
-
-        // ESTÁGIO 3: PREENCHIMENTO DE LACUNAS (Corrige as "torres" e buracos)
-        LongSet finalVisibleChunks = new LongOpenHashSet(initialChunks);
-        for (long key : initialChunks) {
-            int x = ChunkPos.getPackedX(key);
-            int z = ChunkPos.getPackedZ(key);
-            finalVisibleChunks.add(ChunkPos.toLong(x + 1, z));
-            finalVisibleChunks.add(ChunkPos.toLong(x - 1, z));
-            finalVisibleChunks.add(ChunkPos.toLong(x, z + 1));
-            finalVisibleChunks.add(ChunkPos.toLong(x, z - 1));
-        }
-
-        visibleChunkKeys.set(finalVisibleChunks);
+        
+        // ATUALIZAÇÃO SEGURA: Publica o novo mapa de visibilidade para a thread do jogo.
+        this.visibleChunkKeys.set(newVisibleChunks);
     }
 
     private Vec3d findFirstNonOpaqueBlock(MinecraftClient client, Vec3d start, Vec3d direction) {
+        // ... (lógica inalterada)
         final double step = 0.5;
         for (double d = 0; d < MAX_RAY_DISTANCE; d += step) {
             BlockPos blockPos = BlockPos.ofFloored(start.add(direction.multiply(d)));
@@ -99,6 +100,8 @@ public class ChunkVisibilityManager {
     }
 
     private void traceRayAndAddChunks(Vec3d start, Vec3d end, LongSet chunkSet) {
+        // CORREÇÃO VISUAL: Esta lógica é mais simples e robusta que o "gap filling".
+        // Ela garante que o caminho inteiro do raio seja preenchido.
         int x1 = (int) start.getX() >> 4, z1 = (int) start.getZ() >> 4;
         int x2 = (int) end.getX() >> 4, z2 = (int) end.getZ() >> 4;
         int dx = Math.abs(x2 - x1), dz = Math.abs(z2 - z1);
@@ -115,7 +118,8 @@ public class ChunkVisibilityManager {
 
     public boolean isChunkPotentiallyVisible(int chunkX, int chunkZ) {
         LongSet visibleSet = visibleChunkKeys.get();
-        if (visibleSet == null || visibleSet.isEmpty()) return true;
+        // Se o mapa ainda não foi calculado, assume que tudo é visível.
+        if (visibleSet == null) return true;
         return visibleSet.contains(ChunkPos.toLong(chunkX, chunkZ));
     }
 }
