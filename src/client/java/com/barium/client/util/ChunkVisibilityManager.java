@@ -16,7 +16,8 @@ public class ChunkVisibilityManager {
     private static final ChunkVisibilityManager INSTANCE = new ChunkVisibilityManager();
     public static ChunkVisibilityManager getInstance() { return INSTANCE; }
 
-    private static final int RAYS_TO_CAST = 128; // Suficiente com o preenchimento de lacunas
+    // Configurações da otimização
+    private static final int RAYS_TO_CAST = 128;
     private static final double MAX_RAY_DISTANCE = 160.0;
     private static final long UPDATE_INTERVAL_MS = 250;
     private static final double MIN_MOVE_DISTANCE_SQ = 16.0;
@@ -31,26 +32,24 @@ public class ChunkVisibilityManager {
         long now = System.currentTimeMillis();
         Vec3d cameraPos = client.cameraEntity.getEyePos();
 
-        boolean needsUpdate = (now - lastUpdateTime > UPDATE_INTERVAL_MS) ||
-                              (cameraPos.squaredDistanceTo(lastCameraPos) > MIN_MOVE_DISTANCE_SQ);
-
-        if (!needsUpdate) {
-            return;
-        }
+        boolean needsUpdate = (now - lastUpdateTime > UPDATE_INTERVAL_MS) || (cameraPos.squaredDistanceTo(lastCameraPos) > MIN_MOVE_DISTANCE_SQ);
+        if (!needsUpdate) return;
 
         this.lastUpdateTime = now;
         this.lastCameraPos = cameraPos;
 
-        LongSet newVisibleChunks = new LongOpenHashSet();
+        LongSet initialChunks = new LongOpenHashSet();
 
+        // ESTÁGIO 1: O TAPETE DE SEGURANÇA (Corrige chão desaparecendo)
         final int forceVisibleRadius = 2;
-        ChunkPos playerChunkPos = new ChunkPos(client.cameraEntity.getBlockPos());
+        ChunkPos playerChunkPos = client.player.getChunkPos();
         for (int x = -forceVisibleRadius; x <= forceVisibleRadius; x++) {
             for (int z = -forceVisibleRadius; z <= forceVisibleRadius; z++) {
-                newVisibleChunks.add(ChunkPos.toLong(playerChunkPos.x + x, playerChunkPos.z + z));
+                initialChunks.add(ChunkPos.toLong(playerChunkPos.x + x, playerChunkPos.z + z));
             }
         }
 
+        // ESTÁGIO 2: RAY-CASTING INTELIGENTE (Encontra chunks distantes e lida com espectador)
         boolean isSpectator = client.player.isSpectator();
         double goldenRatio = (1.0 + Math.sqrt(5.0)) / 2.0;
         double angleIncrement = Math.PI * 2.0 * goldenRatio;
@@ -59,14 +58,9 @@ public class ChunkVisibilityManager {
             double t = (double) i / RAYS_TO_CAST;
             double inclination = Math.acos(1 - 2 * t);
             double azimuth = angleIncrement * i;
+            Vec3d direction = new Vec3d(Math.sin(inclination) * Math.cos(azimuth), Math.sin(inclination) * Math.sin(azimuth), Math.cos(inclination));
 
-            double x = Math.sin(inclination) * Math.cos(azimuth);
-            double y = Math.sin(inclination) * Math.sin(azimuth);
-            double z = Math.cos(inclination);
-
-            Vec3d direction = new Vec3d(x, y, z);
             Vec3d finalHitPos;
-
             if (isSpectator) {
                 Vec3d escapePoint = findFirstNonOpaqueBlock(client, cameraPos, direction);
                 if (escapePoint == null) continue;
@@ -76,55 +70,41 @@ public class ChunkVisibilityManager {
                 RaycastContext context = new RaycastContext(cameraPos, cameraPos.add(direction.multiply(MAX_RAY_DISTANCE)), RaycastContext.ShapeType.COLLIDER, RaycastContext.FluidHandling.NONE, client.player);
                 finalHitPos = client.world.raycast(context).getPos();
             }
-            traceRayAndAddChunks(cameraPos, finalHitPos, newVisibleChunks);
+            traceRayAndAddChunks(cameraPos, finalHitPos, initialChunks);
         }
 
-        // ==================================================================
-        // INÍCIO DA CORREÇÃO (PREENCHIMENTO DE LACUNAS)
-        // ==================================================================
-        // Após encontrar todos os chunks visíveis pelos raios, preenchemos os
-        // buracos entre eles adicionando seus vizinhos.
-
-        LongSet neighborsToAdd = new LongOpenHashSet();
-        for (long key : newVisibleChunks) {
+        // ESTÁGIO 3: PREENCHIMENTO DE LACUNAS (Corrige as "torres" e buracos)
+        LongSet finalVisibleChunks = new LongOpenHashSet(initialChunks);
+        for (long key : initialChunks) {
             int x = ChunkPos.getPackedX(key);
             int z = ChunkPos.getPackedZ(key);
-            neighborsToAdd.add(ChunkPos.toLong(x + 1, z));
-            neighborsToAdd.add(ChunkPos.toLong(x - 1, z));
-            neighborsToAdd.add(ChunkPos.toLong(x, z + 1));
-            neighborsToAdd.add(ChunkPos.toLong(x, z - 1));
+            finalVisibleChunks.add(ChunkPos.toLong(x + 1, z));
+            finalVisibleChunks.add(ChunkPos.toLong(x - 1, z));
+            finalVisibleChunks.add(ChunkPos.toLong(x, z + 1));
+            finalVisibleChunks.add(ChunkPos.toLong(x, z - 1));
         }
-        newVisibleChunks.addAll(neighborsToAdd);
-        // ==================================================================
-        // FIM DA CORREÇÃO
-        // ==================================================================
 
-        visibleChunkKeys.set(newVisibleChunks);
+        visibleChunkKeys.set(finalVisibleChunks);
     }
 
     private Vec3d findFirstNonOpaqueBlock(MinecraftClient client, Vec3d start, Vec3d direction) {
         final double step = 0.5;
         for (double d = 0; d < MAX_RAY_DISTANCE; d += step) {
-            Vec3d currentPos = start.add(direction.multiply(d));
-            BlockPos blockPos = BlockPos.ofFloored(currentPos);
+            BlockPos blockPos = BlockPos.ofFloored(start.add(direction.multiply(d)));
             if (!client.world.isChunkLoaded(blockPos)) return null;
             BlockState state = client.world.getBlockState(blockPos);
-            if (!state.isOpaque()) return currentPos;
+            if (!state.isOpaque()) return start.add(direction.multiply(d));
         }
         return null;
     }
 
     private void traceRayAndAddChunks(Vec3d start, Vec3d end, LongSet chunkSet) {
-        int x1 = (int)start.getX() >> 4;
-        int z1 = (int)start.getZ() >> 4;
-        int x2 = (int)end.getX() >> 4;
-        int z2 = (int)end.getZ() >> 4;
-        int dx = Math.abs(x2 - x1);
-        int dz = Math.abs(z2 - z1);
-        int sx = x1 < x2 ? 1 : -1;
-        int sz = z1 < z2 ? 1 : -1;
+        int x1 = (int) start.getX() >> 4, z1 = (int) start.getZ() >> 4;
+        int x2 = (int) end.getX() >> 4, z2 = (int) end.getZ() >> 4;
+        int dx = Math.abs(x2 - x1), dz = Math.abs(z2 - z1);
+        int sx = x1 < x2 ? 1 : -1, sz = z1 < z2 ? 1 : -1;
         int err = dx - dz;
-        while(true) {
+        while (true) {
             chunkSet.add(ChunkPos.toLong(x1, z1));
             if (x1 == x2 && z1 == z2) break;
             int e2 = 2 * err;
