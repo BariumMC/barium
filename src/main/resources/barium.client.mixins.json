@@ -17,7 +17,8 @@
         "WorldRendererChunkPriorityMixin",
 		"ClientWorldMixin",
 		"ChunkBuilderMixin",
-		"HandledScreenMixin"
+		"HandledScreenMixin",
+		"gui.DrawContextMixin"
 	],
 	"injectors": {
 		"defaultRequire": 1
