@@ -3,8 +3,10 @@ package com.barium.client.mixin;
 import com.barium.client.util.ChunkRenderManager;
 import com.barium.client.util.ChunkVisibilityManager;
 import com.barium.config.BariumConfig;
+import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.render.chunk.ChunkBuilder;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.ChunkPos;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
@@ -30,10 +32,9 @@ public abstract class ChunkRenderMixin {
         
         // --- LÓGICA HÍBRIDA DE CULLING ---
         if (BariumConfig.C.ENABLE_VISIBILITY_GRAPH_CULLING) {
-            // CORREÇÃO: Usamos ChunkPos, que é o tipo de retorno correto.
-            final var player = net.minecraft.client.MinecraftClient.getInstance().player;
+            final var player = MinecraftClient.getInstance().player;
             if (player != null) {
-                final var cameraChunkPos = player.getChunkPos();
+                final ChunkPos cameraChunkPos = player.getChunkPos();
 
                 // Calcula a distância em chunks ao quadrado.
                 final long dx = chunkX - cameraChunkPos.x;
@@ -58,7 +59,8 @@ public abstract class ChunkRenderMixin {
             }
 
             final int minRenderChunkX = ChunkRenderManager.getMinRenderChunkX();
-            final int minRenderChunkZ = ChunkRenderManger.getMinRenderChunkZ();
+            // AQUI ESTÁ A CORREÇÃO
+            final int minRenderChunkZ = ChunkRenderManager.getMinRenderChunkZ();
             final int gridSize = ChunkRenderManager.getRenderGridSize();
 
             final int localX = chunkX - minRenderChunkX;
@@ -70,6 +72,7 @@ public abstract class ChunkRenderMixin {
             }
 
             final int chunkIndex = localX + localZ * gridSize;
+            // CORRIGIDO: A lógica deve ser "se NÃO estiver no bitset, cancele".
             if (!chunksToRenderBitSet.get(chunkIndex)) {
                 cir.setReturnValue(false);
             }
