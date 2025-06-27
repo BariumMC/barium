@@ -10,8 +10,6 @@ public class TooltipManager {
 
     /**
      * Verifica se a tooltip para o ItemStack atual já está em cache.
-     * @param stack O ItemStack sobre o qual o mouse está.
-     * @return true se a tooltip em cache for válida para este stack.
      */
     public static boolean hasCachedTooltip(ItemStack stack) {
         // O cache é válido se o item for o mesmo e o cache não estiver vazio.
@@ -24,8 +22,6 @@ public class TooltipManager {
 
     /**
      * Atualiza o cache com a nova tooltip gerada.
-     * @param stack O ItemStack para o qual a tooltip foi gerada.
-     * @param tooltip A lista de textos da tooltip.
      */
     public static void cacheTooltip(ItemStack stack, List<Text> tooltip) {
         cachedItemStack = stack.copy(); // Copia para evitar problemas com mutabilidade
@@ -33,7 +29,7 @@ public class TooltipManager {
     }
 
     /**
-     * Limpa o cache. Deve ser chamado quando o mouse não está mais sobre um item.
+     * Limpa o cache.
      */
     public static void clearCache() {
         cachedItemStack = ItemStack.EMPTY;

@@ -23,35 +23,27 @@ import java.util.List;
 @Mixin(HandledScreen.class)
 public abstract class HandledScreenMixin<T extends ScreenHandler> {
 
-    // Shadow the fields we need to access directly from the HandledScreen class.
-    // This is more robust than capturing local variables.
     @Shadow @Nullable protected Slot focusedSlot;
     @Shadow protected T handler;
 
     @Inject(
-        // Target the correct method
         method = "drawMouseoverTooltip(Lnet/minecraft/client/gui/DrawContext;II)V",
-        // Inject at the very beginning of the method
         at = @At("HEAD"),
         cancellable = true
     )
-    private void barium$cacheAndRenderTooltip(
-        DrawContext context, int mouseX, int mouseY,
-        CallbackInfo ci
-    ) {
+    private void barium$cacheAndRenderTooltip(DrawContext context, int mouseX, int mouseY, CallbackInfo ci) {
         if (!BariumConfig.C.ENABLE_TOOLTIP_CACHING) return;
 
-        // Replicate the logic from the original method to ensure we only act when a tooltip would be drawn.
         if (this.handler.getCursorStack().isEmpty() && this.focusedSlot != null && this.focusedSlot.hasStack()) {
             final ItemStack itemStack = this.focusedSlot.getStack();
 
-            // If we have a cached tooltip, draw it and cancel the original method.
+            // Se temos uma tooltip em cache, desenhamos e cancelamos o método original.
             if (TooltipManager.hasCachedTooltip(itemStack)) {
                 context.drawTooltip(MinecraftClient.getInstance().textRenderer, TooltipManager.getCachedTooltip(), mouseX, mouseY);
                 ci.cancel();
             } else {
-                // If not cached, generate the tooltip lines and cache them.
-                // DO NOT CANCEL. This allows the original method to continue and draw the tooltip for the first time.
+                // Se não, deixamos o método original rodar para desenhar, mas antes
+                // nós geramos e guardamos a tooltip para a próxima vez.
                 MinecraftClient client = MinecraftClient.getInstance();
                 Item.TooltipContext tooltipContext = Item.TooltipContext.DEFAULT;
                 TooltipType tooltipType = client.options.advancedItemTooltips ? TooltipType.ADVANCED : TooltipType.BASIC;
@@ -59,6 +51,9 @@ public abstract class HandledScreenMixin<T extends ScreenHandler> {
 
                 TooltipManager.cacheTooltip(itemStack, tooltipLines);
             }
+        } else {
+            // Se o mouse não está sobre um item, limpamos o cache.
+            TooltipManager.clearCache();
         }
     }
 }
