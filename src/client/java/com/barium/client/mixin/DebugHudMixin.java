@@ -15,8 +15,8 @@ import java.util.List;
 @Mixin(DebugHud.class)
 public abstract class DebugHudMixin {
 
-    // --- OTIMIZAÇÃO DE CACHE (JÁ EXISTENTE, SEM MUDANÇAS) ---
-
+    // --- LADO ESQUERDO DO F3 (CACHE) ---
+    // Esta parte não precisa de modificação e pode continuar como está.
     @Inject(method = "getLeftText", at = @At("HEAD"), cancellable = true)
     private void barium$getLeftTextHead(CallbackInfoReturnable<List<String>> cir) {
         if (!HudOptimizer.shouldRecalculateDebugHud("debug_left")) {
@@ -29,53 +29,51 @@ public abstract class DebugHudMixin {
         HudOptimizer.updateDebugHudCache("debug_left", cir.getReturnValue());
     }
 
+
+    // --- LADO DIREITO DO F3 (CACHE + BRANDING) ---
+    // A lógica foi redesenhada para ser 100% robusta.
+
+    // 1. Otimização de Cache: Roda primeiro e sai rápido se possível.
     @Inject(method = "getRightText", at = @At("HEAD"), cancellable = true)
     private void barium$getRightTextHead(CallbackInfoReturnable<List<String>> cir) {
+        // Se a otimização de cache estiver desligada, não fazemos nada aqui.
+        if (!BariumConfig.C.CACHE_DEBUG_HUD) return;
+
         if (!HudOptimizer.shouldRecalculateDebugHud("debug_right")) {
             cir.setReturnValue(HudOptimizer.getCachedDebugHudText("debug_right"));
         }
     }
 
-    @Inject(method = "getRightText", at = @At("RETURN"))
-    private void barium$getRightTextReturn(CallbackInfoReturnable<List<String>> cir) {
-        HudOptimizer.updateDebugHudCache("debug_right", cir.getReturnValue());
-    }
-
-    // --- FUNCIONALIDADE: ADICIONAR MARCA DO BARIUM COM ESTILO ---
-
-    /**
-     * Intercepta a lista de strings do lado direito do F3 e adiciona
-     * as informações do Barium com cores e formatação.
-     * Esta funcionalidade agora é incondicional e sempre ativa.
-     */
+    // 2. Modificação e Atualização do Cache: Roda APENAS se o cache precisar ser recalculado.
     @ModifyVariable(
         method = "getRightText",
-        at = @At(value = "RETURN"),
+        at = @At(value = "STORE"), // Injeta DEPOIS que a lista é calculada, mas ANTES de ser retornada.
         ordinal = 0
     )
-    private List<String> barium$addStyledRendererInfo(List<String> list) {
-        // A checagem da config foi removida. O código abaixo sempre será executado.
-
+    private List<String> barium$addBrandingAndCache(List<String> list) {
+        // ETAPA 1: ADICIONAR A MARCA E O ESTILO
         // Adiciona uma linha em branco para separar do conteúdo vanilla.
         list.add("");
-        
         // Linha principal com formatação dupla
         list.add(Formatting.AQUA + "Barium" + Formatting.GRAY + " Renderer");
-
         // Adiciona informações dinâmicas sobre as otimizações ativas com status colorido.
         list.add(formatOption("Vis-Graph Culling", BariumConfig.C.ENABLE_VISIBILITY_GRAPH_CULLING));
         list.add(formatOption("Entity Culling", BariumConfig.C.ENABLE_ENTITY_CULLING));
         list.add(formatOption("Block Entity Culling", BariumConfig.C.ENABLE_BLOCK_ENTITY_OCCLUSION_CULLING));
         list.add(formatOption("Particle Culling", BariumConfig.C.ENABLE_PARTICLE_OPTIMIZATION));
 
-        return list; // Retorna a lista modificada.
+        // ETAPA 2: ATUALIZAR O CACHE COM A LISTA JÁ MODIFICADA
+        // Só atualiza o cache se a otimização estiver ligada.
+        if (BariumConfig.C.CACHE_DEBUG_HUD) {
+            HudOptimizer.updateDebugHudCache("debug_right", list);
+        }
+
+        // ETAPA 3: RETORNAR A LISTA FINAL
+        return list;
     }
 
     /**
      * Helper method para formatar uma linha de opção com status ON/OFF colorido.
-     * @param name O nome da otimização.
-     * @param enabled Se ela está ativa ou não.
-     * @return A string formatada.
      */
     private String formatOption(String name, boolean enabled) {
         String status = enabled
