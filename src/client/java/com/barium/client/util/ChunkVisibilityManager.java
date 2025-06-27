@@ -32,13 +32,14 @@ public class ChunkVisibilityManager {
         visibilityTask = BariumClient.RENDER_THREAD_POOL.submit(() -> rebuildVisibilityMap(client));
     }
 
+    // Este método roda na thread do Barium, não na do jogo.
     private void rebuildVisibilityMap(MinecraftClient client) {
         if (client.player == null || client.world == null || client.cameraEntity == null) return;
 
         Vec3d cameraPos = client.cameraEntity.getEyePos();
-        LongSet initialHits = new LongOpenHashSet(); // Chunks atingidos pelos raios
+        LongSet initialHits = new LongOpenHashSet(); // Apenas os chunks diretamente atingidos
 
-        // Ray-casting...
+        // Lógica de Ray-casting para encontrar os chunks visíveis
         boolean isSpectator = client.player.isSpectator();
         for (int i = 0; i < RAYS_TO_CAST; i++) {
             double goldenRatio = (1.0 + Math.sqrt(5.0)) / 2.0;
@@ -61,9 +62,9 @@ public class ChunkVisibilityManager {
             traceRayAndAddChunks(cameraPos, finalHitPos, initialHits);
         }
 
-        // PASSE DE EXPANSÃO E SEGURANÇA (A CORREÇÃO CRÍTICA)
+        // CORREÇÃO VISUAL: PASSE DE EXPANSÃO E SEGURANÇA
         LongSet finalVisibleChunks = new LongOpenHashSet();
-        final int forceVisibleRadius = 3;
+        final int forceVisibleRadius = 3; // Um "tapete" de segurança maior
         ChunkPos playerChunkPos = client.player.getChunkPos();
 
         // 1. Adiciona o tapete de segurança
@@ -73,12 +74,12 @@ public class ChunkVisibilityManager {
             }
         }
         
-        // 2. Adiciona os chunks atingidos E seus vizinhos (expansão)
+        // 2. Adiciona os chunks atingidos E seus vizinhos (expansão que corrige os buracos)
         for (long key : initialHits) {
             int x = ChunkPos.getPackedX(key);
             int z = ChunkPos.getPackedZ(key);
             finalVisibleChunks.add(key); // O próprio chunk
-            finalVisibleChunks.add(ChunkPos.toLong(x + 1, z)); // Vizinhos
+            finalVisibleChunks.add(ChunkPos.toLong(x + 1, z));
             finalVisibleChunks.add(ChunkPos.toLong(x - 1, z));
             finalVisibleChunks.add(ChunkPos.toLong(x, z + 1));
             finalVisibleChunks.add(ChunkPos.toLong(x, z - 1));
@@ -115,7 +116,7 @@ public class ChunkVisibilityManager {
 
     public boolean isChunkPotentiallyVisible(int chunkX, int chunkZ) {
         LongSet visibleSet = visibleChunkKeys.get();
-        if (visibleSet == null) return true;
+        if (visibleSet == null) return true; // Se o cálculo nunca rodou, não esconde nada.
         return visibleSet.contains(ChunkPos.toLong(chunkX, chunkZ));
     }
 }
