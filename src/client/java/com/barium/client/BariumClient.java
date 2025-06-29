@@ -1,48 +1,52 @@
 package com.barium.client;
 
-import com.barium.BariumMod; // <-- IMPORTAÇÃO CORRIGIDA/ADICIONADA
-import com.barium.client.optimization.HudOptimizer;
-import com.barium.client.optimization.ParticleOptimizer;
-import com.barium.client.optimization.ChunkOptimizer;
-import com.barium.client.util.ChunkRenderManager; // <-- IMPORTAÇÃO ADICIONADA
+import com.barium.BariumMod;
+import com.barium.client.util.ChunkRenderManager;
+import com.barium.client.util.ChunkVisibilityManager;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
+import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.atomic.AtomicInteger;
 
 @Environment(EnvType.CLIENT)
 public class BariumClient implements ClientModInitializer {
 
     private static BariumClient instance;
-    
-    // A thread de trabalho para o culling de visibilidade
-    public static final ExecutorService RENDER_THREAD_POOL = Executors.newSingleThreadExecutor(r -> {
-        Thread t = new Thread(r, "Barium Render Thread");
-        t.setDaemon(true);
-        return t;
-    });
 
-    // O ChunkRenderManager foi adicionado de volta
-    private final ChunkRenderManager chunkRenderManager = new ChunkRenderManager();
+    public static final ExecutorService RENDER_THREAD_POOL = Executors.newSingleThreadExecutor(new ThreadFactory() {
+        private final AtomicInteger threadId = new AtomicInteger(0);
+        @Override
+        public Thread newThread(Runnable r) {
+            Thread t = new Thread(r, "Barium Render Thread #" + threadId.incrementAndGet());
+            t.setDaemon(true);
+            t.setPriority(Thread.MIN_PRIORITY);
+            return t;
+        }
+    });
 
     @Override
     public void onInitializeClient() {
         instance = this;
-        BariumMod.LOGGER.info("Inicializando cliente Barium");
-        
-        HudOptimizer.init();
-        ParticleOptimizer.init();
-        ChunkOptimizer.init();
+        BariumMod.LOGGER.info("Initializing Barium Client...");
+
+        // Registra um evento de tick para limpar caches quando o jogador sai de um mundo
+        ClientTickEvents.END_CLIENT_TICK.register(client -> {
+            if (client.world == null) {
+                ChunkVisibilityManager.getInstance().clear();
+                ChunkRenderManager.getInstance().clear();
+            }
+        });
+
+        // CORREÇÃO: Removidas as chamadas a métodos .init() que não existiam mais.
+        BariumMod.LOGGER.info("Barium Client Initialized.");
     }
 
     public static BariumClient getInstance() {
         return instance;
-    }
-
-    // O método getter foi adicionado de volta para que os mixins possam usá-lo
-    public ChunkRenderManager getChunkRenderManager() {
-        return chunkRenderManager;
     }
 }

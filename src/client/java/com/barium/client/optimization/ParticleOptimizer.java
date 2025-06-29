@@ -2,8 +2,6 @@ package com.barium.client.optimization;
 
 import com.barium.config.BariumConfig;
 import net.minecraft.client.particle.Particle;
-import net.minecraft.client.render.Camera;
-import net.minecraft.util.math.Box;
 import net.minecraft.util.math.Vec3d;
 
 import java.util.concurrent.atomic.AtomicInteger;
@@ -12,20 +10,14 @@ public class ParticleOptimizer {
 
     private static final AtomicInteger particleCount = new AtomicInteger(0);
 
-    public static boolean shouldSkipParticle(Particle particle, Camera camera) {
+    // CORREÇÃO: Assinatura do método corrigida para aceitar a posição da câmera.
+    public static boolean shouldSkipParticleTick(Particle particle, Vec3d cameraPos) {
         if (!BariumConfig.C.ENABLE_PARTICLE_OPTIMIZATION) return false;
 
-        // Verificação por distância primeiro, que é mais barata
-        Vec3d particlePos = new Vec3d(particle.getX(), particle.getY(), particle.getZ());
-        double distanceSq = particlePos.squaredDistanceTo(camera.getPos());
-        // CORREÇÃO: Usando a variável de configuração que foi re-adicionada
-        if (distanceSq > BariumConfig.C.PARTICLE_CULL_DISTANCE_SQ) {
-            return true;
-        }
-
-        // Se estiver perto o suficiente, verifica o frustum
-        Box box = particle.getBoundingBox();
-        return !camera.getFrustum().isVisible(box);
+        // CORREÇÃO: Acessando os campos públicos x, y, z em vez de métodos getX() que não existem.
+        double distanceSq = cameraPos.squaredDistanceTo(particle.x, particle.y, particle.z);
+        
+        return distanceSq > BariumConfig.C.PARTICLE_CULL_DISTANCE_SQ;
     }
     
     public static boolean shouldCullNewParticle() {
