@@ -18,9 +18,8 @@ public abstract class EntityRendererMixin<T extends Entity> {
         cancellable = true
     )
     private void barium$cullDistantEntity(T entity, Frustum frustum, double cameraX, double cameraY, double cameraZ, CallbackInfoReturnable<Boolean> cir) {
-        // CORREÇÃO: A chamada agora corresponde à assinatura correta em EntityOptimizer.
+        // Renomeado para maior clareza, a chamada agora corresponde à assinatura correta.
         if (EntityOptimizer.shouldRenderEntity(entity, cameraX, cameraY, cameraZ)) {
-            // A otimização por distância é a mais barata. Se a entidade estiver longe demais, não renderiza.
             cir.setReturnValue(false);
         }
     }

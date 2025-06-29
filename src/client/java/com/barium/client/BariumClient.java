@@ -18,6 +18,9 @@ public class BariumClient implements ClientModInitializer {
 
     private static BariumClient instance;
 
+    // CORREÇÃO: O ChunkRenderManager foi adicionado de volta
+    private final ChunkRenderManager chunkRenderManager = ChunkRenderManager.getInstance();
+
     public static final ExecutorService RENDER_THREAD_POOL = Executors.newSingleThreadExecutor(new ThreadFactory() {
         private final AtomicInteger threadId = new AtomicInteger(0);
         @Override
@@ -34,19 +37,23 @@ public class BariumClient implements ClientModInitializer {
         instance = this;
         BariumMod.LOGGER.info("Initializing Barium Client...");
 
-        // Registra um evento de tick para limpar caches quando o jogador sai de um mundo
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
             if (client.world == null) {
                 ChunkVisibilityManager.getInstance().clear();
-                ChunkRenderManager.getInstance().clear();
+                // CORREÇÃO: A chamada ao método clear() agora funcionará.
+                this.chunkRenderManager.clear();
             }
         });
 
-        // CORREÇÃO: Removidas as chamadas a métodos .init() que não existiam mais.
         BariumMod.LOGGER.info("Barium Client Initialized.");
     }
 
     public static BariumClient getInstance() {
         return instance;
+    }
+
+    // CORREÇÃO: O método getter foi adicionado de volta para que os mixins possam usá-lo.
+    public ChunkRenderManager getChunkRenderManager() {
+        return chunkRenderManager;
     }
 }
