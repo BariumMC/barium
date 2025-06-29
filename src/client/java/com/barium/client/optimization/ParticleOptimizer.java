@@ -1,40 +1,42 @@
 package com.barium.client.optimization;
 
-import com.barium.client.mixin.ParticleAccessor;
 import com.barium.config.BariumConfig;
 import net.minecraft.client.particle.Particle;
 import net.minecraft.client.render.Camera;
+import net.minecraft.util.math.Box;
 import net.minecraft.util.math.Vec3d;
+
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class ParticleOptimizer {
 
-    public static void init() {
-        // Nada a fazer aqui por enquanto
-    }
+    private static final AtomicInteger particleCount = new AtomicInteger(0);
 
-    public static boolean shouldSkipParticleTick(Particle particle, Camera camera) {
+    public static boolean shouldSkipParticle(Particle particle, Camera camera) {
         if (!BariumConfig.C.ENABLE_PARTICLE_OPTIMIZATION) return false;
 
-        ParticleAccessor accessor = (ParticleAccessor) particle;
-        Vec3d particlePos = new Vec3d(accessor.getX(), accessor.getY(), accessor.getZ());
-        Vec3d cameraPos = camera.getPos();
+        // Verificação por distância primeiro, que é mais barata
+        Vec3d particlePos = new Vec3d(particle.getX(), particle.getY(), particle.getZ());
+        double distanceSq = particlePos.squaredDistanceTo(camera.getPos());
+        // CORREÇÃO: Usando a variável de configuração que foi re-adicionada
+        if (distanceSq > BariumConfig.C.PARTICLE_CULL_DISTANCE_SQ) {
+            return true;
+        }
 
-        double distanceSq = particlePos.squaredDistanceTo(cameraPos);
-        // CORREÇÃO: Usa a única flag de distância de partícula
-        return distanceSq > BariumConfig.C.MAX_TICK_DISTANCE_SQ;
-    }
-
-    public static boolean shouldRenderParticle(Particle particle, Camera camera) {
-        if (!BariumConfig.C.ENABLE_PARTICLE_OPTIMIZATION) return true;
-
-        ParticleAccessor accessor = (ParticleAccessor) particle;
-        Vec3d particlePos = new Vec3d(accessor.getX(), accessor.getY(), accessor.getZ());
-        Vec3d cameraPos = camera.getPos();
-
-        double distanceSq = particlePos.squaredDistanceTo(cameraPos);
-        // CORREÇÃO: Usa a única flag de distância de partícula
-        return distanceSq <= BariumConfig.C.MAX_TICK_DISTANCE_SQ;
+        // Se estiver perto o suficiente, verifica o frustum
+        Box box = particle.getBoundingBox();
+        return !camera.getFrustum().isVisible(box);
     }
     
-    // CORREÇÃO: A lógica de LOD foi removida pois era redundante e complexa.
+    public static boolean shouldCullNewParticle() {
+        return particleCount.get() >= BariumConfig.C.MAX_GLOBAL_PARTICLES;
+    }
+
+    public static void incrementParticleCount() {
+        particleCount.incrementAndGet();
+    }
+    
+    public static void resetParticleCount() {
+        particleCount.set(0);
+    }
 }

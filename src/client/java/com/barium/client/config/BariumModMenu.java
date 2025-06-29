@@ -41,7 +41,6 @@ public class BariumModMenu implements ModMenuApi {
                     .setSaveConsumer(newValue -> BariumConfig.C.ENABLE_VISIBILITY_GRAPH_CULLING = newValue)
                     .build());
             
-            // ADICIONADO: A nova opção na tela de configuração
             chunkPerformance.addEntry(entryBuilder.startBooleanToggle(Text.translatable("option.barium.enable_advanced_section_culling"), BariumConfig.C.ENABLE_ADVANCED_SECTION_CULLING)
                     .setDefaultValue(defaults.ENABLE_ADVANCED_SECTION_CULLING)
                     .setTooltip(Text.translatable("tooltip.barium.enable_advanced_section_culling"))
@@ -66,8 +65,6 @@ public class BariumModMenu implements ModMenuApi {
                     .setSaveConsumer(newValue -> BariumConfig.C.MAX_CHUNK_UPLOADS_PER_FRAME = newValue)
                     .build());
 
-            // ... (o resto do arquivo continua igual)
-            
             // ===================================================================
             // Categoria 2: Otimização e LOD (Level of Detail)
             // ===================================================================
@@ -139,6 +136,13 @@ public class BariumModMenu implements ModMenuApi {
                     .setDefaultValue(defaults.ENABLE_PARTICLE_OPTIMIZATION)
                     .setTooltip(Text.translatable("tooltip.barium.enable_particle_optimizations"))
                     .setSaveConsumer(newValue -> BariumConfig.C.ENABLE_PARTICLE_OPTIMIZATION = newValue)
+                    .build());
+
+            particles.addEntry(entryBuilder.startIntSlider(Text.translatable("option.barium.particle_cull_distance"), (int) Math.sqrt(BariumConfig.C.PARTICLE_CULL_DISTANCE_SQ), 16, 256)
+                    .setDefaultValue((int) Math.sqrt(defaults.PARTICLE_CULL_DISTANCE_SQ))
+                    .setTooltip(Text.translatable("tooltip.barium.particle_cull_distance"))
+                    .setTextGetter(value -> Text.translatable("generic.barium.distance_blocks", value))
+                    .setSaveConsumer(newValue -> BariumConfig.C.PARTICLE_CULL_DISTANCE_SQ = newValue * newValue)
                     .build());
 
             particles.addEntry(entryBuilder.startBooleanToggle(Text.translatable("option.barium.reduce_explosion_particles"), BariumConfig.C.ENABLE_EXPLOSION_PARTICLE_REDUCTION)

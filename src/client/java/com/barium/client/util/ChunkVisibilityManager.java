@@ -18,13 +18,11 @@ public class ChunkVisibilityManager {
     private static final ChunkVisibilityManager INSTANCE = new ChunkVisibilityManager();
     public static ChunkVisibilityManager getInstance() { return INSTANCE; }
 
-    // Configurações do ray-casting
     private static final int RAYS_TO_CAST = 128;
     private static final double MAX_RAY_DISTANCE = 256.0;
     private static final long UPDATE_INTERVAL_MS = 200;
 
     private final AtomicReference<LongSet> visibleChunkKeys = new AtomicReference<>(new LongOpenHashSet());
-    // NOVO: Conjunto para guardar as SEÇÕES visíveis
     private final AtomicReference<LongSet> visibleSectionKeys = new AtomicReference<>(new LongOpenHashSet());
     
     private Future<?> visibilityTask = null;
@@ -46,9 +44,8 @@ public class ChunkVisibilityManager {
 
         final Vec3d cameraPos = client.cameraEntity.getEyePos();
         final LongSet directlyHitChunks = new LongOpenHashSet();
-        final LongSet hitSections = new LongOpenHashSet(); // NOVO: Guarda as seções atingidas
+        final LongSet hitSections = new LongOpenHashSet();
 
-        // 1. Lança raios para encontrar chunks e seções visíveis
         for (int i = 0; i < RAYS_TO_CAST; i++) {
             Vec3d direction = getFibonacciSphereVector(i, RAYS_TO_CAST);
             Vec3d targetPos = cameraPos.add(direction.multiply(MAX_RAY_DISTANCE));
@@ -57,15 +54,12 @@ public class ChunkVisibilityManager {
             BlockHitResult hitResult = client.world.raycast(context);
 
             if (hitResult.getType() != HitResult.Type.MISS) {
-                // Adiciona o chunk atingido
                 BlockPos hitBlockPos = hitResult.getBlockPos();
                 directlyHitChunks.add(ChunkPos.toLong(hitBlockPos));
-                // Traça o caminho do raio e marca todas as seções por onde ele passou
                 traceRayAndAddSections(cameraPos, hitResult.getPos(), hitSections);
             }
         }
 
-        // 2. Expansão para chunks (corrige buracos)
         final LongSet finalVisibleChunks = new LongOpenHashSet();
         final int safetyRadius = 2;
         final ChunkPos playerChunkPos = client.player.getChunkPos();
@@ -86,9 +80,10 @@ public class ChunkVisibilityManager {
         }
         this.visibleChunkKeys.set(finalVisibleChunks);
 
-        // 3. Expansão para seções (corrige buracos em volta do jogador) e armazena o resultado final
         final LongSet finalVisibleSections = new LongOpenHashSet(hitSections);
-        BlockPos playerSectionPos = new BlockPos(playerChunkPos.x, client.player.getChunkSectionY(), playerChunkPos.z);
+        // CORREÇÃO: client.player.getChunkSectionY() foi substituído pelo método correto.
+        int playerSectionY = client.world.getSectionIndex(client.player.getBlockY());
+        BlockPos playerSectionPos = new BlockPos(playerChunkPos.x, playerSectionY, playerChunkPos.z);
         for(int x = -1; x <= 1; x++) {
             for(int y = -1; y <= 1; y++) {
                 for(int z = -1; z <= 1; z++) {
@@ -99,7 +94,6 @@ public class ChunkVisibilityManager {
         this.visibleSectionKeys.set(finalVisibleSections);
     }
 
-    // NOVO: Traça uma linha 3D e marca todas as seções no caminho como visíveis
     private void traceRayAndAddSections(Vec3d start, Vec3d end, LongSet sectionSet) {
         int x1 = (int) Math.floor(start.getX() / 16);
         int y1 = (int) Math.floor(start.getY() / 16);
@@ -120,16 +114,17 @@ public class ChunkVisibilityManager {
         int err1 = dx - dy;
         int err2 = dx - dz;
         
-        // Adiciona a primeira seção
         sectionSet.add(BlockPos.asLong(x1, y1, z1));
 
         while (x1 != x2 || y1 != y2 || z1 != z2) {
             int e1 = 2 * err1;
             int e2 = 2 * err2;
+            
+            boolean xMoved = false, yMoved = false, zMoved = false;
 
-            if (e1 > -dy) { err1 -= dy; x1 += sx; }
-            if (e1 < dx) { err1 += dx; y1 += sy; }
-            if (e2 > -dz) { err2 -= dz; x1 += sx; }
+            if (e1 > -dy) { err1 -= dy; x1 += sx; xMoved = true; }
+            if (e1 < dx) { err1 += dx; y1 += sy; yMoved = true; }
+            if (e2 > -dz) { err2 -= dz; if (!xMoved) x1 += sx; }
             if (e2 < dx) { err2 += dx; z1 += sz; }
             
             sectionSet.add(BlockPos.asLong(x1, y1, z1));
@@ -152,7 +147,6 @@ public class ChunkVisibilityManager {
         return visibleSet.contains(ChunkPos.toLong(chunkX, chunkZ));
     }
     
-    // NOVO: Verifica se uma seção específica é visível
     public boolean isSectionPotentiallyVisible(int sectionX, int sectionY, int sectionZ) {
         LongSet visibleSet = visibleSectionKeys.get();
         if (visibleSet == null) return true;

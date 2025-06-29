@@ -1,17 +1,25 @@
 {
-  "title.barium.config": "Barium Config",
+  "title.barium.config": "Barium Settings",
 
   "category.barium.chunk_performance": "Chunk Performance",
   "category.barium.culling_lod": "Culling & LOD",
   "category.barium.particles": "Particles",
-  "category.barium.visual_effects": "Visual Effects & HUD",
+  "category.barium.visual_effects": "Visuals & HUD",
   "category.barium.game_logic": "Game Logic & Ticks",
-  "category.barium.specific_optimizations": "Specific Optimizations",
 
   "generic.barium.distance_blocks": "%d blocks",
 
+  "option.barium.enable_frustum_culling": "Enable Frustum Culling",
+  "tooltip.barium.enable_frustum_culling": "Prevents the game from rebuilding chunks that are not inside the camera's view.\nReduces CPU load when turning around.",
+
+  "option.barium.enable_visibility_graph_culling": "Enable Visibility Culling (Experimental)",
+  "tooltip.barium.enable_visibility_graph_culling": "Uses aggressive ray-casting to only render chunks that are truly visible.\nMassive performance gain, may cause minor visual artifacts.",
+  
+  "option.barium.enable_advanced_section_culling": "Enable Advanced Section Culling",
+  "tooltip.barium.enable_advanced_section_culling": "Prevents rendering of chunk sections (16x16x16 areas) that are not visible from the camera, such as enclosed caves.\nHighly effective, but may cause visual artifacts in rare cases.",
+
   "option.barium.cull_empty_sections": "Cull Empty Chunk Sections",
-  "tooltip.barium.cull_empty_sections": "Skips rendering sections of the world that only contain air.\nHuge performance boost.",
+  "tooltip.barium.cull_empty_sections": "Skips rendering sections of the world that only contain air.\nSignificant performance boost in worlds with verticality.",
 
   "option.barium.enable_chunk_update_throttling": "Enable Chunk Update Throttling",
   "tooltip.barium.enable_chunk_update_throttling": "Limits how many chunks are sent to the GPU per frame.\nReduces stutters when moving or turning quickly.",
@@ -19,57 +27,66 @@
   "option.barium.max_chunk_uploads": "Max Chunk Uploads/Frame",
   "tooltip.barium.max_chunk_uploads": "The max number of chunks uploaded to the GPU each frame.\nLower values = smoother, higher values = faster world loading.",
 
+  "option.barium.enable_entity_culling": "Enable Entity Culling (Distance)",
+  "tooltip.barium.enable_entity_culling": "Stops rendering entities (mobs, items) that are too far away.",
+  "option.barium.entity_render_distance": "Entity Render Distance",
+  "tooltip.barium.entity_render_distance": "Max distance at which entities are rendered.",
+  
   "option.barium.enable_block_entity_culling": "Enable Block Entity Culling (Distance)",
   "tooltip.barium.enable_block_entity_culling": "Stops rendering block entities (chests, signs) that are too far away.",
   "option.barium.block_entity_render_distance": "Block Entity Render Distance",
   "tooltip.barium.block_entity_render_distance": "Max distance at which block entities are rendered.",
 
-  "option.barium.enable_block_entity_occlusion_culling": "Enable Block Entity Culling (Occlusion)",
-  "tooltip.barium.enable_block_entity_occlusion_culling": "Stops rendering block entities that are hidden behind other blocks.\nCan significantly improve FPS in complex scenes.",
-  "option.barium.block_entity_occlusion_min_distance": "Block Entity Occlusion Min Distance",
-  "tooltip.barium.block_entity_occlusion_min_distance": "The culling check only activates for entities beyond this distance.\nAvoids checks on very close objects.",
+  "option.barium.enable_block_entity_occlusion_culling": "Enable Block Entity Occlusion Culling",
+  "tooltip.barium.enable_block_entity_occlusion_culling": "Stops rendering block entities that are hidden behind other blocks.\nCan significantly improve FPS in bases and villages.",
+  "option.barium.block_entity_occlusion_min_distance": "Occlusion Min Distance",
+  "tooltip.barium.block_entity_occlusion_min_distance": "The culling check only activates for entities beyond this distance.",
   
   "option.barium.enable_dense_foliage_culling": "Enable Dense Foliage Culling",
   "tooltip.barium.enable_dense_foliage_culling": "Randomly skips rendering some grass and ferns to make dense areas less demanding.",
-  "option.barium.dense_foliage_culling_level": "Dense Foliage Culling Level (0-3)",
+  "option.barium.dense_foliage_culling_level": "Foliage Culling Level (0-3)",
   "tooltip.barium.dense_foliage_culling_level": "How aggressively to cull foliage. 0 = off, 3 = max culling.",
 
-  "option.barium.enable_particle_optimizations": "Enable Particle Optimizations",
-  "option.barium.max_global_particles": "Max Global Particles",
+  "option.barium.enable_beacon_culling": "Enable Beacon Beam Culling",
+  "tooltip.barium.enable_beacon_culling": "Stops rendering very distant beacon beams.",
 
+  "option.barium.enable_particle_optimizations": "Enable Particle Optimizations",
+  "tooltip.barium.enable_particle_optimizations": "Skips rendering particles that are outside the screen or too far away.",
+  "option.barium.particle_cull_distance": "Particle Cull Distance",
+  "tooltip.barium.particle_cull_distance": "Particles beyond this distance will not be rendered or ticked.",
+  "option.barium.reduce_explosion_particles": "Reduce Explosion Particles",
+  "tooltip.barium.reduce_explosion_particles": "Greatly reduces the amount of particles from explosions to prevent lag spikes.",
+  "option.barium.enable_global_particle_limit": "Enable Global Particle Limit",
+  "tooltip.barium.enable_global_particle_limit": "Stops creating new particles if the total number exceeds the limit.",
+  "option.barium.max_global_particles": "Max Global Particles",
+  "tooltip.barium.max_global_particles": "The maximum number of particles allowed at once.",
+
+  "option.barium.cache_debug_hud": "Cache Debug HUD (F3)",
+  "tooltip.barium.cache_debug_hud": "Reduces the performance impact of the F3 screen by updating it less frequently.",
+  "option.barium.enable_tooltip_caching": "Enable Tooltip Caching",
+  "tooltip.barium.enable_tooltip_caching": "Caches item tooltips to reduce lag when hovering over items in inventories.",
+  
+  "option.barium.enable_adaptive_fog": "Enable Adaptive Fog",
+  "tooltip.barium.enable_adaptive_fog": "Dynamically adjusts fog to maintain a target FPS.",
+  "option.barium.adaptive_fog_target_fps": "Adaptive Fog Target FPS",
+  "tooltip.barium.adaptive_fog_target_fps": "The framerate the adaptive fog will try to maintain.",
+
+  "option.barium.disable_vignette": "Disable Vignette",
+  "tooltip.barium.disable_vignette": "Removes the dark overlay at the screen edges.",
+  "option.barium.disable_toasts": "Disable Toasts",
+  "tooltip.barium.disable_toasts": "Hides the recipe/advancement pop-ups.",
   "option.barium.disable_entity_outlines": "Disable Glowing Effect",
-  "tooltip.barium.disable_entity_outlines": "Completely disables the glowing outline effect (e.g., from spectral arrows).",
+  "tooltip.barium.disable_entity_outlines": "Completely disables the glowing outline effect.",
   "option.barium.enable_half_res_outlines": "Half Resolution Glowing Effect",
   "tooltip.barium.enable_half_res_outlines": "Renders the glowing effect at half resolution for better performance.",
-  "option.barium.disable_vignette": "Disable Vignette",
-  "tooltip.barium.disable_vignette": "Removes the dark overlay at the screen edges, especially in dark areas.",
-  "option.barium.disable_toasts": "Disable Toasts",
-  "tooltip.barium.disable_toasts": "Hides the recipe/advancement pop-ups in the top-right corner.",
   
   "option.barium.enable_entity_tick_culling": "Enable Entity Tick Culling",
-  "tooltip.barium.enable_entity_tick_culling": "Reduces the update frequency of distant entities' logic (AI).\nImproves CPU performance in areas with many mobs.",
+  "tooltip.barium.enable_entity_tick_culling": "Reduces the update frequency of distant entities' logic (AI).",
   "option.barium.entity_tick_distance": "Entity Tick Distance",
   "tooltip.barium.entity_tick_distance": "Entities beyond this distance will have their logic updates reduced.",
 
   "option.barium.reduce_ambient_particles": "Reduce Ambient Particles",
-  "tooltip.barium.reduce_ambient_particles": "Reduces the frequency of ambient particle effects (torch smoke, water drips).\nReduces constant CPU usage.",
-  
+  "tooltip.barium.reduce_ambient_particles": "Reduces the frequency of ambient particle effects (torch smoke, water drips).",
   "option.barium.enable_hopper_culling": "Enable Hopper Culling",
-  "tooltip.barium.enable_hopper_culling": "Reduces the update frequency of distant hoppers. Huge CPU saver for farms.",
-  
-  "option.barium.reduce_explosion_particles": "Reduce Explosion Particles",
-  "tooltip.barium.reduce_explosion_particles": "Greatly reduces the amount of particles from explosions to prevent lag spikes.",
-  
-  "option.barium.enable_beacon_culling": "Enable Beacon Beam Culling",
-  "tooltip.barium.enable_beacon_culling": "Prevents rendering of very distant beacon beams.",
-
-"option.barium.enable_frustum_culling": "Enable Frustum Chunk Culling",
-"tooltip.barium.enable_frustum_culling": "Prevents the game from rebuilding chunks that are not inside the camera's view.\nReduces CPU load when turning around.",
-
-  "option.barium.enable_fog_optimization": "Enable Fog Optimization",
-  "tooltip.barium.enable_fog_optimization": "Allows Barium to control fog distance for better visibility and performance.",
-  "option.barium.disable_fog": "Disable Fog",
-  "tooltip.barium.disable_fog": "Completely removes distance fog. Overrides the start percentage slider.",
-  "option.barium.fog_start_percentage": "Fog Start Distance",
-  "tooltip.barium.fog_start_percentage": "At what percentage of your render distance the fog should start. Vanilla is ~75%."
+  "tooltip.barium.enable_hopper_culling": "Reduces the update frequency of distant hoppers. Huge CPU saver for farms."
 }
