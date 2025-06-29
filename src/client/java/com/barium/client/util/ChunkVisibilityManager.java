@@ -3,9 +3,9 @@ package com.barium.client.util;
 import com.barium.client.BariumClient;
 import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
 import it.unimi.dsi.fastutil.longs.LongSet;
-import net.minecraft.block.BlockState;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.util.hit.BlockHitResult;
+import net.minecraft.util.hit.HitResult;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.ChunkPos;
 import net.minecraft.util.math.Vec3d;
@@ -18,105 +18,150 @@ public class ChunkVisibilityManager {
     private static final ChunkVisibilityManager INSTANCE = new ChunkVisibilityManager();
     public static ChunkVisibilityManager getInstance() { return INSTANCE; }
 
-    private static final int RAYS_TO_CAST = 100;
-    private static final double MAX_RAY_DISTANCE = 160.0;
-    private static final long UPDATE_INTERVAL_MS = 250;
+    // Configurações do ray-casting
+    private static final int RAYS_TO_CAST = 128;
+    private static final double MAX_RAY_DISTANCE = 256.0;
+    private static final long UPDATE_INTERVAL_MS = 200;
 
-    private final AtomicReference<LongSet> visibleChunkKeys = new AtomicReference<>(null);
+    private final AtomicReference<LongSet> visibleChunkKeys = new AtomicReference<>(new LongOpenHashSet());
+    // NOVO: Conjunto para guardar as SEÇÕES visíveis
+    private final AtomicReference<LongSet> visibleSectionKeys = new AtomicReference<>(new LongOpenHashSet());
+    
     private Future<?> visibilityTask = null;
+    private long lastUpdateTime = 0;
 
     public void update(MinecraftClient client) {
         if (client.player == null || client.world == null) return;
         if (visibilityTask != null && !visibilityTask.isDone()) return;
+        
+        long currentTime = System.currentTimeMillis();
+        if ((currentTime - lastUpdateTime) < UPDATE_INTERVAL_MS) return;
 
+        lastUpdateTime = currentTime;
         visibilityTask = BariumClient.RENDER_THREAD_POOL.submit(() -> rebuildVisibilityMap(client));
     }
 
-    // Este método roda na thread do Barium, não na do jogo.
     private void rebuildVisibilityMap(MinecraftClient client) {
         if (client.player == null || client.world == null || client.cameraEntity == null) return;
 
-        Vec3d cameraPos = client.cameraEntity.getEyePos();
-        LongSet initialHits = new LongOpenHashSet(); // Apenas os chunks diretamente atingidos
+        final Vec3d cameraPos = client.cameraEntity.getEyePos();
+        final LongSet directlyHitChunks = new LongOpenHashSet();
+        final LongSet hitSections = new LongOpenHashSet(); // NOVO: Guarda as seções atingidas
 
-        // Lógica de Ray-casting para encontrar os chunks visíveis
-        boolean isSpectator = client.player.isSpectator();
+        // 1. Lança raios para encontrar chunks e seções visíveis
         for (int i = 0; i < RAYS_TO_CAST; i++) {
-            double goldenRatio = (1.0 + Math.sqrt(5.0)) / 2.0;
-            double angleIncrement = Math.PI * 2.0 * goldenRatio;
-            double t = (double) i / RAYS_TO_CAST;
-            double inclination = Math.acos(1 - 2 * t);
-            double azimuth = angleIncrement * i;
-            Vec3d direction = new Vec3d(Math.sin(inclination) * Math.cos(azimuth), Math.sin(inclination) * Math.sin(azimuth), Math.cos(inclination));
+            Vec3d direction = getFibonacciSphereVector(i, RAYS_TO_CAST);
+            Vec3d targetPos = cameraPos.add(direction.multiply(MAX_RAY_DISTANCE));
+            
+            RaycastContext context = new RaycastContext(cameraPos, targetPos, RaycastContext.ShapeType.COLLIDER, RaycastContext.FluidHandling.NONE, client.cameraEntity);
+            BlockHitResult hitResult = client.world.raycast(context);
 
-            Vec3d finalHitPos;
-            if (isSpectator) {
-                Vec3d escapePoint = findFirstNonOpaqueBlock(client, cameraPos, direction);
-                if (escapePoint == null) continue;
-                RaycastContext context = new RaycastContext(escapePoint, escapePoint.add(direction.multiply(MAX_RAY_DISTANCE)), RaycastContext.ShapeType.COLLIDER, RaycastContext.FluidHandling.NONE, client.player);
-                finalHitPos = client.world.raycast(context).getPos();
-            } else {
-                RaycastContext context = new RaycastContext(cameraPos, cameraPos.add(direction.multiply(MAX_RAY_DISTANCE)), RaycastContext.ShapeType.COLLIDER, RaycastContext.FluidHandling.NONE, client.player);
-                finalHitPos = client.world.raycast(context).getPos();
+            if (hitResult.getType() != HitResult.Type.MISS) {
+                // Adiciona o chunk atingido
+                BlockPos hitBlockPos = hitResult.getBlockPos();
+                directlyHitChunks.add(ChunkPos.toLong(hitBlockPos));
+                // Traça o caminho do raio e marca todas as seções por onde ele passou
+                traceRayAndAddSections(cameraPos, hitResult.getPos(), hitSections);
             }
-            traceRayAndAddChunks(cameraPos, finalHitPos, initialHits);
         }
 
-        // CORREÇÃO VISUAL: PASSE DE EXPANSÃO E SEGURANÇA
-        LongSet finalVisibleChunks = new LongOpenHashSet();
-        final int forceVisibleRadius = 3; // Um "tapete" de segurança maior
-        ChunkPos playerChunkPos = client.player.getChunkPos();
+        // 2. Expansão para chunks (corrige buracos)
+        final LongSet finalVisibleChunks = new LongOpenHashSet();
+        final int safetyRadius = 2;
+        final ChunkPos playerChunkPos = client.player.getChunkPos();
 
-        // 1. Adiciona o tapete de segurança
-        for (int x = -forceVisibleRadius; x <= forceVisibleRadius; x++) {
-            for (int z = -forceVisibleRadius; z <= forceVisibleRadius; z++) {
+        for (int x = -safetyRadius; x <= safetyRadius; x++) {
+            for (int z = -safetyRadius; z <= safetyRadius; z++) {
                 finalVisibleChunks.add(ChunkPos.toLong(playerChunkPos.x + x, playerChunkPos.z + z));
             }
         }
-        
-        // 2. Adiciona os chunks atingidos E seus vizinhos (expansão que corrige os buracos)
-        for (long key : initialHits) {
+        for (long key : directlyHitChunks) {
             int x = ChunkPos.getPackedX(key);
             int z = ChunkPos.getPackedZ(key);
-            finalVisibleChunks.add(key); // O próprio chunk
-            finalVisibleChunks.add(ChunkPos.toLong(x + 1, z));
-            finalVisibleChunks.add(ChunkPos.toLong(x - 1, z));
-            finalVisibleChunks.add(ChunkPos.toLong(x, z + 1));
-            finalVisibleChunks.add(ChunkPos.toLong(x, z - 1));
+            for (int dx = -1; dx <= 1; dx++) {
+                for (int dz = -1; dz <= 1; dz++) {
+                    finalVisibleChunks.add(ChunkPos.toLong(x + dx, z + dz));
+                }
+            }
         }
-
         this.visibleChunkKeys.set(finalVisibleChunks);
+
+        // 3. Expansão para seções (corrige buracos em volta do jogador) e armazena o resultado final
+        final LongSet finalVisibleSections = new LongOpenHashSet(hitSections);
+        BlockPos playerSectionPos = new BlockPos(playerChunkPos.x, client.player.getChunkSectionY(), playerChunkPos.z);
+        for(int x = -1; x <= 1; x++) {
+            for(int y = -1; y <= 1; y++) {
+                for(int z = -1; z <= 1; z++) {
+                    finalVisibleSections.add(BlockPos.asLong(playerSectionPos.getX() + x, playerSectionPos.getY() + y, playerSectionPos.getZ() + z));
+                }
+            }
+        }
+        this.visibleSectionKeys.set(finalVisibleSections);
     }
 
-    private Vec3d findFirstNonOpaqueBlock(MinecraftClient client, Vec3d start, Vec3d direction) {
-        final double step = 0.5;
-        for (double d = 0; d < MAX_RAY_DISTANCE; d += step) {
-            BlockPos blockPos = BlockPos.ofFloored(start.add(direction.multiply(d)));
-            if (!client.world.isChunkLoaded(blockPos)) return null;
-            BlockState state = client.world.getBlockState(blockPos);
-            if (!state.isOpaque()) return start.add(direction.multiply(d));
+    // NOVO: Traça uma linha 3D e marca todas as seções no caminho como visíveis
+    private void traceRayAndAddSections(Vec3d start, Vec3d end, LongSet sectionSet) {
+        int x1 = (int) Math.floor(start.getX() / 16);
+        int y1 = (int) Math.floor(start.getY() / 16);
+        int z1 = (int) Math.floor(start.getZ() / 16);
+
+        int x2 = (int) Math.floor(end.getX() / 16);
+        int y2 = (int) Math.floor(end.getY() / 16);
+        int z2 = (int) Math.floor(end.getZ() / 16);
+
+        int dx = Math.abs(x2 - x1);
+        int dy = Math.abs(y2 - y1);
+        int dz = Math.abs(z2 - z1);
+
+        int sx = x1 < x2 ? 1 : -1;
+        int sy = y1 < y2 ? 1 : -1;
+        int sz = z1 < z2 ? 1 : -1;
+
+        int err1 = dx - dy;
+        int err2 = dx - dz;
+        
+        // Adiciona a primeira seção
+        sectionSet.add(BlockPos.asLong(x1, y1, z1));
+
+        while (x1 != x2 || y1 != y2 || z1 != z2) {
+            int e1 = 2 * err1;
+            int e2 = 2 * err2;
+
+            if (e1 > -dy) { err1 -= dy; x1 += sx; }
+            if (e1 < dx) { err1 += dx; y1 += sy; }
+            if (e2 > -dz) { err2 -= dz; x1 += sx; }
+            if (e2 < dx) { err2 += dx; z1 += sz; }
+            
+            sectionSet.add(BlockPos.asLong(x1, y1, z1));
         }
-        return null;
     }
 
-    private void traceRayAndAddChunks(Vec3d start, Vec3d end, LongSet chunkSet) {
-        int x1 = (int) start.getX() >> 4, z1 = (int) start.getZ() >> 4;
-        int x2 = (int) end.getX() >> 4, z2 = (int) end.getZ() >> 4;
-        int dx = Math.abs(x2 - x1), dz = Math.abs(z2 - z1);
-        int sx = x1 < x2 ? 1 : -1, sz = z1 < z2 ? 1 : -1;
-        int err = dx - dz;
-        while (true) {
-            chunkSet.add(ChunkPos.toLong(x1, z1));
-            if (x1 == x2 && z1 == z2) break;
-            int e2 = 2 * err;
-            if (e2 > -dz) { err -= dz; x1 += sx; }
-            if (e2 < dx) { err += dx; z1 += sz; }
-        }
+    private Vec3d getFibonacciSphereVector(int i, int n) {
+        double phi = Math.PI * (3.0 - Math.sqrt(5.0));
+        double y = 1 - (i / (double)(n - 1)) * 2;
+        double radius = Math.sqrt(1 - y * y);
+        double theta = phi * i;
+        double x = Math.cos(theta) * radius;
+        double z = Math.sin(theta) * radius;
+        return new Vec3d(x, y, z);
     }
 
     public boolean isChunkPotentiallyVisible(int chunkX, int chunkZ) {
         LongSet visibleSet = visibleChunkKeys.get();
-        if (visibleSet == null) return true; // Se o cálculo nunca rodou, não esconde nada.
+        if (visibleSet == null) return true;
         return visibleSet.contains(ChunkPos.toLong(chunkX, chunkZ));
+    }
+    
+    // NOVO: Verifica se uma seção específica é visível
+    public boolean isSectionPotentiallyVisible(int sectionX, int sectionY, int sectionZ) {
+        LongSet visibleSet = visibleSectionKeys.get();
+        if (visibleSet == null) return true;
+        return visibleSet.contains(BlockPos.asLong(sectionX, sectionY, sectionZ));
+    }
+    
+    public void clear() {
+        this.visibleChunkKeys.set(new LongOpenHashSet());
+        this.visibleSectionKeys.set(new LongOpenHashSet());
+        this.lastUpdateTime = 0;
     }
 }

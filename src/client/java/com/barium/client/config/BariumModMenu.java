@@ -8,7 +8,6 @@ import com.terraformersmc.modmenu.api.ModMenuApi;
 import me.shedaniel.clothconfig2.api.ConfigBuilder;
 import me.shedaniel.clothconfig2.api.ConfigCategory;
 import me.shedaniel.clothconfig2.api.ConfigEntryBuilder;
-import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.text.Text;
 
 public class BariumModMenu implements ModMenuApi {
@@ -41,6 +40,13 @@ public class BariumModMenu implements ModMenuApi {
                     .setTooltip(Text.translatable("tooltip.barium.enable_visibility_graph_culling"))
                     .setSaveConsumer(newValue -> BariumConfig.C.ENABLE_VISIBILITY_GRAPH_CULLING = newValue)
                     .build());
+            
+            // ADICIONADO: A nova opção na tela de configuração
+            chunkPerformance.addEntry(entryBuilder.startBooleanToggle(Text.translatable("option.barium.enable_advanced_section_culling"), BariumConfig.C.ENABLE_ADVANCED_SECTION_CULLING)
+                    .setDefaultValue(defaults.ENABLE_ADVANCED_SECTION_CULLING)
+                    .setTooltip(Text.translatable("tooltip.barium.enable_advanced_section_culling"))
+                    .setSaveConsumer(newValue -> BariumConfig.C.ENABLE_ADVANCED_SECTION_CULLING = newValue)
+                    .build());
 
             chunkPerformance.addEntry(entryBuilder.startBooleanToggle(Text.translatable("option.barium.cull_empty_sections"), BariumConfig.C.ENABLE_EMPTY_CHUNK_SECTION_CULLING)
                     .setDefaultValue(defaults.ENABLE_EMPTY_CHUNK_SECTION_CULLING)
@@ -60,12 +66,8 @@ public class BariumModMenu implements ModMenuApi {
                     .setSaveConsumer(newValue -> BariumConfig.C.MAX_CHUNK_UPLOADS_PER_FRAME = newValue)
                     .build());
 
-           chunkPerformance.addEntry(entryBuilder.startBooleanToggle(Text.translatable("option.barium.enable_distance_throttling"), BariumConfig.C.ENABLE_DISTANCE_THROTTLING)
-                    .setDefaultValue(defaults.ENABLE_DISTANCE_THROTTLING)
-                    .setTooltip(Text.translatable("tooltip.barium.enable_distance_throttling"))
-                    .setSaveConsumer(newValue -> BariumConfig.C.ENABLE_DISTANCE_THROTTLING = newValue)
-                    .build());
-
+            // ... (o resto do arquivo continua igual)
+            
             // ===================================================================
             // Categoria 2: Otimização e LOD (Level of Detail)
             // ===================================================================
@@ -144,14 +146,18 @@ public class BariumModMenu implements ModMenuApi {
                     .setTooltip(Text.translatable("tooltip.barium.reduce_explosion_particles"))
                     .setSaveConsumer(newValue -> BariumConfig.C.ENABLE_EXPLOSION_PARTICLE_REDUCTION = newValue)
                     .build());
+            
+            particles.addEntry(entryBuilder.startBooleanToggle(Text.translatable("option.barium.enable_global_particle_limit"), BariumConfig.C.ENABLE_GLOBAL_PARTICLE_LIMIT)
+                .setDefaultValue(defaults.ENABLE_GLOBAL_PARTICLE_LIMIT)
+                .setTooltip(Text.translatable("tooltip.barium.enable_global_particle_limit"))
+                .setSaveConsumer(newValue -> BariumConfig.C.ENABLE_GLOBAL_PARTICLE_LIMIT = newValue)
+                .build());
 
-            ConfigCategory guiOptimizations = builder.getOrCreateCategory(Text.translatable("category.barium.gui_optimizations"));
-
-            guiOptimizations.addEntry(entryBuilder.startBooleanToggle(Text.translatable("option.barium.enable_tooltip_caching"), BariumConfig.C.ENABLE_TOOLTIP_CACHING)
-                    .setDefaultValue(defaults.ENABLE_TOOLTIP_CACHING)
-                    .setTooltip(Text.translatable("tooltip.barium.enable_tooltip_caching"))
-                    .setSaveConsumer(newValue -> BariumConfig.C.ENABLE_TOOLTIP_CACHING = newValue)
-                    .build());
+            particles.addEntry(entryBuilder.startIntSlider(Text.translatable("option.barium.max_global_particles"), BariumConfig.C.MAX_GLOBAL_PARTICLES, 512, 16384)
+                .setDefaultValue(defaults.MAX_GLOBAL_PARTICLES)
+                .setTooltip(Text.translatable("tooltip.barium.max_global_particles"))
+                .setSaveConsumer(newValue -> BariumConfig.C.MAX_GLOBAL_PARTICLES = newValue)
+                .build());
 
 
             // ===================================================================
@@ -159,13 +165,25 @@ public class BariumModMenu implements ModMenuApi {
             // ===================================================================
             ConfigCategory visualEffects = builder.getOrCreateCategory(Text.translatable("category.barium.visual_effects"));
 
+            visualEffects.addEntry(entryBuilder.startBooleanToggle(Text.translatable("option.barium.cache_debug_hud"), BariumConfig.C.CACHE_DEBUG_HUD)
+                .setDefaultValue(defaults.CACHE_DEBUG_HUD)
+                .setTooltip(Text.translatable("tooltip.barium.cache_debug_hud"))
+                .setSaveConsumer(newValue -> BariumConfig.C.CACHE_DEBUG_HUD = newValue)
+                .build());
+
+            visualEffects.addEntry(entryBuilder.startBooleanToggle(Text.translatable("option.barium.enable_tooltip_caching"), BariumConfig.C.ENABLE_TOOLTIP_CACHING)
+                    .setDefaultValue(defaults.ENABLE_TOOLTIP_CACHING)
+                    .setTooltip(Text.translatable("tooltip.barium.enable_tooltip_caching"))
+                    .setSaveConsumer(newValue -> BariumConfig.C.ENABLE_TOOLTIP_CACHING = newValue)
+                    .build());
+
             visualEffects.addEntry(entryBuilder.startBooleanToggle(Text.translatable("option.barium.enable_adaptive_fog"), BariumConfig.C.ENABLE_ADAPTIVE_FOG)
                     .setDefaultValue(defaults.ENABLE_ADAPTIVE_FOG)
                     .setTooltip(Text.translatable("tooltip.barium.enable_adaptive_fog"))
                     .setSaveConsumer(newValue -> BariumConfig.C.ENABLE_ADAPTIVE_FOG = newValue)
                     .build());
             
-            visualEffects.addEntry(entryBuilder.startIntSlider(Text.translatable("option.barium.adaptive_fog_target_fps"), BariumConfig.C.ADAPTIVE_FOG_TARGET_FPS, 30, 144)
+            visualEffects.addEntry(entryBuilder.startIntSlider(Text.translatable("option.barium.adaptive_fog_target_fps"), BariumConfig.C.ADAPTIVE_FOG_TARGET_FPS, 30, 240)
                     .setDefaultValue(defaults.ADAPTIVE_FOG_TARGET_FPS)
                     .setTooltip(Text.translatable("tooltip.barium.adaptive_fog_target_fps"))
                     .setSaveConsumer(newValue -> BariumConfig.C.ADAPTIVE_FOG_TARGET_FPS = newValue)
