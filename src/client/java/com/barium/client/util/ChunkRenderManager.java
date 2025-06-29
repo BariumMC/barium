@@ -4,6 +4,7 @@ import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.render.Frustum;
 import net.minecraft.util.math.Box;
 import net.minecraft.util.math.ChunkPos;
+import net.minecraft.world.Heightmap;
 
 import java.util.BitSet;
 import java.util.concurrent.atomic.AtomicReference;
@@ -35,9 +36,11 @@ public class ChunkRenderManager {
                 final int chunkX = this.minRenderChunkX + x;
                 final int chunkZ = this.minRenderChunkZ + z;
 
+                // CORREÇÃO: A caixa do chunk agora usa a altura da dimensão, o que é correto e funciona.
+                // Isso cobre o chunk inteiro, da base (geralmente Y=-64) ao topo do mundo.
                 final Box chunkBox = new Box(
                         chunkX * 16, client.world.getBottomY(), chunkZ * 16,
-                        chunkX * 16 + 16, client.world.getTopY(), chunkZ * 16 + 16
+                        chunkX * 16 + 16, client.world.getDimension().height() + client.world.getBottomY(), chunkZ * 16 + 16
                 );
 
                 if (frustum.isVisible(chunkBox)) {
@@ -50,7 +53,7 @@ public class ChunkRenderManager {
 
     public boolean isChunkInFrustum(int chunkX, int chunkZ) {
         BitSet visibleSet = this.chunksInFrustum.get();
-        if (visibleSet == null || this.renderGridSize == 0) return true;
+        if (visibleSet == null || this.renderGridSize == 0) return true; // Segurança
 
         final int localX = chunkX - this.minRenderChunkX;
         final int localZ = chunkZ - this.minRenderChunkZ;
@@ -62,7 +65,6 @@ public class ChunkRenderManager {
         return visibleSet.get(localX + localZ * this.renderGridSize);
     }
 
-    // CORREÇÃO: O método clear() foi adicionado de volta.
     public void clear() {
         this.chunksInFrustum.set(new BitSet());
         this.renderGridSize = 0;
