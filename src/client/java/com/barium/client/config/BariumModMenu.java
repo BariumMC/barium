@@ -47,6 +47,12 @@ public class BariumModMenu implements ModMenuApi {
                     .setSaveConsumer(newValue -> BariumConfig.C.ENABLE_ADVANCED_SECTION_CULLING = newValue)
                     .build());
 
+            chunkPerformance.addEntry(entryBuilder.startBooleanToggle(Text.translatable("option.barium.enable_enclosed_section_culling"), BariumConfig.C.ENABLE_ENCLOSED_SECTION_CULLING)
+                    .setDefaultValue(defaults.ENABLE_ENCLOSED_SECTION_CULLING)
+                    .setTooltip(Text.translatable("tooltip.barium.enable_enclosed_section_culling"))
+                    .setSaveConsumer(newValue -> BariumConfig.C.ENABLE_ENCLOSED_SECTION_CULLING = newValue)
+                    .build());
+
             chunkPerformance.addEntry(entryBuilder.startBooleanToggle(Text.translatable("option.barium.cull_empty_sections"), BariumConfig.C.ENABLE_EMPTY_CHUNK_SECTION_CULLING)
                     .setDefaultValue(defaults.ENABLE_EMPTY_CHUNK_SECTION_CULLING)
                     .setTooltip(Text.translatable("tooltip.barium.cull_empty_sections"))
@@ -115,7 +121,7 @@ public class BariumModMenu implements ModMenuApi {
                     .setSaveConsumer(newValue -> BariumConfig.C.ENABLE_DENSE_FOLIAGE_CULLING = newValue)
                     .build());
 
-            cullingLod.addEntry(entryBuilder.startIntSlider(Text.translatable("option.barium.dense_foliage_culling_level"), BariumConfig.C.DENSE_FOLIAGE_CULLING_LEVEL, 0, 3)
+            cullingLod.addEntry(entryBuilder.startIntSlider(Text.translatable("option.barium.dense_foliage_culling_level"), BariumConfig.C.DENSE_FOLIAGE_CULLING_LEVEL, 0, 4)
                     .setDefaultValue(defaults.DENSE_FOLIAGE_CULLING_LEVEL)
                     .setTooltip(Text.translatable("tooltip.barium.dense_foliage_culling_level"))
                     .setSaveConsumer(newValue -> BariumConfig.C.DENSE_FOLIAGE_CULLING_LEVEL = newValue)

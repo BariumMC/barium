@@ -1,5 +1,6 @@
 package com.barium.client.mixin;
 
+import com.barium.client.util.ChunkCullingUtils;
 import com.barium.client.util.ChunkVisibilityManager;
 import com.barium.config.BariumConfig;
 import net.minecraft.client.render.WorldRenderer;
@@ -27,7 +28,7 @@ public abstract class WorldRendererScheduleMixin {
             cancellable = true
     )
     private void barium$preventSchedulingOfUnseenSections(int x, int y, int z, boolean important, CallbackInfo ci) {
-        if (!BariumConfig.C.ENABLE_ADVANCED_SECTION_CULLING || this.world == null) {
+        if (this.world == null) {
             return;
         }
 
@@ -36,10 +37,22 @@ public abstract class WorldRendererScheduleMixin {
         int sectionY = this.world.getSectionIndex(y);
         int sectionZ = z >> 4;
 
-        // Pergunta ao manager se esta seção é visível.
-        if (!ChunkVisibilityManager.getInstance().isSectionPotentiallyVisible(sectionX, sectionY, sectionZ)) {
-            // Se não for, cancela o agendamento. Simples e eficaz.
-            ci.cancel();
+        // Otimização 1: Visibilidade por Ray-Casting (a mais agressiva)
+        if (BariumConfig.C.ENABLE_ADVANCED_SECTION_CULLING) {
+            // Pergunta ao manager se esta seção é visível.
+            if (!ChunkVisibilityManager.getInstance().isSectionPotentiallyVisible(sectionX, sectionY, sectionZ)) {
+                // Se não for, cancela o agendamento. Simples e eficaz.
+                ci.cancel();
+                return;
+            }
+        }
+        
+        // Otimização 2: Oclusão Total (ideal para CPU)
+        // Verifica se a seção está totalmente cercada por outras seções sólidas.
+        if (BariumConfig.C.ENABLE_ENCLOSED_SECTION_CULLING) {
+            if (ChunkCullingUtils.isSectionFullyEnclosed(this.world, sectionX, sectionY, sectionZ)) {
+                ci.cancel();
+            }
         }
     }
 }

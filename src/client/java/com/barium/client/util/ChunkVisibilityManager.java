@@ -21,21 +21,33 @@ public class ChunkVisibilityManager {
     private static final int RAYS_TO_CAST = 128;
     private static final double MAX_RAY_DISTANCE = 256.0;
     private static final long UPDATE_INTERVAL_MS = 200;
+    private static final long FORCE_UPDATE_INTERVAL_MS = 1000; // Força uma atualização mesmo parado
 
     private final AtomicReference<LongSet> visibleChunkKeys = new AtomicReference<>(new LongOpenHashSet());
     private final AtomicReference<LongSet> visibleSectionKeys = new AtomicReference<>(new LongOpenHashSet());
     
     private Future<?> visibilityTask = null;
     private long lastUpdateTime = 0;
+    private ChunkPos lastPlayerChunkPos = null;
 
     public void update(MinecraftClient client) {
         if (client.player == null || client.world == null) return;
         if (visibilityTask != null && !visibilityTask.isDone()) return;
         
         long currentTime = System.currentTimeMillis();
+        ChunkPos currentPlayerChunkPos = client.player.getChunkPos();
+
+        // Otimização para CPU: Não recalcula se o jogador não mudou de chunk,
+        // a menos que um tempo maior (FORCE_UPDATE_INTERVAL_MS) tenha passado.
+        boolean hasPlayerMoved = !currentPlayerChunkPos.equals(lastPlayerChunkPos);
+        if (!hasPlayerMoved && (currentTime - lastUpdateTime) < FORCE_UPDATE_INTERVAL_MS) {
+            return;
+        }
+
         if ((currentTime - lastUpdateTime) < UPDATE_INTERVAL_MS) return;
 
         lastUpdateTime = currentTime;
+        lastPlayerChunkPos = currentPlayerChunkPos;
         visibilityTask = BariumClient.RENDER_THREAD_POOL.submit(() -> rebuildVisibilityMap(client));
     }
 
@@ -157,5 +169,6 @@ public class ChunkVisibilityManager {
         this.visibleChunkKeys.set(new LongOpenHashSet());
         this.visibleSectionKeys.set(new LongOpenHashSet());
         this.lastUpdateTime = 0;
+        this.lastPlayerChunkPos = null;
     }
 }

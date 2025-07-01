@@ -6,6 +6,7 @@ public class ConfigData {
     public boolean ENABLE_FRUSTUM_CHUNK_CULLING = true;
     public boolean ENABLE_VISIBILITY_GRAPH_CULLING = true;
     public boolean ENABLE_ADVANCED_SECTION_CULLING = true;
+    public boolean ENABLE_ENCLOSED_SECTION_CULLING = true; // Nova opção
     public boolean ENABLE_EMPTY_CHUNK_SECTION_CULLING = true;
     public boolean ENABLE_CHUNK_UPDATE_THROTTLING = true;
     public int MAX_CHUNK_UPLOADS_PER_FRAME = 4;
