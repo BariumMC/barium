@@ -44,8 +44,8 @@
   
   "option.barium.enable_dense_foliage_culling": "Ativar Otimização de Folhagem Densa",
   "tooltip.barium.enable_dense_foliage_culling": "Pula aleatoriamente a renderização de algumas gramas e samambaias para tornar áreas densas menos pesadas.",
-  "option.barium.dense_foliage_culling_level": "Nível da Otimização de Folhagem (0-3)",
-  "tooltip.barium.dense_foliage_culling_level": "Quão agressivamente otimizar a folhagem. 0 = desligado, 3 = otimização máxima.",
+  "option.barium.dense_foliage_culling_level": "Nível da Otimização de Folhagem (0-4)",
+  "tooltip.barium.dense_foliage_culling_level": "Quão agressivamente otimizar a folhagem usando um padrão baseado na posição. Níveis mais altos são mais agressivos.\n0=Desligado, 1=Leve, 2=Médio, 3=Pesado, 4=Extremo.",
 
   "option.barium.enable_beacon_culling": "Ativar Otimização de Sinalizadores",
   "tooltip.barium.enable_beacon_culling": "Para de renderizar raios de sinalizadores muito distantes.",

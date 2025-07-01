@@ -15,7 +15,6 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import java.util.List; // Import necessário
-import java.util.concurrent.ThreadLocalRandom;
 
 @Mixin(BlockRenderManager.class)
 public class BlockRenderManagerMixin {
@@ -34,12 +33,31 @@ public class BlockRenderManagerMixin {
     // O método Java deve corresponder à assinatura do Mixin.
     // Usamos List<?> para máxima compatibilidade, mas List<BlockModelPart> também funciona se a classe for visível.
     private void barium$cullDenseFoliage(BlockState state, BlockPos pos, BlockRenderView world, MatrixStack matrices, VertexConsumer vertexConsumer, boolean cull, List<?> parts, CallbackInfo ci) {
-        if (!BariumConfig.C.ENABLE_DENSE_FOLIAGE_CULLING || BariumConfig.C.DENSE_FOLIAGE_CULLING_LEVEL <= 0) {
+        int level = BariumConfig.C.DENSE_FOLIAGE_CULLING_LEVEL;
+        if (!BariumConfig.C.ENABLE_DENSE_FOLIAGE_CULLING || level <= 0) {
             return;
         }
 
         if (isTargetFoliage(state)) {
-            if (ThreadLocalRandom.current().nextInt(4) < BariumConfig.C.DENSE_FOLIAGE_CULLING_LEVEL) {
+            // Usa um hash posicional em vez de aleatório.
+            // Isso é mais rápido (sem overhead de thread-local) e fornece um padrão consistente,
+            // evitando o "ruído" visual do culling aleatório. É ideal para renderizadores de CPU.
+            long seed = (long)pos.getX() * 3129871 ^ (long)pos.getZ() * 1125899;
+            seed = seed * seed * 4231761 + seed * 11;
+            int hash = (int)(seed >> 16);
+
+            int cullChance; // Chance em 100 de ser REMOVIDO
+            switch (level) {
+                case 1: cullChance = 25; break; // Leve
+                case 2: cullChance = 50; break; // Médio
+                case 3: cullChance = 75; break; // Pesado
+                case 4: cullChance = 90; break; // Extremo
+                default: return; // Nível 0 ou inválido
+            }
+
+            // A matemática de módulo com números negativos pode ser estranha em Java,
+            // então usamos Math.abs para garantir um resultado positivo entre 0 e 99.
+            if ((Math.abs(hash) % 100) < cullChance) {
                 ci.cancel();
             }
         }

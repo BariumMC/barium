@@ -44,8 +44,8 @@
   
   "option.barium.enable_dense_foliage_culling": "Enable Dense Foliage Culling",
   "tooltip.barium.enable_dense_foliage_culling": "Randomly skips rendering some grass and ferns to make dense areas less demanding.",
-  "option.barium.dense_foliage_culling_level": "Foliage Culling Level (0-3)",
-  "tooltip.barium.dense_foliage_culling_level": "How aggressively to cull foliage. 0 = off, 3 = max culling.",
+  "option.barium.dense_foliage_culling_level": "Foliage Culling Level (0-4)",
+  "tooltip.barium.dense_foliage_culling_level": "How aggressively to cull foliage using a position-based pattern. Higher levels are more aggressive.\n0=Off, 1=Light, 2=Medium, 3=Heavy, 4=Extreme.",
 
   "option.barium.enable_beacon_culling": "Enable Beacon Beam Culling",
   "tooltip.barium.enable_beacon_culling": "Stops rendering very distant beacon beams.",
