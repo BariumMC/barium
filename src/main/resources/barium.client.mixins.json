@@ -18,8 +18,7 @@
 		"ChunkBuilderMixin",
 		"HandledScreenMixin",
 		"WorldRendererMixin",
-		"WorldRendererScheduleMixin",
-		"BeaconBlockEntityRendererMixin"
+		"WorldRendererScheduleMixin"
 	],
 	"injectors": {
 		"defaultRequire": 1
