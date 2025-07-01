@@ -12,11 +12,14 @@
   "option.barium.enable_frustum_culling": "Ativar Otimização por Frustum",
   "tooltip.barium.enable_frustum_culling": "Impede que o jogo reconstrua chunks que não estão no campo de visão da câmera.\nReduz a carga na CPU ao virar a visão.",
 
-  "option.barium.enable_visibility_graph_culling": "Ativar Otimização por Visibilidade (Experimental)",
-  "tooltip.barium.enable_visibility_graph_culling": "Usa um sistema agressivo de raios para renderizar apenas chunks que são realmente visíveis.\nEnorme ganho de performance, pode causar pequenos artefatos visuais.",
+  "option.barium.enable_visibility_graph_culling": "Ativar Otimização por Visibilidade (Smart)",
+  "tooltip.barium.enable_visibility_graph_culling": "Usa um sistema agressivo de raios para renderizar apenas chunks que são realmente visíveis.\nAgora atualiza com menos frequência ao ficar parado para economizar CPU.",
   
   "option.barium.enable_advanced_section_culling": "Ativar Otimização Avançada de Seções",
   "tooltip.barium.enable_advanced_section_culling": "Impede a renderização de seções de chunk (áreas 16x16x16) que não são visíveis da câmera, como cavernas fechadas.\nAltamente eficaz, mas pode causar artefatos visuais em casos raros.",
+
+  "option.barium.enable_enclosed_section_culling": "Otimizar Seções Fechadas (Economia de CPU)",
+  "tooltip.barium.enable_enclosed_section_culling": "Impede a renderização de seções de chunk que estão completamente cercadas por outras seções sólidas (ex: pedra no subsolo).\nGrande economia de CPU, especialmente para renderizadores via software.",
 
   "option.barium.cull_empty_sections": "Otimizar Seções de Chunk Vazias",
   "tooltip.barium.cull_empty_sections": "Pula a renderização de seções do mundo que contêm apenas ar.\nGrande ganho de performance em mundos com verticalidade.",
@@ -47,8 +50,8 @@
   "option.barium.dense_foliage_culling_level": "Nível da Otimização de Folhagem (0-4)",
   "tooltip.barium.dense_foliage_culling_level": "Quão agressivamente otimizar a folhagem usando um padrão baseado na posição. Níveis mais altos são mais agressivos.\n0=Desligado, 1=Leve, 2=Médio, 3=Pesado, 4=Extremo.",
 
-  "option.barium.enable_beacon_culling": "Ativar Otimização de Sinalizadores",
-  "tooltip.barium.enable_beacon_culling": "Para de renderizar raios de sinalizadores muito distantes.",
+  "option.barium.enable_beacon_optimization": "Ativar Otimização de Sinalizadores",
+  "tooltip.barium.enable_beacon_optimization": "Para de renderizar raios de sinalizadores muito distantes para melhorar o desempenho.",
 
   "option.barium.enable_particle_optimizations": "Ativar Otimização de Partículas",
   "tooltip.barium.enable_particle_optimizations": "Pula a renderização de partículas que estão fora da tela ou muito longe.",

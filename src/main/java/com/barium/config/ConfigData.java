@@ -20,7 +20,7 @@ public class ConfigData {
     public double BLOCK_ENTITY_OCCLUSION_MIN_DISTANCE_SQ = 8 * 8;
     public boolean ENABLE_DENSE_FOLIAGE_CULLING = true;
     public int DENSE_FOLIAGE_CULLING_LEVEL = 2;
-    public boolean ENABLE_BEACON_BEAM_CULLING = true;
+    public boolean ENABLE_BEACON_BEAM_OPTIMIZATION = true;
     public double BEACON_BEAM_CULL_DISTANCE_SQ = 256 * 256;
 
     // ================== Particle Optimizer ================== //

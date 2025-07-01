@@ -127,10 +127,10 @@ public class BariumModMenu implements ModMenuApi {
                     .setSaveConsumer(newValue -> BariumConfig.C.DENSE_FOLIAGE_CULLING_LEVEL = newValue)
                     .build());
                     
-            cullingLod.addEntry(entryBuilder.startBooleanToggle(Text.translatable("option.barium.enable_beacon_culling"), BariumConfig.C.ENABLE_BEACON_BEAM_CULLING)
-                    .setDefaultValue(defaults.ENABLE_BEACON_BEAM_CULLING)
-                    .setTooltip(Text.translatable("tooltip.barium.enable_beacon_culling"))
-                    .setSaveConsumer(newValue -> BariumConfig.C.ENABLE_BEACON_BEAM_CULLING = newValue)
+            cullingLod.addEntry(entryBuilder.startBooleanToggle(Text.translatable("option.barium.enable_beacon_optimization"), BariumConfig.C.ENABLE_BEACON_BEAM_OPTIMIZATION)
+                    .setDefaultValue(defaults.ENABLE_BEACON_BEAM_OPTIMIZATION)
+                    .setTooltip(Text.translatable("tooltip.barium.enable_beacon_optimization"))
+                    .setSaveConsumer(newValue -> BariumConfig.C.ENABLE_BEACON_BEAM_OPTIMIZATION = newValue)
                     .build());
 
             // ===================================================================

@@ -12,11 +12,14 @@
   "option.barium.enable_frustum_culling": "Enable Frustum Culling",
   "tooltip.barium.enable_frustum_culling": "Prevents the game from rebuilding chunks that are not inside the camera's view.\nReduces CPU load when turning around.",
 
-  "option.barium.enable_visibility_graph_culling": "Enable Visibility Culling (Experimental)",
-  "tooltip.barium.enable_visibility_graph_culling": "Uses aggressive ray-casting to only render chunks that are truly visible.\nMassive performance gain, may cause minor visual artifacts.",
+  "option.barium.enable_visibility_graph_culling": "Enable Visibility Culling (Smart)",
+  "tooltip.barium.enable_visibility_graph_culling": "Uses aggressive ray-casting to only render chunks that are truly visible.\nNow updates less frequently when standing still to save CPU.",
   
   "option.barium.enable_advanced_section_culling": "Enable Advanced Section Culling",
   "tooltip.barium.enable_advanced_section_culling": "Prevents rendering of chunk sections (16x16x16 areas) that are not visible from the camera, such as enclosed caves.\nHighly effective, but may cause visual artifacts in rare cases.",
+
+  "option.barium.enable_enclosed_section_culling": "Enable Enclosed Section Culling (CPU Saver)",
+  "tooltip.barium.enable_enclosed_section_culling": "Prevents rendering of chunk sections that are completely surrounded by other solid sections (e.g. deep underground stone).\nMassive CPU savings, especially for software renderers.",
 
   "option.barium.cull_empty_sections": "Cull Empty Chunk Sections",
   "tooltip.barium.cull_empty_sections": "Skips rendering sections of the world that only contain air.\nSignificant performance boost in worlds with verticality.",
@@ -47,8 +50,8 @@
   "option.barium.dense_foliage_culling_level": "Foliage Culling Level (0-4)",
   "tooltip.barium.dense_foliage_culling_level": "How aggressively to cull foliage using a position-based pattern. Higher levels are more aggressive.\n0=Off, 1=Light, 2=Medium, 3=Heavy, 4=Extreme.",
 
-  "option.barium.enable_beacon_culling": "Enable Beacon Beam Culling",
-  "tooltip.barium.enable_beacon_culling": "Stops rendering very distant beacon beams.",
+  "option.barium.enable_beacon_optimization": "Enable Beacon Beam Optimization",
+  "tooltip.barium.enable_beacon_optimization": "Stops rendering very distant beacon beams to improve performance.",
 
   "option.barium.enable_particle_optimizations": "Enable Particle Optimizations",
   "tooltip.barium.enable_particle_optimizations": "Skips rendering particles that are outside the screen or too far away.",
