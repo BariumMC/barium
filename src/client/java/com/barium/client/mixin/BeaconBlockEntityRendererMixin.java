@@ -1,41 +1,54 @@
-// --- Mantenha o código do seu BeaconBlockEntityRendererMixin.java como está ---
-// (Com a assinatura que parece correta com base na documentação)
 package com.barium.client.mixin;
 
 import com.barium.config.BariumConfig;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.render.Camera;
-import net.minecraft.client.render.VertexConsumerProvider;
 import net.minecraft.client.render.block.entity.BeaconBlockEntityRenderer;
+import net.minecraft.client.render.VertexConsumerProvider;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.block.entity.BeaconBlockEntity;
-import net.minecraft.util.math.Vec3d; // Import necessário para Vec3d
+import net.minecraft.client.render.Camera;
+import net.minecraft.client.MinecraftClient;
+import net.minecraft.util.math.Vec3d;
+
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
+/**
+ * Mixin para otimização de renderização de raios de beacon
+ * Atualizado para Minecraft 1.21.6
+ */
 @Mixin(BeaconBlockEntityRenderer.class)
 public class BeaconBlockEntityRendererMixin {
 
     /**
-     * Corrigido: A assinatura do método render foi atualizada para incluir Vec3d cameraPos
-     * e a ordem dos parâmetros light/overlay foi ajustada conforme a documentação.
-     * Se este erro persistir, investigue o refmap e os mapeamentos exatos do Yarn 1.21.6.
+     * Otimização para pular a renderização de raios de beacon distantes
      */
-    @Inject(
-        // Assinatura que parece correta com base na documentação fornecida.
-        method = "render(Lnet/minecraft/block/entity/BeaconBlockEntity;FLnet/minecraft/client/util/math/MatrixStack;Lnet/minecraft/client/render/VertexConsumerProvider;IILnet/minecraft/util/math/Vec3d;)V",
-        at = @At("HEAD"),
-        cancellable = true
-    )
-    private void barium$cullDistantBeaconBeams(BeaconBlockEntity beacon, float tickDelta, MatrixStack matrices, VertexConsumerProvider vertexConsumers, int light, int overlay, Vec3d cameraPos, CallbackInfo ci) { // Adicionado Vec3d cameraPos como parâmetro
-        if (!BariumConfig.C.ENABLE_BEACON_BEAM_CULLING) {
+    @Inject(method = "render*", at = @At("HEAD"), cancellable = true)
+    private void barium$skipDistantBeaconBeams(BeaconBlockEntity beaconBlockEntity, 
+                                             float tickDelta, 
+                                             MatrixStack matrices, 
+                                             VertexConsumerProvider vertexConsumers,
+                                             int light, 
+                                             int overlay, 
+                                             CallbackInfo ci) {
+        // Se a otimização estiver desativada, não faz nada
+        if (!BariumConfig.C.ENABLE_BEACON_BEAM_OPTIMIZATION) {
             return;
         }
         
-        double distanceSq = beacon.getPos().getSquaredDistance(cameraPos); // Usamos o cameraPos passado
-
+        // Obtém a posição do beacon e da câmera
+        Vec3d beaconPos = Vec3d.ofCenter(beaconBlockEntity.getPos());
+        Camera camera = MinecraftClient.getInstance().gameRenderer.getCamera();
+        Vec3d cameraPos = camera.getPos();
+        
+        // Calcula a distância ao quadrado
+        double dx = beaconPos.x - cameraPos.x;
+        double dy = beaconPos.y - cameraPos.y;
+        double dz = beaconPos.z - cameraPos.z;
+        double distanceSq = dx * dx + dy * dy + dz * dz;
+        
+        // Se estiver muito longe, não renderiza o raio
         if (distanceSq > BariumConfig.C.BEACON_BEAM_CULL_DISTANCE_SQ) {
             ci.cancel();
         }

@@ -18,7 +18,8 @@
 		"ChunkBuilderMixin",
 		"HandledScreenMixin",
 		"WorldRendererMixin",
-		"WorldRendererScheduleMixin"
+		"WorldRendererScheduleMixin",
+		"text.TextRendererMixin"
 	],
 	"injectors": {
 		"defaultRequire": 1
