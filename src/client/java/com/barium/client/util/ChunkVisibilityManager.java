@@ -33,14 +33,7 @@ public class ChunkVisibilityManager {
         if (visibilityTask != null && !visibilityTask.isDone()) return;
         
         long currentTime = System.currentTimeMillis();
-
-        // CORREÇÃO: Removida a lógica complexa de verificação de movimento.
-        // Agora, o sistema usa um temporizador simples. Isso garante que, se o jogador
-        // girar a câmera (mesmo parado), a visibilidade será recalculada,
-        // corrigindo o bug dos chunks invisíveis.
-        if ((currentTime - lastUpdateTime) < UPDATE_INTERVAL_MS) {
-            return;
-        }
+        if ((currentTime - lastUpdateTime) < UPDATE_INTERVAL_MS) return;
 
         lastUpdateTime = currentTime;
         visibilityTask = BariumClient.RENDER_THREAD_POOL.submit(() -> rebuildVisibilityMap(client));
@@ -87,7 +80,21 @@ public class ChunkVisibilityManager {
         }
         this.visibleChunkKeys.set(finalVisibleChunks);
 
-        final LongSet finalVisibleSections = new LongOpenHashSet(hitSections);
+        final LongSet finalVisibleSections = new LongOpenHashSet();
+
+        // ** A CORREÇÃO **
+        // Adiciona as seções atingidas E suas vizinhas verticais para evitar buracos.
+        for(long sectionKey : hitSections) {
+            int x = BlockPos.unpackLongX(sectionKey);
+            int y = BlockPos.unpackLongY(sectionKey);
+            int z = BlockPos.unpackLongZ(sectionKey);
+
+            finalVisibleSections.add(sectionKey); // A própria seção
+            finalVisibleSections.add(BlockPos.asLong(x, y + 1, z)); // A seção de cima
+            finalVisibleSections.add(BlockPos.asLong(x, y - 1, z)); // A seção de baixo
+        }
+
+        // Garante que a área imediata ao redor do jogador esteja sempre visível.
         int playerSectionY = client.world.getSectionIndex(client.player.getBlockY());
         BlockPos playerSectionPos = new BlockPos(playerChunkPos.x, playerSectionY, playerChunkPos.z);
         for(int x = -1; x <= 1; x++) {
