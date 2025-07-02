@@ -52,7 +52,7 @@ public class BariumClient implements ClientModInitializer {
         return instance;
     }
 
-    // CORREÇÃO: O método getter foi adicionado de volta para que os mixins possam usá-lo.
+    // CORREÇÃO: O método getter foi adicionado de volta para que os mixins possam usá-lo
     public ChunkRenderManager getChunkRenderManager() {
         return chunkRenderManager;
     }
