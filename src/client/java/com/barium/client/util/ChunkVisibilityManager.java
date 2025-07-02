@@ -83,7 +83,8 @@ public class ChunkVisibilityManager {
         final LongSet finalVisibleSections = new LongOpenHashSet();
 
         // ** A CORREÇÃO **
-        // Adiciona as seções atingidas E suas vizinhas verticais para evitar buracos.
+        // Adiciona as seções atingidas E suas vizinhas verticais para criar uma "margem de segurança"
+        // e evitar os buracos visuais no terreno.
         for(long sectionKey : hitSections) {
             int x = BlockPos.unpackLongX(sectionKey);
             int y = BlockPos.unpackLongY(sectionKey);

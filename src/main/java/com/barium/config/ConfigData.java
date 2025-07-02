@@ -5,7 +5,7 @@ public class ConfigData {
     // ================== Chunk Performance ================== //
     public boolean ENABLE_FRUSTUM_CHUNK_CULLING = true;
     public boolean ENABLE_VISIBILITY_GRAPH_CULLING = true;
-    // ** A CORREÇÃO **: Desligado por padrão para evitar bugs visuais.
+    // ** A CORREÇÃO **: Desligado por padrão para garantir estabilidade.
     public boolean ENABLE_ADVANCED_SECTION_CULLING = false;
     public boolean ENABLE_ENCLOSED_SECTION_CULLING = false;
     public boolean ENABLE_EMPTY_CHUNK_SECTION_CULLING = true;
