@@ -17,8 +17,7 @@
 		"ClientWorldMixin",
 		"ChunkBuilderMixin",
 		"HandledScreenMixin",
-		"WorldRendererMixin",
-		"WorldRendererScheduleMixin"
+		"WorldRendererMixin"
 	],
 	"injectors": {
 		"defaultRequire": 1
