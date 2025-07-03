@@ -9,7 +9,7 @@ public class ChunkCullingUtils {
 
     /**
      * Verifica se uma seção de chunk (identificada pela sua origem) está 100% cercada
-     * por outras seções cujas faces são compostas apenas de blocos totalmente opacos.
+     * por outras seções cujas faces são compostas apenas de blocos que são cubos completos.
      * Retorna true se a seção estiver totalmente ocluída e pode ser pulada.
      *
      * @param world O mundo do cliente.
@@ -30,38 +30,37 @@ public class ChunkCullingUtils {
     }
 
     /**
-     * Verifica se a face de uma seção vizinha, que está encostada na nossa seção, é totalmente opaca.
+     * Verifica se a face de uma seção vizinha, que está encostada na nossa seção, é composta
+     * inteiramente de blocos que são "full cubes".
      *
      * @param world O mundo do cliente.
      * @param ourSectionOrigin A origem da nossa seção.
      * @param direction A direção para olhar (ex: Direction.NORTH).
-     * @return true se a face vizinha naquela direção for 100% opaca.
+     * @return true se a face vizinha naquela direção for 100% opaca e sólida.
      */
     public static boolean isNeighboringFaceOpaque(World world, BlockPos ourSectionOrigin, Direction direction) {
         BlockPos neighborSectionOrigin = ourSectionOrigin.add(direction.getOffsetX() * 16, direction.getOffsetY() * 16, direction.getOffsetZ() * 16);
 
         // A face que precisamos verificar no vizinho é a oposta à direção que estamos olhando.
-        // Ex: Para checar a face NORTE da nossa seção, precisamos ver a face SUL do vizinho do norte.
         Direction faceOnNeighbor = direction.getOpposite();
 
         // Percorre a face 16x16 do vizinho.
         for (int u = 0; u < 16; u++) {
             for (int v = 0; v < 16; v++) {
                 BlockPos blockPosOnFace = getBlockPosOnFace(neighborSectionOrigin, faceOnNeighbor, u, v);
-
-                // world.getBlockState é seguro de ser chamado a partir de threads de rebuild de chunks.
+                
                 BlockState state = world.getBlockState(blockPosOnFace);
 
-                // --- A CORREÇÃO ESTÁ AQUI ---
-                // Usamos state.blocksVision(), que é o método padrão e correto em 1.21.7
-                // para determinar se um bloco bloqueia a visão para fins de culling.
-                if (!state.blocksVision(world, blockPosOnFace)) {
-                    // Se um único bloco na face vizinha não for um oclusor perfeito, a face inteira não é.
+                // --- ESTA É A CORREÇÃO FINAL E CORRETA ---
+                // O método isFullCube(BlockView, BlockPos) checa se o bloco é um cubo sólido de 1x1x1.
+                // É o método mais adequado para determinar se a visão é completamente bloqueada.
+                if (!state.isFullCube(world, blockPosOnFace)) {
+                    // Se um único bloco na face vizinha não for um cubo completo, a face não é oclusora.
                     return false;
                 }
             }
         }
-        // Se todos os 256 blocos na face forem opacos, esta face é uma oclusora perfeita.
+        // Se todos os 256 blocos na face forem cubos completos, esta face é uma oclusora perfeita.
         return true;
     }
 
