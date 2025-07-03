@@ -48,13 +48,14 @@ public class ChunkCullingUtils {
         for (int u = 0; u < 16; u++) {
             for (int v = 0; v < 16; v++) {
                 BlockPos blockPosOnFace = getBlockPosOnFace(neighborSectionOrigin, faceOnNeighbor, u, v);
-                
+
                 // world.getBlockState é seguro de ser chamado a partir de threads de rebuild de chunks.
                 BlockState state = world.getBlockState(blockPosOnFace);
 
-                // isOpaqueFullCube é o método mais preciso e confiável do Minecraft.
-                // Ele só retorna true para blocos que são cubos 1x1x1 completos e que bloqueiam a luz.
-                if (!state.isOpaqueFullCube(world, blockPosOnFace)) {
+                // --- A CORREÇÃO ESTÁ AQUI ---
+                // Usamos state.blocksVision(), que é o método padrão e correto em 1.21.7
+                // para determinar se um bloco bloqueia a visão para fins de culling.
+                if (!state.blocksVision(world, blockPosOnFace)) {
                     // Se um único bloco na face vizinha não for um oclusor perfeito, a face inteira não é.
                     return false;
                 }
