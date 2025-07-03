@@ -1,9 +1,9 @@
-gradle.startParameter.configurationCache.set(true)
-
 plugins {
 	id 'fabric-loom' version '1.10-SNAPSHOT'
 	id 'maven-publish'
 }
+
+gradle.startParameter.configurationCache.set(true)
 
 version = project.mod_version
 group = project.maven_group
