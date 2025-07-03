@@ -91,5 +91,11 @@
   "option.barium.reduce_ambient_particles": "Reduzir Partículas de Ambiente",
   "tooltip.barium.reduce_ambient_particles": "Reduz a frequência de efeitos de partículas do ambiente (fumaça de tocha, gotas d'água).",
   "option.barium.enable_hopper_culling": "Ativar Otimização de Funis",
-  "tooltip.barium.enable_hopper_culling": "Reduz a frequência de atualização de funis distantes. Grande economia de CPU para farms."
+  "tooltip.barium.enable_hopper_culling": "Reduz a frequência de atualização de funis distantes. Grande economia de CPU para farms.",
+
+  "option.barium.enable_flood_fill_culling": "Ativar Otimização por Preenchimento (Flood-Fill)",
+  "tooltip.barium.enable_flood_fill_culling": "Um algoritmo robusto que descobre chunks visíveis 'inundando' a visão a partir da câmera. Muito estável e eficaz, impede a renderização de tudo que o jogador não pode ver. Recomendado ATIVADO.",
+
+  "option.barium.enable_occlusion_culling": "Ativar Otimização por Oclusão Total",
+  "tooltip.barium.enable_occlusion_culling": "Para de renderizar seções de chunk que estão 100% cercadas por blocos sólidos e opacos. Altamente eficaz no subsolo e garante um grande ganho de FPS sem bugs visuais."
 }

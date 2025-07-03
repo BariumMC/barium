@@ -4,10 +4,20 @@ public class ConfigData {
 
     // ================== Chunk Performance ================== //
     public boolean ENABLE_FRUSTUM_CHUNK_CULLING = true;
-    public boolean ENABLE_VISIBILITY_GRAPH_CULLING = true;
-    // ** A CORREÇÃO **: Desligado por padrão para garantir estabilidade.
+
+    // --- NOVA OTIMIZAÇÃO: Flood-Fill (Estável) ---
+    // Ativada por padrão como a principal otimização de visibilidade.
+    public boolean ENABLE_FLOOD_FILL_CULLING = true;
+
+    // --- NOVA OTIMIZAÇÃO: Oclusão Total (Estável) ---
+    // Ótima para cavernas e subsolo, sem bugs visuais.
+    public boolean ENABLE_OCCLUSION_CULLING = true;
+
+    // --- Otimizações Experimentais Antigas (Agora Desativadas por Padrão) ---
+    public boolean ENABLE_VISIBILITY_GRAPH_CULLING = false; // Substituída pelo Flood-Fill
     public boolean ENABLE_ADVANCED_SECTION_CULLING = false;
-    public boolean ENABLE_ENCLOSED_SECTION_CULLING = false;
+    public boolean ENABLE_ENCLOSED_SECTION_CULLING = false; // Substituída pela Oclusão Total
+
     public boolean ENABLE_EMPTY_CHUNK_SECTION_CULLING = true;
     public boolean ENABLE_CHUNK_UPDATE_THROTTLING = true;
     public int MAX_CHUNK_UPLOADS_PER_FRAME = 4;
@@ -26,7 +36,7 @@ public class ConfigData {
 
     // ================== Particle Optimizer ================== //
     public boolean ENABLE_PARTICLE_OPTIMIZATION = true;
-    public double PARTICLE_CULL_DISTANCE_SQ = 128 * 128; 
+    public double PARTICLE_CULL_DISTANCE_SQ = 128 * 128;
     public boolean ENABLE_EXPLOSION_PARTICLE_REDUCTION = true;
     public boolean ENABLE_GLOBAL_PARTICLE_LIMIT = true;
     public int MAX_GLOBAL_PARTICLES = 4096;

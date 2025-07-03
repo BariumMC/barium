@@ -1,66 +1,80 @@
 package com.barium.client.util;
 
-import net.minecraft.client.world.ClientWorld;
+import net.minecraft.block.BlockState;
+import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
-import net.minecraft.world.chunk.Chunk;
-import net.minecraft.world.chunk.ChunkSection;
+import net.minecraft.world.World;
 
 public class ChunkCullingUtils {
 
     /**
-     * Verifica se uma seção de chunk está completamente cercada por outras seções opacas.
-     * Esta é uma otimização poderosa para renderizadores de CPU, pois evita a reconstrução
-     * de chunks que são garantidamente invisíveis (ex: no subsolo profundo).
+     * Verifica se uma seção de chunk (identificada pela sua origem) está 100% cercada
+     * por outras seções cujas faces são compostas apenas de blocos totalmente opacos.
+     * Retorna true se a seção estiver totalmente ocluída e pode ser pulada.
      *
      * @param world O mundo do cliente.
-     * @param sectionX Coordenada X da seção.
-     * @param sectionY Coordenada Y da seção.
-     * @param sectionZ Coordenada Z da seção.
-     * @return true se a seção estiver totalmente ocluída, false caso contrário.
+     * @param sectionOrigin A posição do bloco de origem da seção (geralmente com coordenadas múltiplas de 16).
+     * @return true se a seção estiver totalmente ocluída.
      */
-    public static boolean isSectionFullyEnclosed(ClientWorld world, int sectionX, int sectionY, int sectionZ) {
-        // Itera sobre todas as 6 direções (cima, baixo, norte, sul, leste, oeste).
-        for (Direction direction : Direction.values()) {
-            int neighborX = sectionX + direction.getOffsetX();
-            int neighborY = sectionY + direction.getOffsetY();
-            int neighborZ = sectionZ + direction.getOffsetZ();
+    public static boolean isSectionTotallyOccluded(World world, BlockPos sectionOrigin) {
+        if (world == null) return false;
 
-            // Verifica se o vizinho está fora dos limites do mundo. Se estiver, não está fechado.
-            if (neighborY < world.getBottomSectionCoord() || neighborY >= world.getTopSectionCoord()) {
-                return false;
-            }
-
-            Chunk neighborChunk = world.getChunk(neighborX, neighborZ);
-            ChunkSection neighborSection = neighborChunk.getSection(world.sectionIndexToCoord(neighborY));
-
-            // Se a seção vizinha não for opaca, então a seção atual não está fechada.
-            if (!isSectionConsideredOpaque(neighborSection)) {
+        for (Direction faceDirection : Direction.values()) {
+            if (!isNeighboringFaceOpaque(world, sectionOrigin, faceDirection)) {
+                // Se qualquer uma das 6 faces não estiver bloqueada por uma face opaca, a seção é visível.
                 return false;
             }
         }
-
-        // Se todos os 6 vizinhos são opacos, a seção está totalmente fechada.
+        // Todas as 6 faces estão bloqueadas, a seção é invisível.
         return true;
     }
 
     /**
-     * Uma heurística rápida para determinar se uma seção de chunk pode ser considerada "opaca".
-     * Não precisa ser 100% precisa, mas deve ser rápida.
+     * Verifica se a face de uma seção vizinha, que está encostada na nossa seção, é totalmente opaca.
      *
-     * @param section A seção a ser verificada.
-     * @return true se a seção provavelmente for opaca.
+     * @param world O mundo do cliente.
+     * @param ourSectionOrigin A origem da nossa seção.
+     * @param direction A direção para olhar (ex: Direction.NORTH).
+     * @return true se a face vizinha naquela direção for 100% opaca.
      */
-    private static boolean isSectionConsideredOpaque(ChunkSection section) {
-        // Se a seção não existe ou está vazia (só ar), definitivamente não é opaca.
-        // O método isEmpty() é uma verificação rápida que o próprio Minecraft usa.
-        if (section == null || section.isEmpty()) {
-            return false;
-        }
+    public static boolean isNeighboringFaceOpaque(World world, BlockPos ourSectionOrigin, Direction direction) {
+        BlockPos neighborSectionOrigin = ourSectionOrigin.add(direction.getOffsetX() * 16, direction.getOffsetY() * 16, direction.getOffsetZ() * 16);
 
-        // Uma heurística mais forte seria verificar se a contagem de blocos não-aéreos
-        // está acima de um certo limite, mas `!isEmpty()` já é um bom e rápido começo.
-        // Se a seção não está vazia, há uma boa chance de ela ser opaca o suficiente para
-        // esconder a seção vizinha. Esta é uma troca de precisão por velocidade.
+        // A face que precisamos verificar no vizinho é a oposta à direção que estamos olhando.
+        // Ex: Para checar a face NORTE da nossa seção, precisamos ver a face SUL do vizinho do norte.
+        Direction faceOnNeighbor = direction.getOpposite();
+
+        // Percorre a face 16x16 do vizinho.
+        for (int u = 0; u < 16; u++) {
+            for (int v = 0; v < 16; v++) {
+                BlockPos blockPosOnFace = getBlockPosOnFace(neighborSectionOrigin, faceOnNeighbor, u, v);
+                
+                // world.getBlockState é seguro de ser chamado a partir de threads de rebuild de chunks.
+                BlockState state = world.getBlockState(blockPosOnFace);
+
+                // isOpaqueFullCube é o método mais preciso e confiável do Minecraft.
+                // Ele só retorna true para blocos que são cubos 1x1x1 completos e que bloqueiam a luz.
+                if (!state.isOpaqueFullCube(world, blockPosOnFace)) {
+                    // Se um único bloco na face vizinha não for um oclusor perfeito, a face inteira não é.
+                    return false;
+                }
+            }
+        }
+        // Se todos os 256 blocos na face forem opacos, esta face é uma oclusora perfeita.
         return true;
+    }
+
+    /**
+     * Helper matemático para obter a posição de um bloco em uma das 6 faces de um cubo de 16x16x16.
+     */
+    private static BlockPos getBlockPosOnFace(BlockPos origin, Direction face, int u, int v) {
+        return switch (face) {
+            case DOWN -> new BlockPos(origin.getX() + u, origin.getY(), origin.getZ() + v);
+            case UP -> new BlockPos(origin.getX() + u, origin.getY() + 15, origin.getZ() + v);
+            case NORTH -> new BlockPos(origin.getX() + u, origin.getY() + v, origin.getZ());
+            case SOUTH -> new BlockPos(origin.getX() + u, origin.getY() + v, origin.getZ() + 15);
+            case WEST -> new BlockPos(origin.getX(), origin.getY() + v, origin.getZ() + u);
+            case EAST -> new BlockPos(origin.getX() + 15, origin.getY() + v, origin.getZ() + u);
+        };
     }
 }

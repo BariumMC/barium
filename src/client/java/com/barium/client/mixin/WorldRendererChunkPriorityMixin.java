@@ -3,6 +3,7 @@ package com.barium.client.mixin;
 import com.barium.client.BariumClient;
 import com.barium.client.util.ChunkRenderManager;
 import com.barium.client.util.ChunkVisibilityManager;
+import com.barium.client.util.FloodFillVisibilityManager; // Importa o novo manager
 import com.barium.client.optimization.ChunkUploadThrottler;
 import com.barium.config.BariumConfig;
 import net.minecraft.client.MinecraftClient;
@@ -25,15 +26,23 @@ public abstract class WorldRendererChunkPriorityMixin {
 
     @Inject(method = "setupTerrain(Lnet/minecraft/client/render/Camera;Lnet/minecraft/client/render/Frustum;ZZ)V", at = @At("HEAD"))
     private void barium$updateAllChunkManagers(Camera camera, Frustum frustum, boolean hasForcedFrustum, boolean spectator, CallbackInfo ci) {
-        if (client.player == null) return;
+        if (client.world == null || client.player == null) {
+            FloodFillVisibilityManager.getInstance().clear();
+            ChunkVisibilityManager.getInstance().clear();
+            return;
+        }
 
-        // Camada 1: Atualiza o Frustum Culling (a rede de segurança)
+        // Camada 1: Frustum Culling (a base)
         if (BariumConfig.C.ENABLE_FRUSTUM_CHUNK_CULLING) {
-            // CORREÇÃO: Acessando o manager através do getter que foi adicionado de volta.
             BariumClient.getInstance().getChunkRenderManager().calculateChunksToRender(client, frustum);
         }
 
-        // Camada 2: Dispara a atualização do Visibility Graph (a otimização agressiva)
+        // Camada 2: Otimização Estável por Flood-Fill (a nova otimização principal)
+        if (BariumConfig.C.ENABLE_FLOOD_FILL_CULLING) {
+            FloodFillVisibilityManager.getInstance().update(client);
+        }
+
+        // Camada 3: Otimização Experimental por Ray-Casting (antiga)
         if (BariumConfig.C.ENABLE_VISIBILITY_GRAPH_CULLING) {
             ChunkVisibilityManager.getInstance().update(client);
         }

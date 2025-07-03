@@ -91,5 +91,11 @@
   "option.barium.reduce_ambient_particles": "Reduce Ambient Particles",
   "tooltip.barium.reduce_ambient_particles": "Reduces the frequency of ambient particle effects (torch smoke, water drips).",
   "option.barium.enable_hopper_culling": "Enable Hopper Culling",
-  "tooltip.barium.enable_hopper_culling": "Reduces the update frequency of distant hoppers. Huge CPU saver for farms."
+  "tooltip.barium.enable_hopper_culling": "Reduces the update frequency of distant hoppers. Huge CPU saver for farms.",
+
+  "option.barium.enable_flood_fill_culling": "Enable Flood-Fill Culling",
+  "tooltip.barium.enable_flood_fill_culling": "A robust algorithm that discovers visible chunks by 'flooding' out from the camera. Very stable and effective, prevents rendering anything the player can't see. Recommended ON.",
+
+  "option.barium.enable_occlusion_culling": "Enable Total Occlusion Culling",
+  "tooltip.barium.enable_occlusion_culling": "Stops rendering chunk sections that are 100% surrounded by solid, opaque blocks. Highly effective underground and provides a large FPS boost with no visual bugs."
 }

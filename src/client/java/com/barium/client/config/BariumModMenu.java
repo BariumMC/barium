@@ -71,6 +71,18 @@ public class BariumModMenu implements ModMenuApi {
                     .setSaveConsumer(newValue -> BariumConfig.C.MAX_CHUNK_UPLOADS_PER_FRAME = newValue)
                     .build());
 
+            chunkPerformance.addEntry(entryBuilder.startBooleanToggle(Text.translatable("option.barium.enable_flood_fill_culling"), BariumConfig.C.ENABLE_FLOOD_FILL_CULLING)
+                    .setDefaultValue(new ConfigData().ENABLE_FLOOD_FILL_CULLING)
+                    .setTooltip(Text.translatable("tooltip.barium.enable_flood_fill_culling"))
+                    .setSaveConsumer(newValue -> BariumConfig.C.ENABLE_FLOOD_FILL_CULLING = newValue)
+                    .build());
+
+            chunkPerformance.addEntry(entryBuilder.startBooleanToggle(Text.translatable("option.barium.enable_occlusion_culling"), BariumConfig.C.ENABLE_OCCLUSION_CULLING)
+                    .setDefaultValue(new ConfigData().ENABLE_OCCLUSION_CULLING)
+                    .setTooltip(Text.translatable("tooltip.barium.enable_occlusion_culling"))
+                    .setSaveConsumer(newValue -> BariumConfig.C.ENABLE_OCCLUSION_CULLING = newValue)
+                    .build());
+
             // ===================================================================
             // Categoria 2: Otimização e LOD (Level of Detail)
             // ===================================================================
