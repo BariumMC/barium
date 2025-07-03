@@ -1,3 +1,5 @@
+gradle.startParameter.configurationCache.set(true)
+
 plugins {
 	id 'fabric-loom' version '1.10-SNAPSHOT'
 	id 'maven-publish'
