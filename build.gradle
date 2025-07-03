@@ -1,3 +1,5 @@
+// build.gradle (FINAL CORRECTED VERSION)
+
 plugins {
 	id 'fabric-loom' version '1.10-SNAPSHOT'
 	id 'maven-publish'
@@ -5,6 +7,11 @@ plugins {
 
 version = project.mod_version
 group = project.maven_group
+
+// --- CONFIGURATION CACHE-SAFE VARIABLE ---
+// Read the version from the project object here, during the configuration phase.
+// This final variable is safe to use in task actions below.
+final String modVersionForExpansion = project.version
 
 base {
 	archivesName = project.archives_base_name
@@ -47,12 +54,14 @@ dependencies {
     modImplementation "me.shedaniel.cloth:cloth-config-fabric:${project.cloth_config_version}"
 }
 
+// THIS BLOCK IS NOW CORRECT AND SAFE FOR THE CONFIGURATION CACHE
 processResources {
-    filesMatching("fabric.mod.json") {
-        expand(
-            "version": project.version
+	filesMatching("fabric.mod.json") {
+		// Use the safe final variable instead of "project.version"
+		expand(
+            "version": modVersionForExpansion
         )
-    }
+	}
 }
 
 tasks.withType(JavaCompile).configureEach {
