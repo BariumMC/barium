@@ -60,7 +60,8 @@ public abstract class ChunkRenderMixin {
             }
         }
 
-        // --- Otimização de Frustum Culling (Sua implementação existente) ---
+        // --- Otimização de Frustum Culling (Sua implementação existente) --
+        
         if (BariumConfig.C.ENABLE_FRUSTUM_CHUNK_CULLING) {
             final int chunkX = origin.getX() >> 4;
             final int chunkZ = origin.getZ() >> 4;
