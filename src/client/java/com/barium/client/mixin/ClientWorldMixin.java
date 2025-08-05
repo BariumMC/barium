@@ -50,11 +50,10 @@ public abstract class ClientWorldMixin {
 
     /**
      * Otimização de Partículas de Explosão.
-     * SOLUÇÃO DEFINITIVA: Apontamos para o método apenas pelo nome e deixamos o Mixin
-     * resolver a assinatura, o que é mais robusto.
+     * CORREÇÃO FINAL: Usando o atributo 'method' correto na anotação @Inject.
      */
     @Inject(
-        value = "addParticle",
+        method = "addParticle(Lnet/minecraft/particle/ParticleEffect;DDDDDD)V",
         at = @At("HEAD"),
         cancellable = true
     )
