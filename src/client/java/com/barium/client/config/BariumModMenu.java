@@ -65,12 +65,6 @@ public class BariumModMenu implements ModMenuApi {
                     .setSaveConsumer(newValue -> BariumConfig.C.MAX_CHUNK_UPLOADS_PER_FRAME = newValue)
                     .build());
 
-            chunkPerformance.addEntry(entryBuilder.startBooleanToggle(Text.translatable("option.barium.enable_persistent_buffer_uploading"), BariumConfig.C.ENABLE_PERSISTENT_BUFFER_UPLOADING)
-                    .setDefaultValue(defaults.ENABLE_PERSISTENT_BUFFER_UPLOADING)
-                    .setTooltip(Text.translatable("tooltip.barium.enable_persistent_buffer_uploading"))
-                    .setSaveConsumer(newValue -> BariumConfig.C.ENABLE_PERSISTENT_BUFFER_UPLOADING = newValue)
-                    .build());
-
             // ===================================================================
             // Categoria 2: Otimização e LOD (Level of Detail)
             // ===================================================================
