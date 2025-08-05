@@ -1,6 +1,5 @@
 package com.barium.client.mixin;
 
-import com.barium.client.util.ChunkCullingUtils;
 import com.barium.client.util.ChunkRenderManager;
 import com.barium.client.util.FloodFillVisibilityManager;
 import com.barium.config.BariumConfig;
@@ -22,46 +21,10 @@ public abstract class ChunkRenderMixin {
     private void barium$onShouldBuild(CallbackInfoReturnable<Boolean> cir) {
         BlockPos origin = this.getOrigin();
         MinecraftClient client = MinecraftClient.getInstance();
+        if (client.player == null) return;
 
-        // --- Otimização de Oclusão Total (Ideal para subsolo) ---
-        if (BariumConfig.C.ENABLE_OCCLUSION_CULLING && client.world != null) {
-            if (ChunkCullingUtils.isSectionTotallyOccluded(client.world, origin)) {
-                cir.setReturnValue(false);
-                return;
-            }
-        }
-        
-        // --- Otimização de Visibilidade por Flood-Fill COM "BOLHA DE SEGURANÇA" ---
-        if (BariumConfig.C.ENABLE_FLOOD_FILL_CULLING) {
-            // Apenas aplica a otimização se o jogador existir no mundo
-            if (client.player != null) {
-                int sectionX = origin.getX() >> 4;
-                int sectionZ = origin.getZ() >> 4;
-
-                int playerChunkX = client.player.getChunkPos().x;
-                int playerChunkZ = client.player.getChunkPos().z;
-
-                // Calcula a distância em chunks do jogador até a seção que estamos verificando
-                int dx = Math.abs(playerChunkX - sectionX);
-                int dz = Math.abs(playerChunkZ - sectionZ);
-                
-                // Define um raio de segurança (1 significa uma área de 3x3 chunks ao redor do jogador)
-                int safetyRadius = 1;
-
-                // A otimização SÓ É APLICADA se o chunk estiver FORA da bolha de segurança.
-                if (dx > safetyRadius || dz > safetyRadius) {
-                    int sectionY = origin.getY() >> 4;
-                     if (!FloodFillVisibilityManager.getInstance().isSectionVisible(sectionX, sectionY, sectionZ)) {
-                        cir.setReturnValue(false);
-                        return; // Cancela a renderização do chunk distante
-                    }
-                }
-                // Se o chunk estiver DENTRO da bolha, a verificação é pulada e ele será renderizado.
-            }
-        }
-
-        // --- Otimização de Frustum Culling (Sua implementação existente) --
-        
+        // Verificação 1: Otimização de Frustum (a mais barata e rápida)
+        // Se o chunk inteiro não está no campo de visão da câmera, pulamos a reconstrução.
         if (BariumConfig.C.ENABLE_FRUSTUM_CHUNK_CULLING) {
             final int chunkX = origin.getX() >> 4;
             final int chunkZ = origin.getZ() >> 4;
@@ -70,5 +33,31 @@ public abstract class ChunkRenderMixin {
                 return;
             }
         }
+        
+        // Verificação 2: Otimização de Flood-Fill (verificação rápida com dados assíncronos)
+        // Usa dados pré-calculados para determinar a visibilidade. A verificação em si é muito rápida.
+        if (BariumConfig.C.ENABLE_FLOOD_FILL_CULLING) {
+            int sectionX = origin.getX() >> 4;
+            int sectionY = origin.getY() >> 4;
+            int sectionZ = origin.getZ() >> 4;
+
+            // A "bolha de segurança" impede que a otimização remova chunks muito próximos,
+            // evitando "buracos" visuais ao se virar rapidamente. O raio foi aumentado para mais estabilidade.
+            int playerChunkX = client.player.getChunkPos().x;
+            int playerChunkZ = client.player.getChunkPos().z;
+            int safetyRadius = 2; // Raio de segurança aumentado para uma área de 5x5 chunks.
+
+            // A otimização só é aplicada se o chunk estiver FORA da bolha de segurança.
+            if (Math.abs(playerChunkX - sectionX) > safetyRadius || Math.abs(playerChunkZ - sectionZ) > safetyRadius) {
+                 if (!FloodFillVisibilityManager.getInstance().isSectionVisible(sectionX, sectionY, sectionZ)) {
+                    cir.setReturnValue(false);
+                    return;
+                }
+            }
+        }
+
+        // A verificação síncrona de oclusão total (`isSectionTotallyOccluded`) foi REMOVIDA deste método.
+        // A sua execução aqui era muito cara e causava a lentidão no carregamento de chunks.
+        // A otimização Flood-Fill já lida com a maioria dos casos de oclusão de forma muito mais eficiente.
     }
 }

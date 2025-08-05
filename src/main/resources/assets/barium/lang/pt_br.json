@@ -18,6 +18,12 @@
   "option.barium.enable_advanced_section_culling": "Otim. Avançada de Seções (Experimental)",
   "tooltip.barium.enable_advanced_section_culling": "Impede a renderização de seções de chunk (áreas 16x16x16) que não são visíveis da câmera.\n[Aviso] Pode causar bugs visuais. Desativado por padrão para estabilidade.",
 
+  "option.barium.enable_chunk_update_throttling": "Limitar Atualização de Chunks",
+  "tooltip.barium.enable_chunk_update_throttling": "Limita quantos chunks são enviados para a GPU por frame.\nReduz travadinhas ao se mover ou virar rapidamente.",
+  
+  "option.barium.enable_persistent_buffer_uploading": "Ativar Upload com Buffers Persistentes",
+  "tooltip.barium.enable_persistent_buffer_uploading": "Usa um recurso moderno do OpenGL para enviar dados de chunks para a GPU com menos sincronização.\nPode reduzir travadinhas ao carregar chunks novos. [Requer drivers compatíveis com OpenGL 4.4+]",
+
   "option.barium.enable_enclosed_section_culling": "Otim. de Seções Fechadas (Experimental)",
   "tooltip.barium.enable_enclosed_section_culling": "Impede a renderização de seções de chunk que estão completamente cercadas por outras seções sólidas.\n[Aviso] Pode causar bugs visuais. Desativado por padrão para estabilidade.",
 
