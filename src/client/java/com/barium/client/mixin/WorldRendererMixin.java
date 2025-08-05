@@ -1,6 +1,5 @@
 package com.barium.client.mixin;
 
-import com.barium.client.optimization.ChunkVisibilityOptimizer;
 import com.barium.client.util.ChunkRenderManager;
 import com.barium.client.util.ChunkVisibilityManager;
 import com.barium.client.util.FloodFillVisibilityManager;
@@ -11,15 +10,12 @@ import net.minecraft.client.render.Camera;
 import net.minecraft.client.render.Frustum;
 import net.minecraft.client.render.WorldRenderer;
 import net.minecraft.client.render.chunk.ChunkBuilder;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Box;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
-import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 @Mixin(WorldRenderer.class)
 public abstract class WorldRendererMixin {
@@ -30,7 +26,6 @@ public abstract class WorldRendererMixin {
     /**
      * Atualiza todos os managers de otimização de uma só vez.
      * Injeta em `setupTerrain` para ter acesso ao Frustum e um ponto de atualização confiável por frame.
-     * Este método consolida o trabalho de WorldRendererMixin e WorldRendererChunkPriorityMixin.
      */
     @Inject(method = "setupTerrain(Lnet/minecraft/client/render/Camera;Lnet/minecraft/client/render/Frustum;ZZ)V", at = @At("HEAD"))
     private void barium$updateAllChunkManagers(Camera camera, Frustum frustum, boolean hasForcedFrustum, boolean spectator, CallbackInfo ci) {
@@ -68,19 +63,5 @@ public abstract class WorldRendererMixin {
         }
         // Reseta o contador do limitador de uploads por frame
         ChunkUploadThrottler.resetCounter();
-    }
-
-    /**
-     * Otimiza a verificação de visibilidade de chunk com margem de erro epsilon
-     * para evitar artefatos de renderização com ponto flutuante.
-     */
-    @Inject(method = "shouldRenderBlock", at = @At("HEAD"), cancellable = true)
-    private void barium$shouldRenderBlockOptimized(BlockPos pos, CallbackInfoReturnable<Boolean> cir) {
-        Camera camera = net.minecraft.client.MinecraftClient.getInstance().gameRenderer.getCamera();
-        Box boundingBox = new Box(pos).expand(8); // Chunk aproximado 16x16x16, centrado
-
-        if (!ChunkVisibilityOptimizer.isChunkVisible(boundingBox, camera)) {
-            cir.setReturnValue(false); // Cancela render se estiver fora da visibilidade com epsilon
-        }
     }
 }
