@@ -15,8 +15,7 @@ public class WorldRendererRenderLayerMixin {
 
     /**
      * Injeta no método que renderiza cada camada de blocos.
-     * CORREÇÃO FINAL: Usamos a assinatura exata e o seletor 'method' para garantir que
-     * o alvo correto seja encontrado, e usamos RenderLayer.TRANSLUCENT como um campo estático.
+     * CORREÇÃO FINAL: Usa RenderLayer.getTranslucent() que é o método correto.
      */
     @Inject(
         method = "renderLayer(Lnet/minecraft/client/render/RenderLayer;Lnet/minecraft/client/util/math/MatrixStack;DDDLorg/joml/Matrix4f;)V",
@@ -24,7 +23,7 @@ public class WorldRendererRenderLayerMixin {
         cancellable = true
     )
     private void barium$skipTranslucentLayer(RenderLayer renderLayer, MatrixStack matrices, double cameraX, double cameraY, double cameraZ, Matrix4f positionMatrix, CallbackInfo ci) {
-        if (BariumConfig.C.DISABLE_TRANSLUCENT_RENDERING && renderLayer == RenderLayer.TRANSLUCENT) {
+        if (BariumConfig.C.DISABLE_TRANSLUCENT_RENDERING && renderLayer == RenderLayer.getTranslucent()) {
             ci.cancel();
         }
     }
