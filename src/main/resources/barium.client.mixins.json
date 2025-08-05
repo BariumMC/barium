@@ -11,14 +11,14 @@
 		"ClientWorldMixin",
 		"DebugHudMixin",
 		"EntityRendererMixin",
+		"FluidBlockRendererMixin",
 		"GameRendererMixin",
 		"HandledScreenMixin",
 		"ParticleAccessor",
 		"ParticleManagerMixin",
 		"ParticleMixin",
 		"TextureAtlasMixin",
-		"WorldRendererMixin",
-		"WorldRendererRenderLayerMixin"
+		"WorldRendererMixin"
 	],
 	"injectors": {
 		"defaultRequire": 1

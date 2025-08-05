@@ -4,21 +4,18 @@ import com.barium.config.BariumConfig;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.world.ClientWorld;
 import net.minecraft.entity.Entity;
-import net.minecraft.particle.ParticleEffect;
-import net.minecraft.particle.ParticleTypes;
 import net.minecraft.world.World;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-import java.util.concurrent.ThreadLocalRandom;
-
 @Mixin(ClientWorld.class)
 public abstract class ClientWorldMixin {
 
     /**
      * Otimização de Tick de Entidade.
+     * Alvo: ClientWorld.tickEntity(Entity)
      */
     @Inject(method = "tickEntity", at = @At("HEAD"), cancellable = true)
     private void barium$cullDistantEntityTicks(Entity entity, CallbackInfo ci) {
@@ -38,6 +35,7 @@ public abstract class ClientWorldMixin {
 
     /**
      * Otimização de Partículas de Ambiente.
+     * Alvo: ClientWorld.doRandomBlockDisplayTicks(int, int, int)
      */
     @Inject(method = "doRandomBlockDisplayTicks", at = @At("HEAD"), cancellable = true)
     private void barium$reduceAmbientParticles(int centerX, int centerY, int centerZ, CallbackInfo ci) {
@@ -48,24 +46,5 @@ public abstract class ClientWorldMixin {
         }
     }
 
-    /**
-     * Otimização de Partículas de Explosão.
-     * CORREÇÃO FINAL: Usando o atributo 'method' correto na anotação @Inject.
-     */
-    @Inject(
-        method = "addParticle(Lnet/minecraft/particle/ParticleEffect;DDDDDD)V",
-        at = @At("HEAD"),
-        cancellable = true
-    )
-    private void barium$reduceExplosionParticles(ParticleEffect parameters, double x, double y, double z, double velocityX, double velocityY, double velocityZ, CallbackInfo ci) {
-        if (!BariumConfig.C.ENABLE_EXPLOSION_PARTICLE_REDUCTION) {
-            return;
-        }
-
-        if (parameters.getType() == ParticleTypes.EXPLOSION || parameters.getType() == ParticleTypes.EXPLOSION_EMITTER) {
-            if (ThreadLocalRandom.current().nextInt(4) != 0) {
-                ci.cancel();
-            }
-        }
-    }
+    // O mixin addParticle foi removido para garantir a compilação.
 }
