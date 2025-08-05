@@ -14,6 +14,7 @@ import net.minecraft.text.Text;
 import org.jetbrains.annotations.Nullable;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
+import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
@@ -25,6 +26,22 @@ public abstract class HandledScreenMixin<T extends ScreenHandler> {
 
     @Shadow @Nullable protected Slot focusedSlot;
     @Shadow protected T handler;
+
+    @Unique
+    private long barium_screenOpenedAt = 0;
+
+    @Inject(method = "init", at = @At("TAIL"))
+    private void barium$markOpenTime(CallbackInfo ci) {
+        barium_screenOpenedAt = System.currentTimeMillis();
+    }
+
+    @Inject(method = "render", at = @At("HEAD"), cancellable = true)
+    private void barium$skipFirstRenderFrame(DrawContext context, int mouseX, int mouseY, float delta, CallbackInfo ci) {
+        long now = System.currentTimeMillis();
+        if (now - barium_screenOpenedAt < 50) {
+            ci.cancel(); // Pula o primeiro frame de renderização pesada
+        }
+    }
 
     @Inject(
         method = "drawMouseoverTooltip(Lnet/minecraft/client/gui/DrawContext;II)V",
