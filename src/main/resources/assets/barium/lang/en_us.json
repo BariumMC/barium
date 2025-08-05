@@ -83,6 +83,11 @@
   "option.barium.enable_half_res_outlines": "Half Resolution Glowing Effect",
   "tooltip.barium.enable_half_res_outlines": "Renders the glowing effect at half resolution for better performance.",
   
+  "option.barium.disable_translucent_rendering": "Disable Translucent Rendering",
+  "tooltip.barium.disable_translucent_rendering": "Disables rendering of all translucent blocks like glass and water.\nProvides a significant FPS boost at the cost of visuals.",
+  "option.barium.disable_texture_animations": "Disable Texture Animations",
+  "tooltip.barium.disable_texture_animations": "Freezes animated textures (water, lava, portals) to save a small amount of CPU.",
+
   "option.barium.enable_entity_tick_culling": "Enable Entity Tick Culling",
   "tooltip.barium.enable_entity_tick_culling": "Reduces the update frequency of distant entities' logic (AI).",
   "option.barium.entity_tick_distance": "Entity Tick Distance",

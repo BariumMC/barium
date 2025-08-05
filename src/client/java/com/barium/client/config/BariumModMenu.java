@@ -34,23 +34,17 @@ public class BariumModMenu implements ModMenuApi {
                     .setTooltip(Text.translatable("tooltip.barium.enable_frustum_culling"))
                     .setSaveConsumer(newValue -> BariumConfig.C.ENABLE_FRUSTUM_CHUNK_CULLING = newValue)
                     .build());
-
-            chunkPerformance.addEntry(entryBuilder.startBooleanToggle(Text.translatable("option.barium.enable_visibility_graph_culling"), BariumConfig.C.ENABLE_VISIBILITY_GRAPH_CULLING)
-                    .setDefaultValue(defaults.ENABLE_VISIBILITY_GRAPH_CULLING)
-                    .setTooltip(Text.translatable("tooltip.barium.enable_visibility_graph_culling"))
-                    .setSaveConsumer(newValue -> BariumConfig.C.ENABLE_VISIBILITY_GRAPH_CULLING = newValue)
-                    .build());
             
-            chunkPerformance.addEntry(entryBuilder.startBooleanToggle(Text.translatable("option.barium.enable_advanced_section_culling"), BariumConfig.C.ENABLE_ADVANCED_SECTION_CULLING)
-                    .setDefaultValue(defaults.ENABLE_ADVANCED_SECTION_CULLING)
-                    .setTooltip(Text.translatable("tooltip.barium.enable_advanced_section_culling"))
-                    .setSaveConsumer(newValue -> BariumConfig.C.ENABLE_ADVANCED_SECTION_CULLING = newValue)
+            chunkPerformance.addEntry(entryBuilder.startBooleanToggle(Text.translatable("option.barium.enable_flood_fill_culling"), BariumConfig.C.ENABLE_FLOOD_FILL_CULLING)
+                    .setDefaultValue(defaults.ENABLE_FLOOD_FILL_CULLING)
+                    .setTooltip(Text.translatable("tooltip.barium.enable_flood_fill_culling"))
+                    .setSaveConsumer(newValue -> BariumConfig.C.ENABLE_FLOOD_FILL_CULLING = newValue)
                     .build());
 
-            chunkPerformance.addEntry(entryBuilder.startBooleanToggle(Text.translatable("option.barium.enable_enclosed_section_culling"), BariumConfig.C.ENABLE_ENCLOSED_SECTION_CULLING)
-                    .setDefaultValue(defaults.ENABLE_ENCLOSED_SECTION_CULLING)
-                    .setTooltip(Text.translatable("tooltip.barium.enable_enclosed_section_culling"))
-                    .setSaveConsumer(newValue -> BariumConfig.C.ENABLE_ENCLOSED_SECTION_CULLING = newValue)
+            chunkPerformance.addEntry(entryBuilder.startBooleanToggle(Text.translatable("option.barium.enable_occlusion_culling"), BariumConfig.C.ENABLE_OCCLUSION_CULLING)
+                    .setDefaultValue(defaults.ENABLE_OCCLUSION_CULLING)
+                    .setTooltip(Text.translatable("tooltip.barium.enable_occlusion_culling"))
+                    .setSaveConsumer(newValue -> BariumConfig.C.ENABLE_OCCLUSION_CULLING = newValue)
                     .build());
 
             chunkPerformance.addEntry(entryBuilder.startBooleanToggle(Text.translatable("option.barium.cull_empty_sections"), BariumConfig.C.ENABLE_EMPTY_CHUNK_SECTION_CULLING)
@@ -69,18 +63,6 @@ public class BariumModMenu implements ModMenuApi {
                     .setDefaultValue(defaults.MAX_CHUNK_UPLOADS_PER_FRAME)
                     .setTooltip(Text.translatable("tooltip.barium.max_chunk_uploads"))
                     .setSaveConsumer(newValue -> BariumConfig.C.MAX_CHUNK_UPLOADS_PER_FRAME = newValue)
-                    .build());
-
-            chunkPerformance.addEntry(entryBuilder.startBooleanToggle(Text.translatable("option.barium.enable_flood_fill_culling"), BariumConfig.C.ENABLE_FLOOD_FILL_CULLING)
-                    .setDefaultValue(new ConfigData().ENABLE_FLOOD_FILL_CULLING)
-                    .setTooltip(Text.translatable("tooltip.barium.enable_flood_fill_culling"))
-                    .setSaveConsumer(newValue -> BariumConfig.C.ENABLE_FLOOD_FILL_CULLING = newValue)
-                    .build());
-
-            chunkPerformance.addEntry(entryBuilder.startBooleanToggle(Text.translatable("option.barium.enable_occlusion_culling"), BariumConfig.C.ENABLE_OCCLUSION_CULLING)
-                    .setDefaultValue(new ConfigData().ENABLE_OCCLUSION_CULLING)
-                    .setTooltip(Text.translatable("tooltip.barium.enable_occlusion_culling"))
-                    .setSaveConsumer(newValue -> BariumConfig.C.ENABLE_OCCLUSION_CULLING = newValue)
                     .build());
 
             // ===================================================================
@@ -221,6 +203,19 @@ public class BariumModMenu implements ModMenuApi {
                     .setDefaultValue(defaults.DISABLE_TOASTS)
                     .setTooltip(Text.translatable("tooltip.barium.disable_toasts"))
                     .setSaveConsumer(newValue -> BariumConfig.C.DISABLE_TOASTS = newValue)
+                    .build());
+            
+            // ADICIONADAS AS NOVAS OPÇÕES VISUAIS AQUI
+            visualEffects.addEntry(entryBuilder.startBooleanToggle(Text.translatable("option.barium.disable_translucent_rendering"), BariumConfig.C.DISABLE_TRANSLUCENT_RENDERING)
+                    .setDefaultValue(defaults.DISABLE_TRANSLUCENT_RENDERING)
+                    .setTooltip(Text.translatable("tooltip.barium.disable_translucent_rendering"))
+                    .setSaveConsumer(newValue -> BariumConfig.C.DISABLE_TRANSLUCENT_RENDERING = newValue)
+                    .build());
+
+            visualEffects.addEntry(entryBuilder.startBooleanToggle(Text.translatable("option.barium.disable_texture_animations"), BariumConfig.C.DISABLE_TEXTURE_ANIMATIONS)
+                    .setDefaultValue(defaults.DISABLE_TEXTURE_ANIMATIONS)
+                    .setTooltip(Text.translatable("tooltip.barium.disable_texture_animations"))
+                    .setSaveConsumer(newValue -> BariumConfig.C.DISABLE_TEXTURE_ANIMATIONS = newValue)
                     .build());
 
             visualEffects.addEntry(entryBuilder.startBooleanToggle(Text.translatable("option.barium.disable_entity_outlines"), BariumConfig.C.DISABLE_ENTITY_OUTLINES)

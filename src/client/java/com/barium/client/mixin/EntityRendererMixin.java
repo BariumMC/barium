@@ -18,8 +18,9 @@ public abstract class EntityRendererMixin<T extends Entity> {
         cancellable = true
     )
     private void barium$cullDistantEntity(T entity, Frustum frustum, double cameraX, double cameraY, double cameraZ, CallbackInfoReturnable<Boolean> cir) {
-        // Renomeado para maior clareza, a chamada agora corresponde à assinatura correta.
-        if (EntityOptimizer.shouldRenderEntity(entity, cameraX, cameraY, cameraZ)) {
+        // CORREÇÃO CRÍTICA: A lógica foi invertida para funcionar corretamente.
+        // A renderização agora é cancelada APENAS se shouldRenderEntity retornar 'false'.
+        if (!EntityOptimizer.shouldRenderEntity(entity, cameraX, cameraY, cameraZ)) {
             cir.setReturnValue(false);
         }
     }

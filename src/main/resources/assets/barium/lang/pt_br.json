@@ -82,6 +82,11 @@
   "tooltip.barium.disable_entity_outlines": "Desativa completamente o contorno brilhante.",
   "option.barium.enable_half_res_outlines": "Efeito de Brilho em Meia Resolução",
   "tooltip.barium.enable_half_res_outlines": "Renderiza o efeito de brilho em meia resolução para melhor performance.",
+
+  "option.barium.disable_translucent_rendering": "Desativar Render. de Translúcidos",
+  "tooltip.barium.disable_translucent_rendering": "Desativa a renderização de todos os blocos translúcidos como vidro e água.\nGarante um ganho significativo de FPS ao custo de visuais.",
+  "option.barium.disable_texture_animations": "Desativar Animações de Textura",
+  "tooltip.barium.disable_texture_animations": "Congela texturas animadas (água, lava, portais) para economizar uma pequena quantidade de CPU.",
   
   "option.barium.enable_entity_tick_culling": "Ativar Otimização de Ticks de Entidades",
   "tooltip.barium.enable_entity_tick_culling": "Reduz a frequência de atualização da lógica (IA) de entidades distantes.",

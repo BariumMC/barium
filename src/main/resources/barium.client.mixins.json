@@ -5,19 +5,21 @@
 	"plugin": "com.barium.BariumMixinPlugin",
 	"client": [
 		"BlockEntityRenderDispatcherMixin",
+		"BlockRenderManagerMixin",
+		"ChunkBuilderMixin",
 		"ChunkRenderMixin",
+		"ClientWorldMixin",
 		"DebugHudMixin",
 		"EntityRendererMixin",
-		"ParticleAccessor",
-		"ParticleMixin",
-		"ParticleManagerMixin",
 		"GameRendererMixin",
-		"BlockRenderManagerMixin",
-        "WorldRendererChunkPriorityMixin",
-		"ClientWorldMixin",
-		"ChunkBuilderMixin",
 		"HandledScreenMixin",
-		"WorldRendererMixin"
+		"ParticleAccessor",
+		"ParticleManagerMixin",
+		"ParticleMixin",
+		"SpriteTickableMixin",
+		"WorldMixin",
+		"WorldRendererMixin",
+		"WorldRendererRenderLayerMixin"
 	],
 	"injectors": {
 		"defaultRequire": 1
