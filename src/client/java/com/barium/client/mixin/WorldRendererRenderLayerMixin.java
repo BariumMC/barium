@@ -15,7 +15,8 @@ public class WorldRendererRenderLayerMixin {
 
     /**
      * Injeta no método que renderiza cada camada de blocos.
-     * CORREÇÃO FINAL: Usa RenderLayer.getTranslucent() que é o método correto.
+     * SOLUÇÃO DEFINITIVA: Em vez de buscar a camada estática, verificamos a propriedade
+     * de transparência da camada que está sendo renderizada. Isso é 100% estável.
      */
     @Inject(
         method = "renderLayer(Lnet/minecraft/client/render/RenderLayer;Lnet/minecraft/client/util/math/MatrixStack;DDDLorg/joml/Matrix4f;)V",
@@ -23,8 +24,12 @@ public class WorldRendererRenderLayerMixin {
         cancellable = true
     )
     private void barium$skipTranslucentLayer(RenderLayer renderLayer, MatrixStack matrices, double cameraX, double cameraY, double cameraZ, Matrix4f positionMatrix, CallbackInfo ci) {
-        if (BariumConfig.C.DISABLE_TRANSLUCENT_RENDERING && renderLayer == RenderLayer.getTranslucent()) {
-            ci.cancel();
+        // Se a opção estiver ativa, verifica a propriedade de transparência da camada.
+        if (BariumConfig.C.DISABLE_TRANSLUCENT_RENDERING) {
+            // Acessa a enum interna 'Transparency' e compara com o valor da camada translúcida.
+            if (renderLayer.getTransparency() == RenderLayer.Transparency.TRANSLUCENT) {
+                ci.cancel(); // Cancela a renderização se a camada for translúcida.
+            }
         }
     }
 }

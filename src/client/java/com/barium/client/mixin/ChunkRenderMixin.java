@@ -1,73 +1,82 @@
 package com.barium.client.mixin;
 
-import com.barium.client.util.ChunkCullingUtils;
-import com.barium.client.util.ChunkRenderManager;
-import com.barium.client.util.FloodFillVisibilityManager;
 import com.barium.config.BariumConfig;
 import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.render.chunk.ChunkBuilder;
-import net.minecraft.util.math.BlockPos;
+import net.minecraft.client.world.ClientWorld;
+import net.minecraft.entity.Entity;
+import net.minecraft.particle.ParticleEffect;
+import net.minecraft.particle.ParticleTypes;
+import net.minecraft.world.World;
 import org.spongepowered.asm.mixin.Mixin;
-import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
-import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-@Mixin(ChunkBuilder.BuiltChunk.class)
-public abstract class ChunkRenderMixin {
+import java.util.concurrent.ThreadLocalRandom;
 
-    @Shadow public abstract BlockPos getOrigin();
+@Mixin(ClientWorld.class)
+public abstract class ClientWorldMixin {
 
-    @Inject(method = "shouldBuild()Z", at = @At("HEAD"), cancellable = true)
-    private void barium$onShouldBuild(CallbackInfoReturnable<Boolean> cir) {
-        BlockPos origin = this.getOrigin();
+    /**
+     * Otimização de Tick de Entidade.
+     * Alvo: ClientWorld.tickEntity(Entity)
+     * Reduz a frequência de atualização da lógica de entidades distantes.
+     */
+    @Inject(method = "tickEntity", at = @At("HEAD"), cancellable = true)
+    private void barium$cullDistantEntityTicks(Entity entity, CallbackInfo ci) {
+        if (!BariumConfig.C.ENABLE_ENTITY_TICK_CULLING) return;
+        
+        // Ignora jogadores, entidades com passageiros ou entidades que são veículos.
+        if (entity.isPlayer() || entity.hasPassengers() || entity.getVehicle() != null) return;
+
         MinecraftClient client = MinecraftClient.getInstance();
+        if (client.player == null) return;
 
-        // --- Otimização de Oclusão Total (Ideal para subsolo) ---
-        if (BariumConfig.C.ENABLE_OCCLUSION_CULLING && client.world != null) {
-            if (ChunkCullingUtils.isSectionTotallyOccluded(client.world, origin)) {
-                cir.setReturnValue(false);
-                return;
+        double distanceSq = entity.getPos().squaredDistanceTo(client.player.getPos());
+        if (distanceSq > BariumConfig.C.ENTITY_TICK_CULLING_DISTANCE_SQ) {
+            // Executa a lógica apenas 1 a cada 4 ticks para entidades distantes.
+            if (entity.age % 4 != 0) {
+                ci.cancel();
             }
         }
-        
-        // --- Otimização de Visibilidade por Flood-Fill COM "BOLHA DE SEGURANÇA" ---
-        if (BariumConfig.C.ENABLE_FLOOD_FILL_CULLING) {
-            // Apenas aplica a otimização se o jogador existir no mundo
-            if (client.player != null) {
-                int sectionX = origin.getX() >> 4;
-                int sectionZ = origin.getZ() >> 4;
+    }
 
-                int playerChunkX = client.player.getChunkPos().x;
-                int playerChunkZ = client.player.getChunkPos().z;
+    /**
+     * Otimização de Partículas de Ambiente.
+     * Alvo: ClientWorld.doRandomBlockDisplayTicks(int, int, int)
+     * Reduz pela metade a frequência de verificação para criar partículas de ambiente (goteiras, fumaça).
+     */
+    @Inject(method = "doRandomBlockDisplayTicks", at = @At("HEAD"), cancellable = true)
+    private void barium$reduceAmbientParticles(int centerX, int centerY, int centerZ, CallbackInfo ci) {
+        if (!BariumConfig.C.REDUCE_AMBIENT_PARTICLES) return;
 
-                // Calcula a distância em chunks do jogador até a seção que estamos verificando
-                int dx = Math.abs(playerChunkX - sectionX);
-                int dz = Math.abs(playerChunkZ - sectionZ);
-                
-                // Define um raio de segurança (1 significa uma área de 3x3 chunks ao redor do jogador)
-                int safetyRadius = 1;
+        // Pula a execução em ticks pares, cortando o custo de CPU pela metade.
+        if (((World)(Object)this).getTime() % 2 == 0) {
+            ci.cancel();
+        }
+    }
 
-                // A otimização SÓ É APLICADA se o chunk estiver FORA da bolha de segurança.
-                if (dx > safetyRadius || dz > safetyRadius) {
-                    int sectionY = origin.getY() >> 4;
-                     if (!FloodFillVisibilityManager.getInstance().isSectionVisible(sectionX, sectionY, sectionZ)) {
-                        cir.setReturnValue(false);
-                        return; // Cancela a renderização do chunk distante
-                    }
-                }
-                // Se o chunk estiver DENTRO da bolha, a verificação é pulada e ele será renderizado.
-            }
+    /**
+     * Otimização de Partículas de Explosão.
+     * Alvo: ClientWorld.addParticle(...)
+     * Intercepta a criação de partículas e reduz drasticamente as de explosões.
+     */
+    @Inject(
+        method = "addParticle(Lnet/minecraft/particle/ParticleEffect;DDDDDD)V",
+        at = @At("HEAD"),
+        cancellable = true
+    )
+    private void barium$reduceExplosionParticles(ParticleEffect parameters, double x, double y, double z, double velocityX, double velocityY, double velocityZ, CallbackInfo ci) {
+        if (!BariumConfig.C.ENABLE_EXPLOSION_PARTICLE_REDUCTION) {
+            return;
         }
 
-        // --- Otimização de Frustum Culling (Sua implementação existente) --
-        
-        if (BariumConfig.C.ENABLE_FRUSTUM_CHUNK_CULLING) {
-            final int chunkX = origin.getX() >> 4;
-            final int chunkZ = origin.getZ() >> 4;
-            if (!ChunkRenderManager.getInstance().isChunkInFrustum(chunkX, chunkZ)) {
-                cir.setReturnValue(false);
-                return;
+        // Verifica se a partícula é de uma explosão.
+        if (parameters.getType() == ParticleTypes.EXPLOSION || parameters.getType() == ParticleTypes.EXPLOSION_EMITTER) {
+            // Tem 75% de chance de pular a criação da partícula.
+            // Apenas 1 em cada 4 partículas será criada.
+            if (ThreadLocalRandom.current().nextInt(4) != 0) {
+                ci.cancel(); // Cancela a adição desta partícula.
             }
         }
     }
