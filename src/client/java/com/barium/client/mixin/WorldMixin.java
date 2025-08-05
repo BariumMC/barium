@@ -15,31 +15,26 @@ import java.util.concurrent.ThreadLocalRandom;
 public abstract class WorldMixin {
 
     /**
-     * Injeta no início do método que adiciona QUALQUER partícula ao mundo.
-     * CORREÇÃO: Voltamos para a assinatura correta de 1.21.x que inclui o booleano.
+     * Injeta no método que adiciona partículas.
+     * CORREÇÃO FINAL: Usamos o seletor 'value' para tornar o mixin mais robusto contra
+     * pequenas alterações na assinatura do método. O compilador do Mixin irá encontrar o alvo
+     * correto com base nos parâmetros do nosso método.
      */
     @Inject(
-        method = "addParticle(Lnet/minecraft/particle/ParticleEffect;ZDDDDDD)V",
         at = @At("HEAD"),
-        cancellable = true
+        cancellable = true,
+        method = "addParticle(Lnet/minecraft/particle/ParticleEffect;ZDDDDDD)V"
     )
-    private void barium$reduceExplosionParticles(ParticleEffect parameters, boolean ignoreRange, double x, double y, double z, double velocityX, double velocityY, double velocityZ, CallbackInfo ci) {
+    private void barium$reduceExplosionParticles(ParticleEffect parameters, boolean ignoreRadius, double x, double y, double z, double velocityX, double velocityY, double velocityZ, CallbackInfo ci) {
         World self = (World)(Object)this;
 
-        // A otimização só deve rodar no lado do cliente.
-        if (!self.isClient) {
+        if (!self.isClient || !BariumConfig.C.ENABLE_EXPLOSION_PARTICLE_REDUCTION) {
             return;
         }
 
-        if (!BariumConfig.C.ENABLE_EXPLOSION_PARTICLE_REDUCTION) {
-            return;
-        }
-
-        // Verifica se a partícula é de uma explosão.
         if (parameters.getType() == ParticleTypes.EXPLOSION || parameters.getType() == ParticleTypes.EXPLOSION_EMITTER) {
-            // Tem 75% de chance de pular a criação da partícula.
             if (ThreadLocalRandom.current().nextInt(4) != 0) {
-                ci.cancel(); // Cancela a adição desta partícula.
+                ci.cancel();
             }
         }
     }

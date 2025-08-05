@@ -1,18 +1,17 @@
 package com.barium.client.mixin;
 
 import com.barium.config.BariumConfig;
-import net.minecraft.client.texture.TextureAtlas;
+import net.minecraft.client.texture.SpriteAtlasTexture;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 /**
- * Este mixin substitui o antigo SpriteTickableMixin.
- * Ele desativa as animações de textura de uma forma muito mais estável e segura,
- * interceptando o método que executa a atualização de todas as texturas animadas.
+ * CORREÇÃO FINAL: O alvo do Mixin agora é a classe correta, 'SpriteAtlasTexture'.
+ * Este mixin desativa as animações de textura de forma estável e segura.
  */
-@Mixin(TextureAtlas.class)
+@Mixin(SpriteAtlasTexture.class)
 public class TextureAtlasMixin {
 
     @Inject(method = "tick", at = @At("HEAD"), cancellable = true)

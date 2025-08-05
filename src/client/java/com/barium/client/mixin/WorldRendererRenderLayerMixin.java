@@ -15,8 +15,8 @@ public class WorldRendererRenderLayerMixin {
 
     /**
      * Injeta no método que renderiza cada camada de blocos.
-     * Se a opção estiver ativa, ele cancela a renderização da camada translúcida.
-     * CORREÇÃO: A assinatura do método está correta e RenderLayer.TRANSLUCENT é usado.
+     * CORREÇÃO FINAL: Usamos a assinatura exata e o seletor 'method' para garantir que
+     * o alvo correto seja encontrado, e usamos RenderLayer.TRANSLUCENT como um campo estático.
      */
     @Inject(
         method = "renderLayer(Lnet/minecraft/client/render/RenderLayer;Lnet/minecraft/client/util/math/MatrixStack;DDDLorg/joml/Matrix4f;)V",
@@ -24,9 +24,8 @@ public class WorldRendererRenderLayerMixin {
         cancellable = true
     )
     private void barium$skipTranslucentLayer(RenderLayer renderLayer, MatrixStack matrices, double cameraX, double cameraY, double cameraZ, Matrix4f positionMatrix, CallbackInfo ci) {
-        // Se a opção estiver ativa e a camada for translúcida...
         if (BariumConfig.C.DISABLE_TRANSLUCENT_RENDERING && renderLayer == RenderLayer.TRANSLUCENT) {
-            ci.cancel(); // ...cancela a renderização desta camada inteira.
+            ci.cancel();
         }
     }
 }
