@@ -1,4 +1,3 @@
-// --- Substitua o conteúdo de: src/client/java/com/barium/client/mixin/WorldMixin.java ---
 package com.barium.client.mixin;
 
 import com.barium.config.BariumConfig;
@@ -17,14 +16,14 @@ public abstract class WorldMixin {
 
     /**
      * Injeta no início do método que adiciona QUALQUER partícula ao mundo.
-     * CORREÇÃO: A assinatura mudou em 1.21.6+ para incluir um booleano 'ignoreRange'.
+     * CORREÇÃO: A assinatura foi atualizada para a versão 1.21.x, removendo o parâmetro 'ignoreRange'.
      */
     @Inject(
-        method = "addParticle(Lnet/minecraft/particle/ParticleEffect;ZDDDDDD)V",
+        method = "addParticle(Lnet/minecraft/particle/ParticleEffect;DDDDDD)V",
         at = @At("HEAD"),
         cancellable = true
     )
-    private void barium$reduceExplosionParticles(ParticleEffect parameters, boolean ignoreRange, double x, double y, double z, double velocityX, double velocityY, double velocityZ, CallbackInfo ci) {
+    private void barium$reduceExplosionParticles(ParticleEffect parameters, double x, double y, double z, double velocityX, double velocityY, double velocityZ, CallbackInfo ci) {
         World self = (World)(Object)this;
 
         // A otimização só deve rodar no lado do cliente.

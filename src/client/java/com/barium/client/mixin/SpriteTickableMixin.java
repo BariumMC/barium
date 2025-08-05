@@ -7,11 +7,15 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-@Mixin(Sprite.Tickable.class)
+/**
+ * CORREÇÃO: O alvo do Mixin agora é a classe Sprite, não a interface Tickable.
+ * Isso permite injetar no método tick() que controla a animação.
+ */
+@Mixin(Sprite.class)
 public class SpriteTickableMixin {
 
     /**
-     * Injeta no método 'tick' das texturas animadas.
+     * Injeta no método 'tick' da classe Sprite.
      * Se a opção estiver ativa, cancela a atualização da animação, "congelando" a textura.
      */
     @Inject(method = "tick", at = @At("HEAD"), cancellable = true)
