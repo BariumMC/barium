@@ -16,7 +16,7 @@
 		"ParticleAccessor",
 		"ParticleManagerMixin",
 		"ParticleMixin",
-		"SpriteTickableMixin",
+		"TextureAtlasMixin",
 		"WorldMixin",
 		"WorldRendererMixin",
 		"WorldRendererRenderLayerMixin"

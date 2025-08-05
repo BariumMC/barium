@@ -16,14 +16,14 @@ public abstract class WorldMixin {
 
     /**
      * Injeta no início do método que adiciona QUALQUER partícula ao mundo.
-     * CORREÇÃO: A assinatura foi atualizada para a versão 1.21.x, removendo o parâmetro 'ignoreRange'.
+     * CORREÇÃO: Voltamos para a assinatura correta de 1.21.x que inclui o booleano.
      */
     @Inject(
-        method = "addParticle(Lnet/minecraft/particle/ParticleEffect;DDDDDD)V",
+        method = "addParticle(Lnet/minecraft/particle/ParticleEffect;ZDDDDDD)V",
         at = @At("HEAD"),
         cancellable = true
     )
-    private void barium$reduceExplosionParticles(ParticleEffect parameters, double x, double y, double z, double velocityX, double velocityY, double velocityZ, CallbackInfo ci) {
+    private void barium$reduceExplosionParticles(ParticleEffect parameters, boolean ignoreRange, double x, double y, double z, double velocityX, double velocityY, double velocityZ, CallbackInfo ci) {
         World self = (World)(Object)this;
 
         // A otimização só deve rodar no lado do cliente.
@@ -38,7 +38,6 @@ public abstract class WorldMixin {
         // Verifica se a partícula é de uma explosão.
         if (parameters.getType() == ParticleTypes.EXPLOSION || parameters.getType() == ParticleTypes.EXPLOSION_EMITTER) {
             // Tem 75% de chance de pular a criação da partícula.
-            // Apenas 1 em cada 4 partículas será criada.
             if (ThreadLocalRandom.current().nextInt(4) != 0) {
                 ci.cancel(); // Cancela a adição desta partícula.
             }

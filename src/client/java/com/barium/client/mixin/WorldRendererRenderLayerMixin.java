@@ -14,9 +14,9 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 public class WorldRendererRenderLayerMixin {
 
     /**
-     * Injeta no método que renderiza cada camada de blocos (sólida, translúcida, etc.).
+     * Injeta no método que renderiza cada camada de blocos.
      * Se a opção estiver ativa, ele cancela a renderização da camada translúcida.
-     * CORREÇÃO: A assinatura foi atualizada para a versão 1.21.x, adicionando Matrix4f.
+     * CORREÇÃO: A assinatura do método está correta e RenderLayer.TRANSLUCENT é usado.
      */
     @Inject(
         method = "renderLayer(Lnet/minecraft/client/render/RenderLayer;Lnet/minecraft/client/util/math/MatrixStack;DDDLorg/joml/Matrix4f;)V",
@@ -25,7 +25,7 @@ public class WorldRendererRenderLayerMixin {
     )
     private void barium$skipTranslucentLayer(RenderLayer renderLayer, MatrixStack matrices, double cameraX, double cameraY, double cameraZ, Matrix4f positionMatrix, CallbackInfo ci) {
         // Se a opção estiver ativa e a camada for translúcida...
-        if (BariumConfig.C.DISABLE_TRANSLUCENT_RENDERING && renderLayer == RenderLayer.getTranslucent()) {
+        if (BariumConfig.C.DISABLE_TRANSLUCENT_RENDERING && renderLayer == RenderLayer.TRANSLUCENT) {
             ci.cancel(); // ...cancela a renderização desta camada inteira.
         }
     }
