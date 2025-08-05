@@ -6,7 +6,6 @@
 	"client": [
 		"BlockEntityRenderDispatcherMixin",
 		"BlockRenderManagerMixin",
-		"ChunkBuilderUploadMixin",
 		"ChunkBuilderMixin",
 		"ChunkRenderMixin",
 		"ClientWorldMixin",
