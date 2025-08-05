@@ -260,6 +260,12 @@ public class BariumModMenu implements ModMenuApi {
                     .setSaveConsumer(newValue -> BariumConfig.C.ENABLE_HOPPER_TICK_CULLING = newValue)
                     .build());
 
+            gameLogic.addEntry(entryBuilder.startBooleanToggle(Text.translatable("option.barium.enable_smart_sleep"), BariumConfig.C.ENABLE_SMART_SLEEP)
+                    .setDefaultValue(defaults.ENABLE_SMART_SLEEP)
+                    .setTooltip(Text.translatable("tooltip.barium.enable_smart_sleep"))
+                    .setSaveConsumer(newValue -> BariumConfig.C.ENABLE_SMART_SLEEP = newValue)
+                    .build());
+
             return builder.build();
         };
     }

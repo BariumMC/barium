@@ -49,4 +49,5 @@ public class ConfigData {
     public double ENTITY_TICK_CULLING_DISTANCE_SQ = 64 * 64;
     public boolean REDUCE_AMBIENT_PARTICLES = true;
     public boolean ENABLE_HOPPER_TICK_CULLING = true;
+    public boolean ENABLE_SMART_SLEEP = true;
 }

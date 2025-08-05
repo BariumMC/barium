@@ -102,5 +102,8 @@
   "tooltip.barium.enable_flood_fill_culling": "Um algoritmo robusto que descobre chunks visíveis 'inundando' a visão a partir da câmera. Muito estável e eficaz, impede a renderização de tudo que o jogador não pode ver. Recomendado ATIVADO.",
 
   "option.barium.enable_occlusion_culling": "Ativar Otimização por Oclusão Total",
-  "tooltip.barium.enable_occlusion_culling": "Para de renderizar seções de chunk que estão 100% cercadas por blocos sólidos e opacos. Altamente eficaz no subsolo e garante um grande ganho de FPS sem bugs visuais."
+  "tooltip.barium.enable_occlusion_culling": "Para de renderizar seções de chunk que estão 100% cercadas por blocos sólidos e opacos. Altamente eficaz no subsolo e garante um grande ganho de FPS sem bugs visuais.",
+
+  "option.barium.enable_smart_sleep": "Ativar Espera Inteligente (Smart Sleep)",
+  "tooltip.barium.enable_smart_sleep": "Substitui o loop de espera ineficiente do Minecraft por uma espera baseada em 'sleep'.\nReduz drasticamente o uso da CPU e o consumo de energia quando o VSync está desligado, sem perder performance."
 }
