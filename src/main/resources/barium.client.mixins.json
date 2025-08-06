@@ -14,7 +14,7 @@
 		"GameRendererMixin",
 		"HandledScreenMixin",
 		"ParticleAccessor",
-		"RenderSystemMixin",
+		"MinecraftClientMixin",
 		"ParticleManagerMixin",
 		"ParticleMixin",
 		"TextureAtlasMixin",
