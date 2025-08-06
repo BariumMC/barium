@@ -1,44 +1,51 @@
 package com.barium.client.mixin.gui;
 
 import com.barium.client.config.BariumOptionsScreen;
-import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.screen.option.OptionsScreen;
-import net.minecraft.client.gui.screen.option.VideoOptionsScreen;
+import net.minecraft.client.gui.widget.ButtonWidget;
+import net.minecraft.client.gui.widget.ClickableWidget;
 import net.minecraft.client.option.GameOptions;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
-import org.spongepowered.asm.mixin.injection.Redirect;
+import org.spongepowered.asm.mixin.injection.ModifyArg;
 
 @Mixin(OptionsScreen.class)
-public abstract class OptionsScreenMixin {
+public abstract class OptionsScreenMixin extends Screen {
+
+    // Construtor necessário para satisfazer a herança da classe Screen.
+    protected OptionsScreenMixin(net.minecraft.text.Text title) {
+        super(title);
+    }
 
     /**
      * @author Barium
-     * @reason Redireciona a criação da tela de Opções de Vídeo para a tela personalizada do Barium.
-     * Esta é a abordagem final e correta, que respeita a assinatura do construtor da 1.21.8.
+     * @reason Modifica o botão "Opções de Vídeo..." para abrir a tela de configurações do Barium.
+     * Esta abordagem usa @ModifyArg para substituir a ação do botão, sendo mais robusta
+     * que @Redirect em `NEW` em ambientes complexos.
      */
-    @Redirect(
+    @ModifyArg(
         method = "init",
         at = @At(
-            value = "NEW",
-            // O alvo é o construtor da VideoOptionsScreen.
-            target = "net/minecraft/client/gui/screen/option/VideoOptionsScreen"
+            value = "INVOKE",
+            target = "Lnet/minecraft/client/gui/screen/Screen;addDrawableChild(Lnet/minecraft/client/gui/widget/ClickableWidget;)Lnet/minecraft/client/gui/widget/ClickableWidget;"
         ),
-        // A anotação `desc` é usada para especificar a assinatura exata do construtor,
-        // resolvendo qualquer ambiguidade e garantindo que o mixin se aplique corretamente.
-        // (LScreen;LMinecraftClient;LGameOptions;)V significa: um construtor que aceita (Screen, MinecraftClient, GameOptions) e não retorna nada (V de void).
-        remap = false // Desativamos o remapeamento para esta assinatura específica para garantir a estabilidade.
+        // O índice 0 refere-se ao primeiro argumento do método alvo, que é o widget a ser adicionado.
+        index = 0
     )
-    private VideoOptionsScreen barium$redirectToCustomVideoSettings(Screen parent, MinecraftClient client, GameOptions gameOptions) {
-        // Retornamos nossa classe anônima "falsa", passando adiante os 3 argumentos que capturamos.
-        // O compilador agora ficará satisfeito, pois estamos chamando o construtor com os tipos corretos.
-        return new VideoOptionsScreen(parent, client, gameOptions) {
-            @Override
-            public void init() {
-                // Ao ser inicializada, a tela falsa se substitui pela nossa tela Barium Hub.
-                this.client.setScreen(new BariumOptionsScreen(this.parent));
-            }
-        };
+    private ClickableWidget modifyVideoOptionsButton(ClickableWidget originalButton) {
+        // Verificamos se o botão que está sendo adicionado é o de "Opções de Vídeo...".
+        // Usamos a chave de tradução para uma comparação segura.
+        if (originalButton instanceof ButtonWidget && originalButton.getMessage().equals(GameOptions.VIDEO_SETTINGS)) {
+            // Se for o botão correto, nós criamos um *novo* botão para substituí-lo.
+            // O novo botão tem a mesma aparência e posição, mas sua ação é abrir a nossa tela.
+            return ButtonWidget.builder(GameOptions.VIDEO_SETTINGS, (button) -> {
+                // Abre a tela de configurações do Barium.
+                this.client.setScreen(new BariumOptionsScreen(this));
+            }).dimensions(originalButton.getX(), originalButton.getY(), originalButton.getWidth(), originalButton.getHeight()).build();
+        }
+
+        // Se não for o botão de vídeo, nós o retornamos sem modificação.
+        return originalButton;
     }
 }
