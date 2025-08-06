@@ -18,7 +18,7 @@ public class BariumOptionsScreen extends Screen {
         super(Text.translatable("title.barium.options"));
         this.parent = parent;
 
-        // Adiciona as páginas (abas) de configuração
+        // Define as páginas (abas) de configuração
         this.pages.add(new OptionPage(Text.translatable("category.barium.general"), BariumConfigScreenFactory::buildGeneralScreen));
         this.pages.add(new OptionPage(Text.translatable("category.barium.quality"), BariumConfigScreenFactory::buildQualityScreen));
         this.pages.add(new OptionPage(Text.translatable("category.barium.performance"), BariumConfigScreenFactory::buildPerformanceScreen));
@@ -27,31 +27,31 @@ public class BariumOptionsScreen extends Screen {
 
     @Override
     protected void init() {
-        // Seleciona a primeira página se nenhuma estiver selecionada
+        // Se nenhuma página foi selecionada ainda, seleciona a primeira como padrão.
         if (this.selectedPage == null) {
             this.selectedPage = this.pages.get(0);
         }
 
-        // Limpa completamente os widgets da tela antes de reconstruir
+        // Limpa TODOS os widgets da tela antes de reconstruir a interface.
         this.clearChildren();
 
-        // 1. Adiciona os widgets da página de conteúdo atual
-        // Cria a tela de conteúdo temporariamente para pegar seus widgets
+        // 1. ADICIONA OS WIDGETS DAS OPÇÕES (SLIDERS, BOTÕES, ETC.)
+        // Cria uma tela de conteúdo temporária APENAS para pegar os widgets que o Cloth Config gera.
         Screen contentScreen = this.selectedPage.createScreen(this);
         contentScreen.init(this.client, this.width, this.height);
 
-        // Adiciona os widgets da tela de conteúdo à lista de renderização e eventos da tela principal.
-        // Isso resolve o erro de compilação, pois children() retorna uma lista do tipo correto.
+        // Adiciona cada widget da tela de conteúdo à nossa tela principal.
+        // Agora eles serão renderizados e interativos.
         for (var child : contentScreen.children()) {
             if (child instanceof ClickableWidget) {
                 this.addDrawableChild((ClickableWidget) child);
             }
         }
 
-        // 2. Agora, cria e adiciona os botões das abas por cima
+        // 2. ADICIONA OS BOTÕES DAS ABAS
         int tabWidth = 80;
         int tabHeight = 20;
-        int startX = this.width / 2 - (this.pages.size() * (tabWidth + 5) - 5) / 2;
+        int startX = this.width / 2 - (this.pages.size() * (tabWidth + 5) - 5) / 2; // Centraliza as abas
         int tabY = 32;
 
         for (OptionPage page : this.pages) {
@@ -59,7 +59,7 @@ public class BariumOptionsScreen extends Screen {
                     .dimensions(startX, tabY, tabWidth, tabHeight)
                     .build();
 
-            // Desabilita o botão da aba que já está selecionada
+            // Desabilita o botão da aba que já está selecionada para feedback visual.
             if (this.selectedPage == page) {
                 button.active = false;
             }
@@ -68,39 +68,44 @@ public class BariumOptionsScreen extends Screen {
             startX += tabWidth + 5;
         }
 
-        // 3. Botão "Concluído"
+        // 3. ADICIONA O BOTÃO "CONCLUÍDO"
         this.addDrawableChild(ButtonWidget.builder(Text.translatable("gui.done"), (btn) -> this.close())
                 .dimensions(this.width / 2 - 100, this.height - 27, 200, 20)
                 .build());
     }
 
     private void selectPage(OptionPage page) {
-        // Se a página já está selecionada, não faz nada
-        if (this.selectedPage == page) {
-            return;
+        if (this.selectedPage != page) {
+            this.selectedPage = page;
+            // Apenas re-inicializa a tela. O método init() fará todo o trabalho de
+            // limpar os widgets antigos e adicionar os novos da página selecionada.
+            this.init();
         }
-        this.selectedPage = page;
-        // Re-inicializa a tela inteira. O método init() cuidará de limpar
-        // os widgets antigos e adicionar os novos da página selecionada.
-        this.init();
     }
 
     @Override
     public void render(DrawContext context, int mouseX, int mouseY, float delta) {
+        // Renderiza o fundo do mundo (ou o fundo de terra se não estiver no mundo).
         this.renderBackground(context, mouseX, mouseY, delta);
-        // Chama super.render() para desenhar todos os widgets que foram adicionados via addDrawableChild()
+
+        // APRIMORAMENTO VISUAL: Desenha um retângulo escuro semi-transparente
+        // sob as opções para melhorar a legibilidade.
+        context.fillGradient(0, 56, this.width, this.height - 32, 0x00000000, 0xC0000000);
+
+        // O super.render() agora desenhará TUDO que foi adicionado com addDrawableChild():
+        // as opções da aba atual, os botões das abas e o botão "Concluído".
+        // Ele também cuidará de mostrar as tooltips automaticamente!
         super.render(context, mouseX, mouseY, delta);
+
+        // APRIMORAMENTO VISUAL: Desenha o título da tela.
         context.drawCenteredTextWithShadow(this.textRenderer, this.title, this.width / 2, 15, 0xFFFFFF);
     }
 
     @Override
     public void close() {
-        // CORREÇÃO: Chamamos o método de salvamento aqui.
-        // Isso garante que todas as alterações feitas em qualquer aba sejam
-        // gravadas nos arquivos de configuração quando o usuário sair da tela.
+        // Salva todas as configurações pendentes de todas as abas.
         BariumConfigScreenFactory.save();
-
-        // Agora, podemos fechar a tela e voltar para a anterior.
+        // Volta para a tela anterior.
         this.client.setScreen(this.parent);
     }
 }
