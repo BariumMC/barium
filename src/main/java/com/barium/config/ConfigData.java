@@ -2,6 +2,9 @@ package com.barium.config;
 
 public class ConfigData {
 
+    // ================== Modo Específico de CPU ================== //
+    public boolean ENABLE_LLVMPIPE_MODE = false;
+
     // ================== Chunk Performance ================== //
     public boolean ENABLE_FRUSTUM_CHUNK_CULLING = true;
     public boolean ENABLE_FLOOD_FILL_CULLING = true;
@@ -15,7 +18,7 @@ public class ConfigData {
     public int MAX_CHUNK_UPLOADS_PER_FRAME = 4;
 
     // ================== Culling & Level of Detail (LOD) ================== //
-    public boolean ENABLE_ENTITY_CULLING = true;
+    public boolean ENABLE_ENTITY_CULLING = true; // <-- ADICIONE ESTA LINHA
     public double MAX_ENTITY_RENDER_DISTANCE_SQ = 72 * 72;
     public boolean ENABLE_BLOCK_ENTITY_CULLING = true;
     public double MAX_BLOCK_ENTITY_RENDER_DISTANCE_SQ = 72 * 72;
@@ -42,13 +45,12 @@ public class ConfigData {
     public boolean ENABLE_HALF_RESOLUTION_ENTITY_OUTLINES = true;
     public boolean ENABLE_ADAPTIVE_FOG = true;
     public int ADAPTIVE_FOG_TARGET_FPS = 58;
-    public boolean DISABLE_TRANSLUCENT_RENDERING = false; // NOVA OPÇÃO
-    public boolean DISABLE_TEXTURE_ANIMATIONS = false; // NOVA OPÇÃO
+    public boolean DISABLE_TRANSLUCENT_RENDERING = false;
+    public boolean DISABLE_TEXTURE_ANIMATIONS = false;
 
     // ================== Game Logic & Tick Optimizations ================== //
     public boolean ENABLE_ENTITY_TICK_CULLING = true;
     public double ENTITY_TICK_CULLING_DISTANCE_SQ = 64 * 64;
     public boolean REDUCE_AMBIENT_PARTICLES = true;
     public boolean ENABLE_HOPPER_TICK_CULLING = true;
-    public boolean ENABLE_SMART_SLEEP = true;
 }
