@@ -19,7 +19,7 @@
 		"TextureAtlasMixin",
 		"WorldRendererMixin",
 		"WorldRendererChunkPriorityMixin",
-		"gui.GameOptionsScreenMixin"
+		"gui.OptionsScreenMixin"
 	],
 	"injectors": {
 		"defaultRequire": 1
