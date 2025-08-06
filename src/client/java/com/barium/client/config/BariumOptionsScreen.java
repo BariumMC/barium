@@ -1,5 +1,6 @@
 package com.barium.client.config;
 
+import com.barium.client.config.BariumConfigScreenFactory;
 import com.google.common.collect.ImmutableList;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.Element;
