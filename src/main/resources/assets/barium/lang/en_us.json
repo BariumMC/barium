@@ -105,5 +105,12 @@
   "tooltip.barium.enable_occlusion_culling": "Stops rendering chunk sections that are 100% surrounded by solid, opaque blocks. Highly effective underground and provides a large FPS boost with no visual bugs.",
 
     "option.barium.enable_smart_sleep": "Enable Smart Sleep",
-  "tooltip.barium.enable_smart_sleep": "Replaces Minecraft's busy-waiting loop with an efficient sleep-based wait.\nDrastically reduces CPU usage and power consumption when not using VSync, without losing performance."
+  "tooltip.barium.enable_smart_sleep": "Replaces Minecraft's busy-waiting loop with an efficient sleep-based wait.\nDrastically reduces CPU usage and power consumption when not using VSync, without losing performance.",
+
+  "title.barium.options": "Barium Options",
+  "title.barium.video_settings": "Barium Video Settings",
+  "category.barium.general": "General",
+  "category.barium.quality": "Quality",
+  "category.barium.performance": "Performance",
+  "category.barium.advanced": "Advanced"
 }
