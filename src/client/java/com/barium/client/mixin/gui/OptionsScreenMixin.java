@@ -1,37 +1,47 @@
 package com.barium.client.mixin.gui;
 
 import com.barium.client.config.BariumOptionsScreen;
+import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.screen.option.OptionsScreen;
+import net.minecraft.client.gui.screen.option.VideoOptionsScreen;
+import net.minecraft.client.option.GameOptions;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Redirect;
 
 @Mixin(OptionsScreen.class)
-public abstract class OptionsScreenMixin extends Screen {
-
-    // Adiciona um construtor para satisfazer o compilador, pois estamos estendendo Screen.
-    protected OptionsScreenMixin(net.minecraft.text.Text title) {
-        super(title);
-    }
+public abstract class OptionsScreenMixin {
 
     /**
-     * @author Barium (adaptado de Sodium)
-     * @reason Redireciona o botão "Opções de Vídeo..." para a tela de configurações personalizada do Barium.
-     * Esta é a abordagem mais estável, substituindo a ação do botão em vez de
-     * depender de assinaturas de construtor frágeis.
+     * @author Barium (corrigido com base no Sodium e na assinatura da 1.21.8)
+     * @reason Redireciona a criação da tela de Opções de Vídeo para a tela personalizada do Barium.
+     * Esta é a abordagem final e correta, que respeita a assinatura exata do construtor.
      */
     @Redirect(
         method = "init",
         at = @At(
-            value = "INVOKE",
-            // Este é o alvo: o método que a lambda do botão "Opções de Vídeo..." chama.
-            target = "Lnet/minecraft/client/gui/screen/option/OptionsScreen;openVideoOptionsScreen()V"
-        )
+            value = "NEW",
+            // O alvo é o construtor da VideoOptionsScreen.
+            target = "net/minecraft/client/gui/screen/option/VideoOptionsScreen",
+            // A anotação `desc` é usada para especificar a assinatura exata do construtor,
+            // resolvendo qualquer ambiguidade e garantindo que o mixin se aplique corretamente.
+            // (LScreen;LMinecraftClient;LGameOptions;)V significa: um construtor que aceita (Screen, MinecraftClient, GameOptions) e não retorna nada (V de void).
+            // Com esta linha, o Mixin não tem como errar o alvo.
+            desc = "(Lnet/minecraft/client/gui/screen/Screen;Lnet/minecraft/client/MinecraftClient;Lnet/minecraft/client/option/GameOptions;)V"
+        ),
+        // Desativamos o remapeamento para esta assinatura específica para garantir a estabilidade entre diferentes mappings.
+        remap = false
     )
-    private void redirectVideoOptionsScreen(OptionsScreen instance) {
-        // Em vez de chamar o método original, nós simplesmente abrimos a nossa própria tela.
-        // this.client está disponível porque a classe do Mixin estende Screen.
-        this.client.setScreen(new BariumOptionsScreen(this));
+    private VideoOptionsScreen barium$redirectToCustomVideoSettings(Screen parent, MinecraftClient client, GameOptions gameOptions) {
+        // Retornamos nossa classe anônima "falsa", passando adiante os 3 argumentos que capturamos.
+        // O compilador agora ficará satisfeito, pois estamos chamando o construtor com os tipos corretos.
+        return new VideoOptionsScreen(parent, client, gameOptions) {
+            @Override
+            public void init() {
+                // Ao ser inicializada, a tela falsa se substitui pela nossa tela Barium Hub.
+                this.client.setScreen(new BariumOptionsScreen(this.parent));
+            }
+        };
     }
 }
