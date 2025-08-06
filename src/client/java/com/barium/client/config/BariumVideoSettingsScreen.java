@@ -10,7 +10,7 @@ import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.option.CloudRenderMode;
 import net.minecraft.client.option.GraphicsMode;
-import net.minecraft.client.option.ParticlesMode;
+import net.minecraft.client.option.ParticleEffectMode; // <-- CORREÇÃO: Classe correta
 import net.minecraft.text.Text;
 
 public class BariumVideoSettingsScreen {
@@ -21,7 +21,6 @@ public class BariumVideoSettingsScreen {
                 .setParentScreen(parent)
                 .setTitle(Text.translatable("title.barium.video_settings"));
 
-        // Salva tanto as configurações do Barium quanto as do Minecraft
         builder.setSavingRunnable(() -> {
             ConfigManager.saveConfig();
             client.options.write();
@@ -30,9 +29,7 @@ public class BariumVideoSettingsScreen {
         ConfigData defaults = new ConfigData();
         ConfigEntryBuilder entryBuilder = builder.entryBuilder();
 
-        // ===================================================================
         // ABA: GERAL
-        // ===================================================================
         ConfigCategory general = builder.getOrCreateCategory(Text.translatable("category.barium.general"));
 
         general.addEntry(entryBuilder.startIntSlider(Text.translatable("options.renderDistance"), client.options.getViewDistance().getValue(), 2, 32)
@@ -57,9 +54,7 @@ public class BariumVideoSettingsScreen {
                 .setSaveConsumer(newValue -> client.options.getMaxFps().setValue(newValue))
                 .build());
 
-        // ===================================================================
         // ABA: QUALIDADE
-        // ===================================================================
         ConfigCategory quality = builder.getOrCreateCategory(Text.translatable("category.barium.quality"));
 
         quality.addEntry(entryBuilder.startEnumSelector(Text.translatable("options.graphics"), GraphicsMode.class, client.options.getGraphicsMode().getValue())
@@ -72,8 +67,9 @@ public class BariumVideoSettingsScreen {
                 .setSaveConsumer(newValue -> client.options.getCloudRenderMode().setValue(newValue))
                 .build());
         
-        quality.addEntry(entryBuilder.startEnumSelector(Text.translatable("options.particles"), ParticlesMode.class, client.options.getParticles().getValue())
-                .setDefaultValue(ParticlesMode.ALL)
+        // CORREÇÃO: Usando a classe ParticleEffectMode
+        quality.addEntry(entryBuilder.startEnumSelector(Text.translatable("options.particles"), ParticleEffectMode.class, client.options.getParticles().getValue())
+                .setDefaultValue(ParticleEffectMode.ALL)
                 .setSaveConsumer(newValue -> client.options.getParticles().setValue(newValue))
                 .build());
         
@@ -82,11 +78,10 @@ public class BariumVideoSettingsScreen {
                 .setSaveConsumer(newValue -> client.options.getMipmapLevels().setValue(newValue))
                 .build());
 
-        // ===================================================================
-        // ABA: PERFORMANCE (OPÇÕES DO BARIUM)
-        // ===================================================================
+        // ABA: PERFORMANCE
         ConfigCategory performance = builder.getOrCreateCategory(Text.translatable("category.barium.performance"));
         
+        // CORREÇÃO: Usando a variável de config que agora existe
         performance.addEntry(entryBuilder.startBooleanToggle(Text.translatable("option.barium.enable_directional_chunk_loading"), BariumConfig.C.ENABLE_DIRECTIONAL_CHUNK_LOADING)
                 .setDefaultValue(defaults.ENABLE_DIRECTIONAL_CHUNK_LOADING)
                 .setTooltip(Text.translatable("tooltip.barium.enable_directional_chunk_loading"))
@@ -105,9 +100,7 @@ public class BariumVideoSettingsScreen {
                 .setSaveConsumer(newValue -> BariumConfig.C.MAX_CHUNK_UPLOADS_PER_FRAME = newValue)
                 .build());
 
-        // ===================================================================
-        // ABA: AVANÇADO (OPÇÕES DO BARIUM)
-        // ===================================================================
+        // ABA: AVANÇADO
         ConfigCategory advanced = builder.getOrCreateCategory(Text.translatable("category.barium.advanced"));
         
         advanced.addEntry(entryBuilder.startBooleanToggle(Text.translatable("option.barium.enable_entity_culling"), BariumConfig.C.ENABLE_ENTITY_CULLING)

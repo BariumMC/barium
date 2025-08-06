@@ -1,16 +1,36 @@
-package com.barium.client.config;
+package com.barium.client.mixin.gui;
 
-import com.terraformersmc.modmenu.api.ConfigScreenFactory;
-import com.terraformersmc.modmenu.api.ModMenuApi;
+import com.barium.client.config.BariumVideoSettingsScreen;
+import net.minecraft.client.MinecraftClient; // <-- IMPORT ADICIONADO
+import net.minecraft.client.gui.screen.Screen;
+import net.minecraft.client.gui.screen.option.OptionsScreen;
+import net.minecraft.client.gui.screen.option.VideoOptionsScreen;
+import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.injection.At;
+import org.spongepowered.asm.mixin.injection.Redirect;
 
-public class BariumModMenu implements ModMenuApi {
+@Mixin(OptionsScreen.class)
+public class OptionsScreenMixin {
 
     /**
-     * Quando o botão de config do Barium for clicado no ModMenu,
-     * ele agora abrirá nossa nova tela de configurações de vídeo unificada.
+     * Redireciona a criação da tela de Opções de Vídeo.
      */
-    @Override
-    public ConfigScreenFactory<?> getModConfigScreenFactory() {
-        return parent -> BariumVideoSettingsScreen.build(parent);
+    @Redirect(
+        method = "createVideoOptionsScreen",
+        at = @At(
+            value = "NEW",
+            target = "Lnet/minecraft/client/gui/screen/option/VideoOptionsScreen;"
+        )
+    )
+    private VideoOptionsScreen barium$redirectToCustomVideoSettings(Screen parent, net.minecraft.client.option.GameOptions options) {
+        // Quando o jogo tenta criar 'new VideoOptionsScreen(...)', nós interceptamos
+        // e, em vez disso, retornamos uma classe "falsa" que, ao ser aberta,
+        // imediatamente se substitui pela nossa tela personalizada do Barium.
+        return new VideoOptionsScreen(parent, options) {
+            @Override
+            public void init() {
+                this.client.setScreen(BariumVideoSettingsScreen.build(this.parent));
+            }
+        };
     }
 }
