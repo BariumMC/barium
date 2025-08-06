@@ -23,15 +23,12 @@ public abstract class OptionsScreenMixin {
         at = @At(
             value = "NEW",
             // O alvo é o construtor da VideoOptionsScreen.
+            // O descriptor 'desc' é um argumento nomeado DENTRO da anotação @At.
             target = "net/minecraft/client/gui/screen/option/VideoOptionsScreen",
-            // A anotação `desc` é usada para especificar a assinatura exata do construtor,
+            // A anotação `args` é usada para especificar a assinatura exata do construtor,
             // resolvendo qualquer ambiguidade e garantindo que o mixin se aplique corretamente.
-            // (LScreen;LMinecraftClient;LGameOptions;)V significa: um construtor que aceita (Screen, MinecraftClient, GameOptions) e não retorna nada (V de void).
-            // Com esta linha, o Mixin não tem como errar o alvo.
-            desc = "(Lnet/minecraft/client/gui/screen/Screen;Lnet/minecraft/client/MinecraftClient;Lnet/minecraft/client/option/GameOptions;)V"
-        ),
-        // Desativamos o remapeamento para esta assinatura específica para garantir a estabilidade entre diferentes mappings.
-        remap = false
+            args = {"Lnet/minecraft/client/gui/screen/Screen;", "Lnet/minecraft/client/MinecraftClient;", "Lnet/minecraft/client/option/GameOptions;"}
+        )
     )
     private VideoOptionsScreen barium$redirectToCustomVideoSettings(Screen parent, MinecraftClient client, GameOptions gameOptions) {
         // Retornamos nossa classe anônima "falsa", passando adiante os 3 argumentos que capturamos.
