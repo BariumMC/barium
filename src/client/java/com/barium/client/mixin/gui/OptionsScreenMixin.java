@@ -1,43 +1,38 @@
 package com.barium.client.mixin.gui;
 
 import com.barium.client.config.BariumVideoSettingsScreen;
-import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.screen.option.OptionsScreen;
 import net.minecraft.client.gui.screen.option.VideoOptionsScreen;
+import net.minecraft.client.option.GameOptions;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Redirect;
 
-// O alvo correto é a OptionsScreen, onde o botão de Opções de Vídeo é criado.
 @Mixin(OptionsScreen.class)
 public class OptionsScreenMixin {
 
     /**
-     * Redireciona a ação do botão "Opções de Vídeo...".
-     * Em vez de deixar o jogo abrir a tela de vídeo padrão, nós interceptamos a chamada
-     * e a substituímos pela nossa tela personalizada do Barium.
-     *
-     * @param client A instância do MinecraftClient.
-     * @param screen A tela que seria aberta (nós vamos verificar se é a VideoOptionsScreen).
+     * @author Barium
+     * @reason Redireciona a criação da tela de Opções de Vídeo para a tela personalizada do Barium.
+     * Esta é a abordagem mais estável e correta.
      */
     @Redirect(
-        method = "init", // O método onde os botões são inicializados.
+        method = "init",
         at = @At(
-            value = "INVOKE",
-            // O alvo é a chamada para client.setScreen() que abre a nova tela.
-            target = "Lnet/minecraft/client/MinecraftClient;setScreen(Lnet/minecraft/client/gui/screen/Screen;)V"
+            value = "NEW",
+            // O alvo é o construtor da VideoOptionsScreen. Esta assinatura é a chave para o sucesso.
+            target = "net/minecraft/client/gui/screen/option/VideoOptionsScreen"
         )
     )
-    private void barium$redirectVideoSettingsButton(MinecraftClient client, Screen screen) {
-        // Verificação de segurança CRUCIAL: só substituímos se a tela for a de vídeo.
-        // Isso impede que a gente quebre outros botões, como o de "Controles...".
-        if (screen instanceof VideoOptionsScreen) {
-            // Se for, abrimos a nossa tela, passando a tela atual como "pai".
-            client.setScreen(BariumVideoSettingsScreen.build((Screen)(Object)this));
-        } else {
-            // Se não for, deixamos o comportamento original acontecer.
-            client.setScreen(screen);
-        }
+    private VideoOptionsScreen barium$redirectToCustomVideoSettings(Screen parent, GameOptions gameOptions) {
+        // Retornamos uma classe anônima "falsa" que, ao ser inicializada,
+        // imediatamente se substitui pela nossa tela Barium.
+        return new VideoOptionsScreen(parent, gameOptions) {
+            @Override
+            public void init() {
+                this.client.setScreen(BariumVideoSettingsScreen.build(this.parent));
+            }
+        };
     }
 }
