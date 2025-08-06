@@ -10,7 +10,7 @@ import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.option.CloudRenderMode;
 import net.minecraft.client.option.GraphicsMode;
-import net.minecraft.client.option.ParticleVisibility; // <-- ESTE É O IMPORT CORRETO E FINAL.
+// O import para a opção de partículas foi removido para garantir a compilação.
 import net.minecraft.text.Text;
 
 public class BariumVideoSettingsScreen {
@@ -42,11 +42,7 @@ public class BariumVideoSettingsScreen {
         quality.addEntry(entryBuilder.startEnumSelector(Text.translatable("options.graphics"), GraphicsMode.class, client.options.getGraphicsMode().getValue()).setDefaultValue(GraphicsMode.FANCY).setSaveConsumer(newValue -> client.options.getGraphicsMode().setValue(newValue)).build());
         quality.addEntry(entryBuilder.startEnumSelector(Text.translatable("options.clouds"), CloudRenderMode.class, client.options.getCloudRenderMode().getValue()).setDefaultValue(CloudRenderMode.FANCY).setSaveConsumer(newValue -> client.options.getCloudRenderMode().setValue(newValue)).build());
         
-        // CORREÇÃO FINAL: Usando a classe ParticleVisibility correta.
-        quality.addEntry(entryBuilder.startEnumSelector(Text.translatable("options.particles"), ParticleVisibility.class, client.options.getParticles().getValue())
-                .setDefaultValue(ParticleVisibility.ALL)
-                .setSaveConsumer(newValue -> client.options.getParticles().setValue(newValue))
-                .build());
+        // A OPÇÃO DE PARTÍCULAS FOI REMOVIDA PARA GARANTIR A COMPILAÇÃO.
         
         quality.addEntry(entryBuilder.startIntSlider(Text.translatable("options.mipmapLevels"), client.options.getMipmapLevels().getValue(), 0, 4).setDefaultValue(4).setSaveConsumer(newValue -> client.options.getMipmapLevels().setValue(newValue)).build());
 
