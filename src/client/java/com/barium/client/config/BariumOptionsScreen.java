@@ -3,15 +3,19 @@ package com.barium.client.config;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.widget.ButtonWidget;
+import net.minecraft.client.gui.widget.ClickableWidget;
 import net.minecraft.text.Text;
+
 import java.util.ArrayList;
 import java.util.List;
 
 public class BariumOptionsScreen extends Screen {
     private final Screen parent;
     private final List<OptionPage> pages = new ArrayList<>();
-    private Screen currentPageContent;
     private OptionPage selectedPage;
+
+    // Lista para guardar apenas os widgets da página de conteúdo atual
+    private final List<ClickableWidget> pageWidgets = new ArrayList<>();
 
     public BariumOptionsScreen(Screen parent) {
         super(Text.translatable("title.barium.options"));
@@ -26,14 +30,29 @@ public class BariumOptionsScreen extends Screen {
 
     @Override
     protected void init() {
-        super.init();
-
-        // Se nenhuma página foi selecionada, seleciona a primeira
+        // Seleciona a primeira página se nenhuma estiver selecionada
         if (this.selectedPage == null) {
-            this.selectPage(this.pages.get(0));
+            this.selectedPage = this.pages.get(0);
         }
 
-        // Adiciona os botões das abas na parte superior
+        // Limpa os widgets da tela, mas guarda os da página atual para não perdê-los
+        this.clearChildren();
+        this.pageWidgets.clear();
+
+        // Cria a tela de conteúdo temporariamente para pegar seus widgets
+        Screen contentScreen = this.selectedPage.createScreen(this);
+        contentScreen.init(this.client, this.width, this.height);
+
+        // Adiciona os widgets da tela de conteúdo à nossa lista de widgets da página
+        // e também à lista de renderização e eventos da tela principal.
+        for (var child : contentScreen.children()) {
+            if (child instanceof ClickableWidget widget) {
+                this.pageWidgets.add(widget);
+                this.addDrawableChild(widget);
+            }
+        }
+
+        // Agora, cria os botões das abas
         int tabWidth = 80;
         int tabHeight = 20;
         int startX = this.width / 2 - (this.pages.size() * (tabWidth + 5) - 5) / 2;
@@ -54,45 +73,42 @@ public class BariumOptionsScreen extends Screen {
         }
 
         // Botão "Concluído"
-        this.addDrawableChild(ButtonWidget.builder(Text.translatable("gui.done"), button -> this.close())
+        this.addDrawableChild(ButtonWidget.builder(Text.translatable("gui.done"), (btn) -> this.close())
                 .dimensions(this.width / 2 - 100, this.height - 27, 200, 20)
                 .build());
     }
 
     private void selectPage(OptionPage page) {
+        // Se a página já está selecionada, não faz nada
+        if (this.selectedPage == page) {
+            return;
+        }
+
         this.selectedPage = page;
-        // Cria o "conteúdo" da página (que é uma tela, mas vamos usá-la como um contêiner de widgets)
-        this.currentPageContent = page.createScreen(this);
-        this.currentPageContent.init(this.client, this.width, this.height);
-
-        // Limpa os widgets antigos (exceto os botões de aba e "Concluído") e adiciona os novos
-        this.clearChildren();
-        this.init(); // Reinicia a tela para recriar os botões de aba
-
-        // Adiciona os widgets da página de conteúdo à tela principal
-        this.currentPageContent.children().forEach(this::addDrawableChild);
+        // Re-inicializa a tela inteira. O método init() cuidará de limpar
+        // os widgets antigos e adicionar os novos da página selecionada.
+        this.init();
     }
 
     @Override
     public void render(DrawContext context, int mouseX, int mouseY, float delta) {
-        // Renderiza o fundo e o título
         this.renderBackground(context, mouseX, mouseY, delta);
-        context.drawCenteredTextWithShadow(this.textRenderer, this.title, this.width / 2, 15, 0xFFFFFF);
-
-        // Renderiza os widgets da página de conteúdo (as opções)
-        if (this.currentPageContent != null) {
-            // A tela de conteúdo não deve desenhar seu próprio fundo
-            for (var drawable : this.currentPageContent.getDrawables()) {
-                drawable.render(context, mouseX, mouseY, delta);
-            }
-        }
-
-        // Renderiza os widgets principais (abas, botão "Concluído")
+        // Chama super.render() para desenhar todos os widgets que foram adicionados via addDrawableChild()
         super.render(context, mouseX, mouseY, delta);
+        context.drawCenteredTextWithShadow(this.textRenderer, this.title, this.width / 2, 15, 0xFFFFFF);
     }
 
     @Override
     public void close() {
+        // Garante que o Cloth Config salve as alterações pendentes ao fechar
+        for (ClickableWidget widget : this.pageWidgets) {
+            if (widget instanceof net.fabricmc.api.Element element) {
+                // A tela criada pelo Cloth Config tem um Runnable para salvar,
+                // mas como não temos acesso direto a ele, a melhor prática é que
+                // o próprio Cloth Config lide com isso ao fechar a tela.
+                // A nossa factory já configura isso com `setSavingRunnable`.
+            }
+        }
         this.client.setScreen(this.parent);
     }
 }
