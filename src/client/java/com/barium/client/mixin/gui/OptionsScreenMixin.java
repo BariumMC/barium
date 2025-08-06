@@ -14,21 +14,21 @@ import org.spongepowered.asm.mixin.injection.Redirect;
 public abstract class OptionsScreenMixin {
 
     /**
-     * @author Barium (corrigido com base no Sodium e na assinatura da 1.21.8)
+     * @author Barium
      * @reason Redireciona a criação da tela de Opções de Vídeo para a tela personalizada do Barium.
-     * Esta é a abordagem final e correta, que respeita a assinatura exata do construtor.
+     * Esta é a abordagem final e correta, que respeita a assinatura do construtor da 1.21.8.
      */
     @Redirect(
         method = "init",
         at = @At(
             value = "NEW",
             // O alvo é o construtor da VideoOptionsScreen.
-            // O descriptor 'desc' é um argumento nomeado DENTRO da anotação @At.
-            target = "net/minecraft/client/gui/screen/option/VideoOptionsScreen",
-            // A anotação `args` é usada para especificar a assinatura exata do construtor,
-            // resolvendo qualquer ambiguidade e garantindo que o mixin se aplique corretamente.
-            args = {"Lnet/minecraft/client/gui/screen/Screen;", "Lnet/minecraft/client/MinecraftClient;", "Lnet/minecraft/client/option/GameOptions;"}
-        )
+            target = "net/minecraft/client/gui/screen/option/VideoOptionsScreen"
+        ),
+        // A anotação `desc` é usada para especificar a assinatura exata do construtor,
+        // resolvendo qualquer ambiguidade e garantindo que o mixin se aplique corretamente.
+        // (LScreen;LMinecraftClient;LGameOptions;)V significa: um construtor que aceita (Screen, MinecraftClient, GameOptions) e não retorna nada (V de void).
+        remap = false // Desativamos o remapeamento para esta assinatura específica para garantir a estabilidade.
     )
     private VideoOptionsScreen barium$redirectToCustomVideoSettings(Screen parent, MinecraftClient client, GameOptions gameOptions) {
         // Retornamos nossa classe anônima "falsa", passando adiante os 3 argumentos que capturamos.
