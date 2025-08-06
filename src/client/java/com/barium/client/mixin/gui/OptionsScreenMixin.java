@@ -1,6 +1,7 @@
 package com.barium.client.mixin.gui;
 
 import com.barium.client.config.BariumVideoSettingsScreen;
+import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.screen.option.OptionsScreen;
 import net.minecraft.client.gui.screen.option.VideoOptionsScreen;
@@ -21,16 +22,17 @@ public class OptionsScreenMixin {
         method = "init",
         at = @At(
             value = "NEW",
-            // O alvo é o construtor da VideoOptionsScreen. Esta assinatura é a chave para o sucesso.
-            target = "net/minecraft/client/gui/screen/option/VideoOptionsScreen"
+            // CORREÇÃO: O alvo agora inclui a assinatura completa do construtor com os 3 argumentos.
+            target = "(Lnet/minecraft/client/gui/screen/Screen;Lnet/minecraft/client/MinecraftClient;Lnet/minecraft/client/option/GameOptions;)Lnet/minecraft/client/gui/screen/option/VideoOptionsScreen;"
         )
     )
-    private VideoOptionsScreen barium$redirectToCustomVideoSettings(Screen parent, GameOptions gameOptions) {
-        // Retornamos uma classe anônima "falsa" que, ao ser inicializada,
-        // imediatamente se substitui pela nossa tela Barium.
-        return new VideoOptionsScreen(parent, gameOptions) {
+    // CORREÇÃO: O método agora aceita os 3 argumentos que o Mixin captura do local da chamada original.
+    private VideoOptionsScreen barium$redirectToCustomVideoSettings(Screen parent, MinecraftClient client, GameOptions gameOptions) {
+        // Retornamos nossa classe anônima "falsa", passando adiante os 3 argumentos corretos.
+        return new VideoOptionsScreen(parent, client, gameOptions) {
             @Override
             public void init() {
+                // Ao ser inicializada, a tela falsa se substitui pela nossa tela Barium.
                 this.client.setScreen(BariumVideoSettingsScreen.build(this.parent));
             }
         };
