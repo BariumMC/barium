@@ -14,9 +14,6 @@ public class BariumOptionsScreen extends Screen {
     private final List<OptionPage> pages = new ArrayList<>();
     private OptionPage selectedPage;
 
-    // Lista para guardar apenas os widgets da página de conteúdo atual
-    private final List<ClickableWidget> pageWidgets = new ArrayList<>();
-
     public BariumOptionsScreen(Screen parent) {
         super(Text.translatable("title.barium.options"));
         this.parent = parent;
@@ -35,24 +32,23 @@ public class BariumOptionsScreen extends Screen {
             this.selectedPage = this.pages.get(0);
         }
 
-        // Limpa os widgets da tela, mas guarda os da página atual para não perdê-los
+        // Limpa completamente os widgets da tela antes de reconstruir
         this.clearChildren();
-        this.pageWidgets.clear();
 
+        // 1. Adiciona os widgets da página de conteúdo atual
         // Cria a tela de conteúdo temporariamente para pegar seus widgets
         Screen contentScreen = this.selectedPage.createScreen(this);
         contentScreen.init(this.client, this.width, this.height);
 
-        // Adiciona os widgets da tela de conteúdo à nossa lista de widgets da página
-        // e também à lista de renderização e eventos da tela principal.
+        // Adiciona os widgets da tela de conteúdo à lista de renderização e eventos da tela principal.
+        // Isso resolve o erro de compilação, pois children() retorna uma lista do tipo correto.
         for (var child : contentScreen.children()) {
-            if (child instanceof ClickableWidget widget) {
-                this.pageWidgets.add(widget);
-                this.addDrawableChild(widget);
+            if (child instanceof ClickableWidget) {
+                this.addDrawableChild((ClickableWidget) child);
             }
         }
 
-        // Agora, cria os botões das abas
+        // 2. Agora, cria e adiciona os botões das abas por cima
         int tabWidth = 80;
         int tabHeight = 20;
         int startX = this.width / 2 - (this.pages.size() * (tabWidth + 5) - 5) / 2;
@@ -72,7 +68,7 @@ public class BariumOptionsScreen extends Screen {
             startX += tabWidth + 5;
         }
 
-        // Botão "Concluído"
+        // 3. Botão "Concluído"
         this.addDrawableChild(ButtonWidget.builder(Text.translatable("gui.done"), (btn) -> this.close())
                 .dimensions(this.width / 2 - 100, this.height - 27, 200, 20)
                 .build());
@@ -83,7 +79,6 @@ public class BariumOptionsScreen extends Screen {
         if (this.selectedPage == page) {
             return;
         }
-
         this.selectedPage = page;
         // Re-inicializa a tela inteira. O método init() cuidará de limpar
         // os widgets antigos e adicionar os novos da página selecionada.
@@ -100,15 +95,12 @@ public class BariumOptionsScreen extends Screen {
 
     @Override
     public void close() {
-        // Garante que o Cloth Config salve as alterações pendentes ao fechar
-        for (ClickableWidget widget : this.pageWidgets) {
-            if (widget instanceof net.fabricmc.api.Element element) {
-                // A tela criada pelo Cloth Config tem um Runnable para salvar,
-                // mas como não temos acesso direto a ele, a melhor prática é que
-                // o próprio Cloth Config lide com isso ao fechar a tela.
-                // A nossa factory já configura isso com `setSavingRunnable`.
-            }
-        }
+        // CORREÇÃO: Chamamos o método de salvamento aqui.
+        // Isso garante que todas as alterações feitas em qualquer aba sejam
+        // gravadas nos arquivos de configuração quando o usuário sair da tela.
+        BariumConfigScreenFactory.save();
+
+        // Agora, podemos fechar a tela e voltar para a anterior.
         this.client.setScreen(this.parent);
     }
 }

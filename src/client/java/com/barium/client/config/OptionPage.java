@@ -5,6 +5,9 @@ import net.minecraft.text.Text;
 
 import java.util.function.Function;
 
+/**
+ * Representa uma página (ou aba) de opções na tela de configurações do Barium.
+ */
 public class OptionPage {
     private final Text title;
     private final Function<Screen, Screen> screenFactory;

@@ -14,7 +14,8 @@ import net.minecraft.text.Text;
 
 public class BariumConfigScreenFactory {
 
-    private static void save() {
+    // CORREÇÃO: Alterado de 'private' para 'public'
+    public static void save() {
         ConfigManager.saveConfig();
         MinecraftClient.getInstance().options.write();
     }
