@@ -3,6 +3,8 @@ package com.barium.client.render;
 import com.barium.BariumMod;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.render.RenderLayer;
+// ADICIONE ESTA LINHA:
+import net.minecraft.client.world.ClientWorld; 
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 import org.jetbrains.annotations.Nullable;
@@ -25,8 +27,7 @@ public class BariumRenderManager {
 
     public void init() {
         this.mesherExecutor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
-        // StreamingBuffer e ChunkMesher não podem ser nulos
-        this.streamingBuffer = new StreamingBuffer(256 * 1024 * 1024); 
+        this.streamingBuffer = new StreamingBuffer(256 * 1024 * 1024);
         this.chunkMesher = new ChunkMesher();
         BariumMod.LOGGER.info("Barium Render Manager inicializado.");
     }
