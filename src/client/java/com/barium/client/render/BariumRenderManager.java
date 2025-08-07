@@ -13,6 +13,8 @@ public class BariumRenderManager {
     private static final BariumRenderManager INSTANCE = new BariumRenderManager();
     public static BariumRenderManager getInstance() { return INSTANCE; }
 
+    // Não precisamos mais da lista de layers aqui. O Mixin vai nos dar o layer certo.
+
     private ExecutorService mesherExecutor;
     private StreamingBuffer streamingBuffer;
 
@@ -24,10 +26,10 @@ public class BariumRenderManager {
 
     public void renderLayer(MatrixStack matrices, RenderLayer layer, double cameraX, double cameraY, double cameraZ) {
         layer.startDrawing();
-        // TODO: Sua lógica de renderização para este layer.
+        // TODO: Lógica de renderização.
         layer.endDrawing();
     }
-
+    
     public void onWorldChange(@Nullable ClientWorld newWorld) {}
     public void scheduleRebuild(int x, int y, int z, boolean isPriority) {}
 
