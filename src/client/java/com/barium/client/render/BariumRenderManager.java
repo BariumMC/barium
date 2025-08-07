@@ -14,12 +14,14 @@ public class BariumRenderManager {
     private static final BariumRenderManager INSTANCE = new BariumRenderManager();
     public static BariumRenderManager getInstance() { return INSTANCE; }
 
+    // CORREÇÃO FINAL: RenderLayer.getTranslucent() foi movido. Agora o acesso é direto.
+    // Vamos definir os layers que nosso renderizador customizado vai lidar.
     private static final List<RenderLayer> CHUNK_LAYERS = List.of(
-        RenderLayer.getSolid(),
-        RenderLayer.getCutoutMipped(),
-        RenderLayer.getCutout(),
-        RenderLayer.getTranslucent()
-        // NOTA: Em versões futuras, RenderLayer.getTripwire() pode ser necessário aqui.
+        RenderLayer.SOLID, 
+        RenderLayer.CUTOUT_MIPPED, 
+        RenderLayer.CUTOUT, 
+        RenderLayer.TRANSLUCENT
+        // RenderLayer.TRIPWIRE pode ser necessário também
     );
 
     private ExecutorService mesherExecutor;
@@ -30,30 +32,22 @@ public class BariumRenderManager {
         this.streamingBuffer = new StreamingBuffer(256 * 1024 * 1024);
         BariumMod.LOGGER.info("Barium Render Manager inicializado.");
     }
-
-    /**
-     * Função de renderização principal, agora simplificada.
-     */
-    public void renderWorld(MatrixStack matrices, float tickDelta) {
-        // Obtenha os dados da câmera quando precisar deles, em vez de passá-los por todo lado.
-        // MinecraftClient client = MinecraftClient.getInstance();
-        // Camera camera = client.gameRenderer.getCamera();
-        // double cameraX = camera.getPos().getX();
-        // double cameraY = camera.getPos().getY();
-        // double cameraZ = camera.getPos().getZ();
-
-        // A lógica principal é iterar e desenhar cada layer.
-        for (RenderLayer layer : CHUNK_LAYERS) {
-            this.renderLayer(matrices, layer);
-        }
-    }
     
-    private void renderLayer(MatrixStack matrices, RenderLayer layer) {
+    // Este método é chamado pelo nosso @Redirect para CADA layer.
+    public void renderLayer(MatrixStack matrices, RenderLayer layer, double cameraX, double cameraY, double cameraZ) {
+        // Começa a desenhar no estado correto para o layer.
         layer.startDrawing();
-        // TODO: Lógica de desenho para o layer.
+
+        // TODO: Sua lógica de renderização para este layer.
+        // - Bind do StreamingBuffer
+        // - Configuração de atributos de vértice (glVertexAttribPointer)
+        // - Chamadas de desenho (glMultiDrawIndirect ou glDrawArrays)
+
+        // Termina o desenho, resetando o estado.
         layer.endDrawing();
     }
     
+    // Métodos de ciclo de vida e agendamento
     public void onWorldChange(@Nullable ClientWorld newWorld) {}
     public void scheduleRebuild(int x, int y, int z, boolean isPriority) {}
 

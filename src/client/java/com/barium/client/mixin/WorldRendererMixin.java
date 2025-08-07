@@ -17,19 +17,16 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-/**
- * Mixin de Tomada de Controle Total (VERSÃO FINAL 1.21.8, ESTÁVEL)
- * Intercepta o método de renderização "clássico".
- */
 @Mixin(WorldRenderer.class)
 public abstract class WorldRendererMixin {
 
     @Shadow @Final private MinecraftClient client;
     @Shadow @Nullable private ClientWorld world;
-    
-    // --- PARTES 1 & 2: INJEÇÕES DE CICLO DE VIDA E REBUILD (SEM MUDANÇAS) ---
+
+    // --- Injeções de setup e schedule (ESTÁVEIS, SEM MUDANÇAS) ---
 
     @Inject(method = "setWorld", at = @At("HEAD"))
     private void barium$onSetWorld(@Nullable ClientWorld newWorld, CallbackInfo ci) {
@@ -54,46 +51,34 @@ public abstract class WorldRendererMixin {
         BariumRenderManager.getInstance().scheduleRebuild(x, y, z, isPriority);
         ci.cancel();
     }
-
-
-    // --- PARTE 3: A INJEÇÃO DE RENDERIZAÇÃO FINAL E CORRETA ---
-
+    
+    
+    // --- TOMADA DE CONTROLE FINAL COM @REDIRECT ---
+    
     /**
-     * **CORREÇÃO FINAL**: Injeta na assinatura de renderização "clássica", que existe
-     * em quase todas as versões recentes do Minecraft, incluindo 1.21.8.
-     * Esta é a forma mais robusta e compatível de tomar o controle.
+     * Esta é a injeção que substitui a renderização de chunks.
+     * Ela intercepta CADA chamada para `renderLayer` dentro do loop do método `render` principal.
+     * Em vez de deixar o Minecraft desenhar, nós chamamos nosso próprio manager.
      */
-    @Inject(
+    @Redirect(
         method = "render(Lnet/minecraft/client/util/math/MatrixStack;FJZLnet/minecraft/client/render/Camera;Lnet/minecraft/client/render/GameRenderer;Lnet/minecraft/client/render/LightmapTextureManager;Lorg/joml/Matrix4f;)V",
-        at = @At("HEAD"),
-        cancellable = true
+        at = @At(
+            value = "INVOKE",
+            // Este é o alvo exato. O `WorldRenderer` chamando seu próprio `renderLayer`
+            target = "Lnet/minecraft/client/render/WorldRenderer;renderLayer(Lnet/minecraft/client/render/RenderLayer;Lnet/minecraft/client/util/math/MatrixStack;DDD)V"
+        )
     )
-    private void barium$takeOverWorldRendering(
-            MatrixStack matrices, float tickDelta, long limitTime, boolean renderBlockOutline,
-            Camera camera, GameRenderer gameRenderer, LightmapTextureManager lightmapTextureManager,
-            Matrix4f projectionMatrix, CallbackInfo ci) {
+    private void barium$redirectRenderLayer(
+            // Os argumentos do @Redirect devem ser:
+            // 1. A instância da classe que chama o método (`WorldRenderer`)
+            // 2. Os argumentos do método que estamos interceptando (`renderLayer`)
+            WorldRenderer instance, RenderLayer layer, MatrixStack matrices, 
+            double cameraX, double cameraY, double cameraZ
+    ) {
+        // NÃO chamamos o método original (instance.renderLayer(...)).
+        // Isso efetivamente desliga a renderização de chunks do Minecraft para este layer.
 
-        // PRIMEIRO, chamamos nosso renderizador para desenhar o mundo.
-        BariumRenderManager.getInstance().renderWorld(matrices, tickDelta);
-
-        // SEGUNDO, permitimos que o resto do código vanilla que desenha outras coisas
-        // (block outlines, entidades, etc.) continue a executar. Para isso,
-        // NÃO cancelamos (`ci.cancel()`) o método. Nós apenas desenhamos nossos chunks
-        // antes de qualquer coisa. Mas para realmente SUBSTITUIR a renderização
-        // de chunks, precisamos interceptar a chamada específica.
-        
-        // VAMOS REVER A ESTRATÉGIA. Injetar em "render" é complexo.
-        // A estratégia de @Redirect é a mais limpa, só precisamos do alvo certo.
-
-        // O alvo está em `renderBlockLayers` que é chamado dentro do `render`.
-        // A razão pela qual o `renderBlockLayers` falhou é porque seu nome pode ser
-        // `method_xxxx` (intermediário).
-
-        // Vamos tentar um @Redirect mais resiliente no `render`
-        // ... (Análise): Não, a abordagem HEAD+cancel é mais simples de depurar.
-        // A assinatura estava errada. A que está acima ESTÁ CORRETA.
-
-        // ETAPA FINAL: Você DEVE cancelar o método para que os chunks vanilla não sejam desenhados.
-        ci.cancel();
+        // Em vez disso, chamamos nosso BariumRenderManager.
+        BariumRenderManager.getInstance().renderLayer(matrices, layer, cameraX, cameraY, cameraZ);
     }
 }
