@@ -19,16 +19,16 @@ public abstract class EntityRendererMixin<T extends Entity> {
         at = @At("HEAD"),
         cancellable = true
     )
-    private void barium$cullEntitiesWithDistanceAndFrustum(T entity, Frustum frustum, double cameraX, double cameraY, double cameraZ, CallbackInfoReturnable<Boolean> cir) {
-        // Se a otimização estiver desligada nas configurações, não fazemos nada.
+    private void barium$cullByDistance(T entity, Frustum frustum, double cameraX, double cameraY, double cameraZ, CallbackInfoReturnable<Boolean> cir) {
+        // Se a otimização de distância estiver desligada, não fazemos nada.
         if (!BariumConfig.C.ENABLE_ENTITY_CULLING) {
             return;
         }
 
-        // Delega a lógica para a nossa classe otimizadora.
-        // Se a nossa lógica decidir que a entidade NÃO deve ser renderizada,
-        // nós cancelamos o método original e retornamos 'false' imediatamente.
-        if (!EntityOptimizer.shouldRenderEntity(entity, frustum, cameraX, cameraY, cameraZ)) {
+        // Delega a lógica de culling APENAS por distância para nossa classe.
+        // Se a entidade estiver muito longe, cancelamos a renderização.
+        // Se estiver perto, deixamos o Minecraft continuar e fazer seu próprio frustum culling.
+        if (!EntityOptimizer.shouldRenderByDistance(entity, cameraX, cameraY, cameraZ)) {
             cir.setReturnValue(false);
         }
     }
