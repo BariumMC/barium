@@ -1,40 +1,65 @@
 {
-  "title.barium.options": "Opções do Barium",
-  "category.barium.general": "Geral",
-  "category.barium.quality": "Qualidade",
-  "category.barium.performance": "Desempenho",
-  "category.barium.advanced": "Avançado",
+  "title.barium.config": "Configurações do Barium",
 
-  "option.barium.enable_frustum_chunk_culling": "Otimização de Frustum",
-  "tooltip.barium.enable_frustum_chunk_culling": "Não reconstrói chunks que estão fora do campo de visão da câmera. Reduz o trabalho da CPU ao virar.",
+  "category.barium.chunk_performance": "Desempenho de Chunks",
+  "category.barium.culling_lod": "Otimização de Renderização",
+  "category.barium.particles": "Partículas",
+  "category.barium.visual_effects": "Visuais e Lógica",
+  "category.barium.performance": "Otimizações de Desempenho",
 
-  "option.barium.enable_flood_fill_culling": "Otimização por Preenchimento",
-  "tooltip.barium.enable_flood_fill_culling": "Algoritmo que descobre chunks visíveis 'inundando' a visão a partir da câmera. Previne a renderização de chunks que o jogador não pode ver. (Recomendado)",
+  "generic.barium.distance_blocks": "%d blocos",
 
-  "option.barium.enable_empty_chunk_section_culling": "Otimizar Seções Vazias",
-  "tooltip.barium.enable_empty_chunk_section_culling": "Pula a renderização de seções de chunk (16x16x16) que contêm apenas ar. Melhora o FPS em mundos com muita verticalidade.",
+  "option.barium.enable_frustum_culling": "Otimização de Frustum",
+  "tooltip.barium.enable_frustum_culling": "Não reconstrói chunks que estão fora do campo de visão da câmera. Reduz o trabalho da CPU ao virar.",
+
+  "option.barium.enable_visibility_graph_culling": "Otimização por Visibilidade (Experimental)",
+  "tooltip.barium.enable_visibility_graph_culling": "Usa um sistema agressivo de raios para renderizar apenas chunks que são realmente visíveis.",
+  
+  "option.barium.enable_advanced_section_culling": "Otim. Avançada de Seções (Experimental)",
+  "tooltip.barium.enable_advanced_section_culling": "Impede a renderização de seções de chunk (áreas 16x16x16) que não são visíveis da câmera.",
+
+  "option.barium.enable_enclosed_section_culling": "Otim. de Seções Fechadas (Experimental)",
+  "tooltip.barium.enable_enclosed_section_culling": "Impede a renderização de seções de chunk que estão completamente cercadas por outras seções sólidas.",
+
+  "option.barium.cull_empty_sections": "Otimizar Seções de Chunk Vazias",
+  "tooltip.barium.cull_empty_sections": "Pula a renderização de seções do mundo que contêm apenas ar. Grande ganho de performance em mundos com verticalidade.",
 
   "option.barium.enable_chunk_update_throttling": "Limitar Atualização de Chunks",
-  "tooltip.barium.enable_chunk_update_throttling": "Limita quantos chunks são enviados para a GPU por frame. Reduz travamentos ao se mover rapidamente.",
+  "tooltip.barium.enable_chunk_update_throttling": "Limita quantos chunks são enviados para a GPU por frame. Reduz travadinhas ao se mover ou virar rapidamente.",
 
-  "option.barium.max_chunk_uploads_per_frame": "Uploads de Chunk/Frame",
-  "tooltip.barium.max_chunk_uploads_per_frame": "O número máximo de chunks novos enviados para a GPU a cada frame. Valores baixos suavizam o jogo, valores altos carregam o mundo mais rápido.",
+  "option.barium.max_chunk_uploads": "Máx. de Uploads de Chunk/Frame",
+  "tooltip.barium.max_chunk_uploads": "O número máximo de chunks enviados para a GPU a cada frame. Valores baixos = mais suave, valores altos = carregamento mais rápido.",
 
-  "option.barium.enable_entity_culling": "Otimizar Render de Entidades",
+  "option.barium.enable_flood_fill_culling": "Ativar Otimização por Preenchimento",
+  "tooltip.barium.enable_flood_fill_culling": "Um algoritmo robusto que descobre chunks visíveis 'inundando' a visão a partir da câmera. Muito estável e eficaz.",
+
+  "option.barium.enable_occlusion_culling": "Ativar Otimização por Oclusão Total",
+  "tooltip.barium.enable_occlusion_culling": "Para de renderizar seções de chunk que estão 100% cercadas por blocos sólidos e opacos. Altamente eficaz no subsolo.",
+
+  "option.barium.enable_entity_culling": "Otimizar Entidades (Distância)",
   "tooltip.barium.enable_entity_culling": "Para de renderizar entidades (mobs, itens) que estão muito longe.",
-
-  "option.barium.enable_block_entity_culling": "Otimizar Entidades de Bloco",
-  "tooltip.barium.enable_block_entity_culling": "Para de renderizar entidades de bloco (baús, placas) que estão muito longe.",
-
-  "option.barium.enable_particle_optimization": "Otimizar Partículas",
-  "tooltip.barium.enable_particle_optimization": "Pula a renderização e o processamento de partículas que estão muito longe.",
-
-  "option.barium.enable_entity_tick_culling": "Otimizar Ticks de Entidades",
-  "tooltip.barium.enable_entity_tick_culling": "Reduz a frequência de atualização da lógica (IA) de entidades distantes.",
   
+  "option.barium.enable_block_entity_occlusion_culling": "Otimizar Entidades de Bloco (Oclusão)",
+  "tooltip.barium.enable_block_entity_occlusion_culling": "Para de renderizar entidades de bloco que estão escondidas atrás de outros blocos.",
+
+  "option.barium.enable_beacon_optimization": "Ativar Otimização de Sinalizadores",
+  "tooltip.barium.enable_beacon_optimization": "Para de renderizar raios de sinalizadores muito distantes para melhorar o desempenho.",
+
+  "option.barium.enable_particle_optimizations": "Ativar Otimização de Partículas",
+  "tooltip.barium.enable_particle_optimizations": "Pula a renderização de partículas que estão fora da tela ou muito longe.",
+
+  "option.barium.reduce_explosion_particles": "Reduzir Partículas de Explosão",
+  "tooltip.barium.reduce_explosion_particles": "Reduz drasticamente a quantidade de partículas de explosões para prevenir picos de lag.",
+
   "option.barium.disable_texture_animations": "Desativar Animações de Textura",
-  "tooltip.barium.disable_texture_animations": "Congela texturas animadas (água, lava, portais) para economizar um pouco de CPU.",
-  
+  "tooltip.barium.disable_texture_animations": "Congela texturas animadas (água, lava, portais) para economizar uma pequena quantidade de CPU.",
+
   "option.barium.cache_debug_hud": "Cache do HUD de Depuração (F3)",
-  "tooltip.barium.cache_debug_hud": "Reduz o impacto na performance da tela F3 ao atualizá-la com menos frequência."
+  "tooltip.barium.cache_debug_hud": "Reduz o impacto na performance da tela F3 ao atualizá-la com menos frequência.",
+  
+  "option.barium.enable_tooltip_caching": "Ativar Cache de Tooltips",
+  "tooltip.barium.enable_tooltip_caching": "Armazena tooltips de itens para reduzir o lag ao passar o mouse sobre eles em inventários.",
+  
+  "option.barium.enable_entity_tick_culling": "Ativar Otimização de Ticks de Entidades",
+  "tooltip.barium.enable_entity_tick_culling": "Reduz a frequência de atualização da lógica (IA) de entidades distantes."
 }
