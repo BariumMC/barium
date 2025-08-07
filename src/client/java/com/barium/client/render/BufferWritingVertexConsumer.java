@@ -3,9 +3,6 @@ package com.barium.client.render;
 import net.minecraft.client.render.VertexConsumer;
 import java.nio.ByteBuffer;
 
-/**
- * VERSÃO CORRIGIDA: Implementa a interface VertexConsumer da 1.21.8
- */
 public class BufferWritingVertexConsumer implements VertexConsumer {
 
     private final BariumVertexFormat.Writer writer;
@@ -14,11 +11,11 @@ public class BufferWritingVertexConsumer implements VertexConsumer {
     public BufferWritingVertexConsumer(ByteBuffer buffer) {
         this.writer = new BariumVertexFormat.Writer(buffer);
     }
-
-    // CORREÇÃO: A interface agora usa floats para o método vertex.
+    
+    // A assinatura CORRETA para 1.21.x
     @Override
-    public VertexConsumer vertex(float x, float y, float z) {
-        this.writer.writePosNormal(x, y, z, this.normal);
+    public VertexConsumer vertex(double x, double y, double z) {
+        this.writer.writePosNormal((float)x, (float)y, (float)z, this.normal);
         return this;
     }
 
@@ -36,8 +33,7 @@ public class BufferWritingVertexConsumer implements VertexConsumer {
 
     @Override
     public VertexConsumer overlay(int u, int v) {
-        // Ignoramos por enquanto
-        return this;
+        return this; // Ignored
     }
 
     @Override
@@ -48,24 +44,11 @@ public class BufferWritingVertexConsumer implements VertexConsumer {
 
     @Override
     public VertexConsumer normal(float x, float y, float z) {
-        // TODO: Compactar a normal
-        return this;
+        return this; // Ignored
     }
 
-    // CORREÇÃO: O método next() agora é `endVertex()`
     @Override
-    public void endVertex() {
+    public void next() {
         this.writer.next();
-    }
-
-    // Métodos que precisam ser implementados, mas que podemos deixar vazios
-    @Override
-    public void fixedColor(int red, int green, int blue, int alpha) {
-        // Não usado por modelos de bloco
-    }
-
-    @Override
-    public void unfixColor() {
-        // Não usado por modelos de bloco
     }
 }
