@@ -1,12 +1,8 @@
 package com.barium.client.config;
 
-import com.barium.client.config.BariumConfigScreenFactory;
-import com.google.common.collect.ImmutableList;
 import net.minecraft.client.gui.DrawContext;
-import net.minecraft.client.gui.Element;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.widget.ButtonWidget;
-import net.minecraft.client.gui.widget.ClickableWidget;
 import net.minecraft.text.Text;
 
 import java.util.ArrayList;
@@ -17,10 +13,8 @@ public class BariumOptionsScreen extends Screen {
     private final List<OptionPage> pages = new ArrayList<>();
     private OptionPage selectedPage;
 
-    // Listas separadas para gerenciar os diferentes tipos de widgets
-    private List<ClickableWidget> tabButtons;
-    private List<ClickableWidget> pageWidgets;
-    private ButtonWidget doneButton;
+    // A tela de conteúdo do Cloth Config que será renderizada dentro da nossa.
+    private Screen currentPageContent;
 
     public BariumOptionsScreen(Screen parent) {
         super(Text.translatable("title.barium.options"));
@@ -40,8 +34,12 @@ public class BariumOptionsScreen extends Screen {
             this.selectedPage = this.pages.get(0);
         }
 
-        // 1. Cria os botões das abas e o botão "Concluído"
-        this.tabButtons = new ArrayList<>();
+        // 1. Cria e inicializa a tela de conteúdo da aba selecionada
+        this.currentPageContent = this.selectedPage.createScreen(this);
+        // IMPORTANTE: Inicializamos a tela de conteúdo para que ela crie seus próprios widgets
+        this.currentPageContent.init(this.client, this.width, this.height);
+
+        // 2. Adiciona os botões das abas à NOSSA tela
         int tabWidth = 80;
         int tabHeight = 20;
         int startX = this.width / 2 - (this.pages.size() * (tabWidth + 5) - 5) / 2;
@@ -55,70 +53,88 @@ public class BariumOptionsScreen extends Screen {
             if (this.selectedPage == page) {
                 button.active = false;
             }
-
-            this.tabButtons.add(button);
+            this.addDrawableChild(button);
             startX += tabWidth + 5;
         }
 
-        this.doneButton = ButtonWidget.builder(Text.translatable("gui.done"), (btn) -> this.close())
+        // 3. Adiciona o botão "Concluído"
+        this.addDrawableChild(ButtonWidget.builder(Text.translatable("gui.done"), (btn) -> this.close())
                 .dimensions(this.width / 2 - 100, this.height - 27, 200, 20)
-                .build();
-
-        // 2. Carrega os widgets da página de conteúdo
-        this.loadPageWidgets();
-
-        // 3. Adiciona TODOS os widgets à tela
-        // A ordem importa para a navegação com Tab
-        this.pageWidgets.forEach(this::addDrawableChild);
-        this.tabButtons.forEach(this::addDrawableChild);
-        this.addDrawableChild(this.doneButton);
-    }
-
-    private void loadPageWidgets() {
-        // Cria uma tela de conteúdo temporária para pegar os widgets
-        Screen contentScreen = this.selectedPage.createScreen(this);
-        contentScreen.init(this.client, this.width, this.height);
-
-        // Guarda apenas os widgets da página atual.
-        // Usamos `ImmutableList` para garantir que a lista é segura.
-        this.pageWidgets = ImmutableList.copyOf(contentScreen.children().stream()
-                .filter(e -> e instanceof ClickableWidget)
-                .map(e -> (ClickableWidget)e)
-                .toList());
+                .build());
     }
 
     private void selectPage(OptionPage page) {
         if (this.selectedPage != page) {
+            // Salva as alterações da página atual antes de trocar
+            BariumConfigScreenFactory.save();
             this.selectedPage = page;
-            // Apenas re-inicializa a tela. O método init() fará todo o trabalho de
-            // limpar os widgets antigos e adicionar os novos da página selecionada.
-            this.init();
+            this.init(); // Recria toda a interface com a nova página
         }
+    }
+
+    // --- A MÁGICA ACONTECE AQUI ---
+    // Nós passamos todos os eventos de mouse e teclado para a tela de conteúdo do Cloth Config
+
+    @Override
+    public boolean mouseClicked(double mouseX, double mouseY, int button) {
+        // Primeiro, tenta o clique na nossa tela (abas, botão Concluído)
+        if (super.mouseClicked(mouseX, mouseY, button)) {
+            return true;
+        }
+        // Se não, passa o clique para a tela de conteúdo
+        if (this.currentPageContent != null) {
+            return this.currentPageContent.mouseClicked(mouseX, mouseY, button);
+        }
+        return false;
+    }
+    
+    @Override
+    public boolean mouseReleased(double mouseX, double mouseY, int button) {
+        if (this.currentPageContent != null) {
+            return this.currentPageContent.mouseReleased(mouseX, mouseY, button);
+        }
+        return super.mouseReleased(mouseX, mouseY, button);
+    }
+    
+    @Override
+    public boolean mouseDragged(double mouseX, double mouseY, int button, double deltaX, double deltaY) {
+        if (this.currentPageContent != null) {
+            return this.currentPageContent.mouseDragged(mouseX, mouseY, button, deltaX, deltaY);
+        }
+        return super.mouseDragged(mouseX, mouseY, button, deltaX, deltaY);
+    }
+
+    @Override
+    public boolean mouseScrolled(double mouseX, double mouseY, double horizontalAmount, double verticalAmount) {
+        if (this.currentPageContent != null) {
+            return this.currentPageContent.mouseScrolled(mouseX, mouseY, horizontalAmount, verticalAmount);
+        }
+        return super.mouseScrolled(mouseX, mouseY, horizontalAmount, verticalAmount);
+    }
+    
+    @Override
+    public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+        if (this.currentPageContent != null && this.currentPageContent.keyPressed(keyCode, scanCode, modifiers)) {
+            return true;
+        }
+        return super.keyPressed(keyCode, scanCode, modifiers);
     }
 
     @Override
     public void render(DrawContext context, int mouseX, int mouseY, float delta) {
-        // Renderiza o fundo do mundo (ou o fundo de terra se não estiver no mundo).
-        this.renderBackground(context, mouseX, mouseY, delta);
+        // A tela de conteúdo do Cloth Config desenha seu próprio fundo e opções
+        if (this.currentPageContent != null) {
+            this.currentPageContent.render(context, mouseX, mouseY, delta);
+        }
 
-        // Desenha um retângulo escuro semi-transparente para melhorar a legibilidade.
-        // Removido o gradiente para um visual mais limpo e próximo do Sodium.
-        context.fill(0, 56, this.width, this.height - 32, 0x90000000);
-
-        // O super.render() agora desenhará TUDO que foi adicionado com addDrawableChild():
-        // as opções da aba atual, os botões das abas e o botão "Concluído".
-        // Ele também cuidará de mostrar as tooltips automaticamente.
-        super.render(context, mouseX, mouseY, delta);
-
-        // Desenha o título da tela.
+        // Agora, desenhamos NOSSOS widgets (abas, título, botão Concluído) por cima
         context.drawCenteredTextWithShadow(this.textRenderer, this.title, this.width / 2, 15, 0xFFFFFF);
+        super.render(context, mouseX, mouseY, delta);
     }
 
     @Override
     public void close() {
-        // Salva todas as configurações pendentes de todas as abas.
         BariumConfigScreenFactory.save();
-        // Volta para a tela anterior.
         this.client.setScreen(this.parent);
     }
 }

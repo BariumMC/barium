@@ -14,7 +14,6 @@ import net.minecraft.text.Text;
 
 public class BariumConfigScreenFactory {
 
-    // CORREÇÃO: Alterado de 'private' para 'public'
     public static void save() {
         ConfigManager.saveConfig();
         MinecraftClient.getInstance().options.write();
@@ -22,7 +21,13 @@ public class BariumConfigScreenFactory {
 
     public static Screen buildGeneralScreen(Screen parent) {
         MinecraftClient client = MinecraftClient.getInstance();
-        ConfigBuilder builder = ConfigBuilder.create().setParentScreen(parent).setTitle(Text.translatable("category.barium.general")).setSavingRunnable(BariumConfigScreenFactory::save);
+        ConfigBuilder builder = ConfigBuilder.create()
+                .setParentScreen(parent)
+                .setTitle(Text.translatable("category.barium.general"))
+                .setSavingRunnable(BariumConfigScreenFactory::save)
+                .setTransparentBackground(true) // Impede que o Cloth desenhe seu próprio fundo
+                .setDoesNotSave(true);          // Remove os botões de salvar/cancelar do Cloth
+
         ConfigEntryBuilder entryBuilder = builder.entryBuilder();
         ConfigCategory general = builder.getOrCreateCategory(Text.translatable("category.barium.general"));
 
@@ -36,7 +41,13 @@ public class BariumConfigScreenFactory {
     
     public static Screen buildQualityScreen(Screen parent) {
         MinecraftClient client = MinecraftClient.getInstance();
-        ConfigBuilder builder = ConfigBuilder.create().setParentScreen(parent).setTitle(Text.translatable("category.barium.quality")).setSavingRunnable(BariumConfigScreenFactory::save);
+        ConfigBuilder builder = ConfigBuilder.create()
+                .setParentScreen(parent)
+                .setTitle(Text.translatable("category.barium.quality"))
+                .setSavingRunnable(BariumConfigScreenFactory::save)
+                .setTransparentBackground(true) // Impede que o Cloth desenhe seu próprio fundo
+                .setDoesNotSave(true);          // Remove os botões de salvar/cancelar do Cloth
+
         ConfigEntryBuilder entryBuilder = builder.entryBuilder();
         ConfigCategory quality = builder.getOrCreateCategory(Text.translatable("category.barium.quality"));
 
@@ -48,7 +59,13 @@ public class BariumConfigScreenFactory {
     }
     
     public static Screen buildPerformanceScreen(Screen parent) {
-        ConfigBuilder builder = ConfigBuilder.create().setParentScreen(parent).setTitle(Text.translatable("category.barium.performance")).setSavingRunnable(BariumConfigScreenFactory::save);
+        ConfigBuilder builder = ConfigBuilder.create()
+                .setParentScreen(parent)
+                .setTitle(Text.translatable("category.barium.performance"))
+                .setSavingRunnable(BariumConfigScreenFactory::save)
+                .setTransparentBackground(true) // Impede que o Cloth desenhe seu próprio fundo
+                .setDoesNotSave(true);          // Remove os botões de salvar/cancelar do Cloth
+
         ConfigEntryBuilder entryBuilder = builder.entryBuilder();
         ConfigData defaults = new ConfigData();
         ConfigCategory performance = builder.getOrCreateCategory(Text.translatable("category.barium.performance"));
@@ -61,7 +78,13 @@ public class BariumConfigScreenFactory {
     }
     
     public static Screen buildAdvancedScreen(Screen parent) {
-        ConfigBuilder builder = ConfigBuilder.create().setParentScreen(parent).setTitle(Text.translatable("category.barium.advanced")).setSavingRunnable(BariumConfigScreenFactory::save);
+        ConfigBuilder builder = ConfigBuilder.create()
+                .setParentScreen(parent)
+                .setTitle(Text.translatable("category.barium.advanced"))
+                .setSavingRunnable(BariumConfigScreenFactory::save)
+                .setTransparentBackground(true) // Impede que o Cloth desenhe seu próprio fundo
+                .setDoesNotSave(true);          // Remove os botões de salvar/cancelar do Cloth
+
         ConfigEntryBuilder entryBuilder = builder.entryBuilder();
         ConfigData defaults = new ConfigData();
         ConfigCategory advanced = builder.getOrCreateCategory(Text.translatable("category.barium.advanced"));
