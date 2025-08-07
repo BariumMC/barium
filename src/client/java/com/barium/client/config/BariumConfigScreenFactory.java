@@ -14,19 +14,22 @@ import net.minecraft.text.Text;
 
 public class BariumConfigScreenFactory {
 
-    public static void save() {
+    private static void save() {
         ConfigManager.saveConfig();
-        MinecraftClient.getInstance().options.write();
+        if (MinecraftClient.getInstance().options != null) {
+            MinecraftClient.getInstance().options.write();
+        }
     }
+
+    // --- Telas de Opções Vanilla (Geral e Qualidade) ---
+    // (Não precisam de alteração, continuam como estão)
 
     public static Screen buildGeneralScreen(Screen parent) {
         MinecraftClient client = MinecraftClient.getInstance();
         ConfigBuilder builder = ConfigBuilder.create()
                 .setParentScreen(parent)
-                .setTitle(Text.translatable("category.barium.general"))
-                .setTransparentBackground(true); // Impede que o Cloth desenhe seu próprio fundo
-
-        // REMOVIDO: .setSavingRunnable(...) e .setDoesNotSave(...)
+                .setTitle(Text.translatable("title.barium.options").append(" - ").append(Text.translatable("category.barium.general")))
+                .setSavingRunnable(BariumConfigScreenFactory::save);
 
         ConfigEntryBuilder entryBuilder = builder.entryBuilder();
         ConfigCategory general = builder.getOrCreateCategory(Text.translatable("category.barium.general"));
@@ -43,8 +46,8 @@ public class BariumConfigScreenFactory {
         MinecraftClient client = MinecraftClient.getInstance();
         ConfigBuilder builder = ConfigBuilder.create()
                 .setParentScreen(parent)
-                .setTitle(Text.translatable("category.barium.quality"))
-                .setTransparentBackground(true); // Impede que o Cloth desenhe seu próprio fundo
+                .setTitle(Text.translatable("title.barium.options").append(" - ").append(Text.translatable("category.barium.quality")))
+                .setSavingRunnable(BariumConfigScreenFactory::save);
 
         ConfigEntryBuilder entryBuilder = builder.entryBuilder();
         ConfigCategory quality = builder.getOrCreateCategory(Text.translatable("category.barium.quality"));
@@ -56,36 +59,55 @@ public class BariumConfigScreenFactory {
         return builder.build();
     }
     
+    // --- Telas de Opções do Barium (com TODAS as suas configurações) ---
+
     public static Screen buildPerformanceScreen(Screen parent) {
         ConfigBuilder builder = ConfigBuilder.create()
                 .setParentScreen(parent)
-                .setTitle(Text.translatable("category.barium.performance"))
-                .setTransparentBackground(true); // Impede que o Cloth desenhe seu próprio fundo
+                .setTitle(Text.translatable("title.barium.options").append(" - ").append(Text.translatable("category.barium.performance")))
+                .setSavingRunnable(BariumConfigScreenFactory::save);
 
         ConfigEntryBuilder entryBuilder = builder.entryBuilder();
         ConfigData defaults = new ConfigData();
         ConfigCategory performance = builder.getOrCreateCategory(Text.translatable("category.barium.performance"));
 
-        performance.addEntry(entryBuilder.startBooleanToggle(Text.translatable("option.barium.enable_directional_chunk_loading"), BariumConfig.C.ENABLE_DIRECTIONAL_CHUNK_LOADING).setDefaultValue(defaults.ENABLE_DIRECTIONAL_CHUNK_LOADING).setTooltip(Text.translatable("tooltip.barium.enable_directional_chunk_loading")).setSaveConsumer(newValue -> BariumConfig.C.ENABLE_DIRECTIONAL_CHUNK_LOADING = newValue).build());
-        performance.addEntry(entryBuilder.startBooleanToggle(Text.translatable("option.barium.enable_chunk_update_throttling"), BariumConfig.C.ENABLE_CHUNK_UPDATE_THROTTLING).setDefaultValue(defaults.ENABLE_CHUNK_UPDATE_THROTTLING).setTooltip(Text.translatable("tooltip.barium.enable_chunk_update_throttling")).setSaveConsumer(newValue -> BariumConfig.C.ENABLE_CHUNK_UPDATE_THROTTLING = newValue).build());
-        performance.addEntry(entryBuilder.startIntSlider(Text.translatable("option.barium.max_chunk_uploads"), BariumConfig.C.MAX_CHUNK_UPLOADS_PER_FRAME, 1, 16).setDefaultValue(defaults.MAX_CHUNK_UPLOADS_PER_FRAME).setTooltip(Text.translatable("tooltip.barium.max_chunk_uploads")).setSaveConsumer(newValue -> BariumConfig.C.MAX_CHUNK_UPLOADS_PER_FRAME = newValue).build());
-
+        performance.addEntry(entryBuilder.startBooleanToggle(Text.translatable("option.barium.enable_frustum_chunk_culling"), BariumConfig.C.ENABLE_FRUSTUM_CHUNK_CULLING)
+                .setDefaultValue(defaults.ENABLE_FRUSTUM_CHUNK_CULLING).setTooltip(Text.translatable("tooltip.barium.enable_frustum_chunk_culling")).setSaveConsumer(v -> BariumConfig.C.ENABLE_FRUSTUM_CHUNK_CULLING = v).build());
+        performance.addEntry(entryBuilder.startBooleanToggle(Text.translatable("option.barium.enable_flood_fill_culling"), BariumConfig.C.ENABLE_FLOOD_FILL_CULLING)
+                .setDefaultValue(defaults.ENABLE_FLOOD_FILL_CULLING).setTooltip(Text.translatable("tooltip.barium.enable_flood_fill_culling")).setSaveConsumer(v -> BariumConfig.C.ENABLE_FLOOD_FILL_CULLING = v).build());
+        performance.addEntry(entryBuilder.startBooleanToggle(Text.translatable("option.barium.enable_empty_chunk_section_culling"), BariumConfig.C.ENABLE_EMPTY_CHUNK_SECTION_CULLING)
+                .setDefaultValue(defaults.ENABLE_EMPTY_CHUNK_SECTION_CULLING).setTooltip(Text.translatable("tooltip.barium.enable_empty_chunk_section_culling")).setSaveConsumer(v -> BariumConfig.C.ENABLE_EMPTY_CHUNK_SECTION_CULLING = v).build());
+        performance.addEntry(entryBuilder.startBooleanToggle(Text.translatable("option.barium.enable_chunk_update_throttling"), BariumConfig.C.ENABLE_CHUNK_UPDATE_THROTTLING)
+                .setDefaultValue(defaults.ENABLE_CHUNK_UPDATE_THROTTLING).setTooltip(Text.translatable("tooltip.barium.enable_chunk_update_throttling")).setSaveConsumer(v -> BariumConfig.C.ENABLE_CHUNK_UPDATE_THROTTLING = v).build());
+        performance.addEntry(entryBuilder.startIntSlider(Text.translatable("option.barium.max_chunk_uploads_per_frame"), BariumConfig.C.MAX_CHUNK_UPLOADS_PER_FRAME, 1, 16)
+                .setDefaultValue(defaults.MAX_CHUNK_UPLOADS_PER_FRAME).setTooltip(Text.translatable("tooltip.barium.max_chunk_uploads_per_frame")).setSaveConsumer(v -> BariumConfig.C.MAX_CHUNK_UPLOADS_PER_FRAME = v).build());
+        
         return builder.build();
     }
     
     public static Screen buildAdvancedScreen(Screen parent) {
         ConfigBuilder builder = ConfigBuilder.create()
                 .setParentScreen(parent)
-                .setTitle(Text.translatable("category.barium.advanced"))
-                .setTransparentBackground(true); // Impede que o Cloth desenhe seu próprio fundo
+                .setTitle(Text.translatable("title.barium.options").append(" - ").append(Text.translatable("category.barium.advanced")))
+                .setSavingRunnable(BariumConfigScreenFactory::save);
 
         ConfigEntryBuilder entryBuilder = builder.entryBuilder();
         ConfigData defaults = new ConfigData();
         ConfigCategory advanced = builder.getOrCreateCategory(Text.translatable("category.barium.advanced"));
 
-        advanced.addEntry(entryBuilder.startBooleanToggle(Text.translatable("option.barium.enable_entity_culling"), BariumConfig.C.ENABLE_ENTITY_CULLING).setDefaultValue(defaults.ENABLE_ENTITY_CULLING).setTooltip(Text.translatable("tooltip.barium.enable_entity_culling")).setSaveConsumer(newValue -> BariumConfig.C.ENABLE_ENTITY_CULLING = newValue).build());
-        advanced.addEntry(entryBuilder.startBooleanToggle(Text.translatable("option.barium.disable_texture_animations"), BariumConfig.C.DISABLE_TEXTURE_ANIMATIONS).setDefaultValue(defaults.DISABLE_TEXTURE_ANIMATIONS).setTooltip(Text.translatable("tooltip.barium.disable_texture_animations")).setSaveConsumer(newValue -> BariumConfig.C.DISABLE_TEXTURE_ANIMATIONS = newValue).build());
-
+        advanced.addEntry(entryBuilder.startBooleanToggle(Text.translatable("option.barium.enable_entity_culling"), BariumConfig.C.ENABLE_ENTITY_CULLING)
+                .setDefaultValue(defaults.ENABLE_ENTITY_CULLING).setTooltip(Text.translatable("tooltip.barium.enable_entity_culling")).setSaveConsumer(v -> BariumConfig.C.ENABLE_ENTITY_CULLING = v).build());
+        advanced.addEntry(entryBuilder.startBooleanToggle(Text.translatable("option.barium.enable_block_entity_culling"), BariumConfig.C.ENABLE_BLOCK_ENTITY_CULLING)
+                .setDefaultValue(defaults.ENABLE_BLOCK_ENTITY_CULLING).setTooltip(Text.translatable("tooltip.barium.enable_block_entity_culling")).setSaveConsumer(v -> BariumConfig.C.ENABLE_BLOCK_ENTITY_CULLING = v).build());
+        advanced.addEntry(entryBuilder.startBooleanToggle(Text.translatable("option.barium.enable_particle_optimization"), BariumConfig.C.ENABLE_PARTICLE_OPTIMIZATION)
+                .setDefaultValue(defaults.ENABLE_PARTICLE_OPTIMIZATION).setTooltip(Text.translatable("tooltip.barium.enable_particle_optimization")).setSaveConsumer(v -> BariumConfig.C.ENABLE_PARTICLE_OPTIMIZATION = v).build());
+        advanced.addEntry(entryBuilder.startBooleanToggle(Text.translatable("option.barium.enable_entity_tick_culling"), BariumConfig.C.ENABLE_ENTITY_TICK_CULLING)
+                .setDefaultValue(defaults.ENABLE_ENTITY_TICK_CULLING).setTooltip(Text.translatable("tooltip.barium.enable_entity_tick_culling")).setSaveConsumer(v -> BariumConfig.C.ENABLE_ENTITY_TICK_CULLING = v).build());
+        advanced.addEntry(entryBuilder.startBooleanToggle(Text.translatable("option.barium.disable_texture_animations"), BariumConfig.C.DISABLE_TEXTURE_ANIMATIONS)
+                .setDefaultValue(defaults.DISABLE_TEXTURE_ANIMATIONS).setTooltip(Text.translatable("tooltip.barium.disable_texture_animations")).setSaveConsumer(v -> BariumConfig.C.DISABLE_TEXTURE_ANIMATIONS = v).build());
+        advanced.addEntry(entryBuilder.startBooleanToggle(Text.translatable("option.barium.cache_debug_hud"), BariumConfig.C.CACHE_DEBUG_HUD)
+                .setDefaultValue(defaults.CACHE_DEBUG_HUD).setTooltip(Text.translatable("tooltip.barium.cache_debug_hud")).setSaveConsumer(v -> BariumConfig.C.CACHE_DEBUG_HUD = v).build());
+        
         return builder.build();
     }
 }
