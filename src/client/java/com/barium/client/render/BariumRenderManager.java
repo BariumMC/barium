@@ -2,16 +2,12 @@ package com.barium.client.render;
 
 import com.barium.BariumMod;
 import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.render.Camera;
 import net.minecraft.client.render.RenderLayer;
-import net.minecraft.client.util.math.MatrixStack;
-import net.minecraft.client.world.ClientWorld;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 import org.jetbrains.annotations.Nullable;
 
 import java.nio.ByteBuffer;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
@@ -21,14 +17,6 @@ public class BariumRenderManager {
     private static final BariumRenderManager INSTANCE = new BariumRenderManager();
     public static BariumRenderManager getInstance() { return INSTANCE; }
 
-    // Lista de layers que nosso mesher irá gerar
-    private static final List<RenderLayer> CHUNK_LAYERS = List.of(
-        RenderLayer.getSolid(), 
-        RenderLayer.getCutoutMipped(), 
-        RenderLayer.getCutout(), 
-        RenderLayer.getTranslucent()
-    );
-
     private final Map<Long, RenderableChunk> chunks = new ConcurrentHashMap<>();
     private ExecutorService mesherExecutor;
     private StreamingBuffer streamingBuffer;
@@ -37,7 +25,8 @@ public class BariumRenderManager {
 
     public void init() {
         this.mesherExecutor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
-        this.streamingBuffer = new StreamingBuffer(256 * 1024 * 1024);
+        // StreamingBuffer e ChunkMesher não podem ser nulos
+        this.streamingBuffer = new StreamingBuffer(256 * 1024 * 1024); 
         this.chunkMesher = new ChunkMesher();
         BariumMod.LOGGER.info("Barium Render Manager inicializado.");
     }
@@ -65,31 +54,10 @@ public class BariumRenderManager {
             this.streamingBuffer.upload(region, entry.getValue());
             chunk.upload(entry.getKey(), region);
         }
-        result.free();
-        chunk.setMeshResult(null);
-    }
-
-    /**
-     * O novo método de renderização principal. Chamado uma vez por frame pelo nosso @Overwrite.
-     */
-    public void renderWorld(MatrixStack matrices, Camera camera) {
-        double camX = camera.getPos().getX();
-        double camY = camera.getPos().getY();
-        double camZ = camera.getPos().getZ();
-
-        // Itera sobre os layers e desenha os chunks para cada um
-        for (RenderLayer layer : CHUNK_LAYERS) {
-            layer.startDrawing();
-            this.streamingBuffer.bind();
-            // TODO: Configurar os atributos de vértice aqui (glVertexAttribPointer)
-            
-            for (RenderableChunk chunk : this.chunks.values()) {
-                // TODO: Adicionar culling de frustum aqui
-                chunk.draw(layer);
-            }
-            
-            layer.endDrawing();
+        if (result != null) {
+            result.free();
         }
+        chunk.setMeshResult(null);
     }
 
     public void shutdown() {
@@ -98,7 +66,6 @@ public class BariumRenderManager {
     }
 
     private static class ChunkRebuildTask implements Runnable {
-        // ... (código da tarefa de rebuild)
         private final RenderableChunk chunk;
         private final World world;
         private final ChunkMesher mesher;
