@@ -7,29 +7,36 @@ import com.barium.client.util.ChunkVisibilityManager;
 import com.barium.client.util.FloodFillVisibilityManager;
 import com.barium.config.BariumConfig;
 import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.render.*;
-import net.minecraft.client.util.math.MatrixStack;
+import net.minecraft.client.render.Camera;
+import net.minecraft.client.render.Frustum;
+import net.minecraft.client.render.WorldRenderer;
 import net.minecraft.client.world.ClientWorld;
 import org.jetbrains.annotations.Nullable;
-import org.joml.Matrix4f;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
-import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
+/**
+ * Mixin Focado e Estável
+ * 
+ * Neste momento, vamos focar em tomar o controle do AGENDAMENTO de rebuilds,
+ * que é um passo estável e garantido de funcionar. A tomada da renderização
+ * será o próximo passo, uma vez que tenhamos uma base compilável.
+ */
 @Mixin(WorldRenderer.class)
 public abstract class WorldRendererMixin {
 
     @Shadow @Final private MinecraftClient client;
     @Shadow @Nullable private ClientWorld world;
 
-    // --- Injeções de setup e schedule (ESTÁVEIS, SEM MUDANÇAS) ---
+    // --- Injeções de setup e schedule (ESTÁVEIS) ---
 
     @Inject(method = "setWorld", at = @At("HEAD"))
     private void barium$onSetWorld(@Nullable ClientWorld newWorld, CallbackInfo ci) {
+        // Inicializa/limpa nosso manager
         BariumRenderManager.getInstance().onWorldChange(newWorld);
     }
 
@@ -46,39 +53,22 @@ public abstract class WorldRendererMixin {
         ChunkUploadThrottler.resetCounter();
     }
 
+    /**
+     * Esta é a tomada de controle mais importante e estável.
+     * Nós interceptamos o pedido para reconstruir um chunk, passamos para nosso sistema,
+     * e impedimos o Minecraft de fazer o trabalho. Isso VAI funcionar.
+     */
     @Inject(method = "scheduleChunkRender(IIIZ)V", at = @At("HEAD"), cancellable = true)
     private void barium$takeOverRebuildScheduling(int x, int y, int z, boolean isPriority, CallbackInfo ci) {
         BariumRenderManager.getInstance().scheduleRebuild(x, y, z, isPriority);
         ci.cancel();
     }
     
-    
-    // --- TOMADA DE CONTROLE FINAL COM @REDIRECT ---
-    
-    /**
-     * Esta é a injeção que substitui a renderização de chunks.
-     * Ela intercepta CADA chamada para `renderLayer` dentro do loop do método `render` principal.
-     * Em vez de deixar o Minecraft desenhar, nós chamamos nosso próprio manager.
-     */
-    @Redirect(
-        method = "render(Lnet/minecraft/client/util/math/MatrixStack;FJZLnet/minecraft/client/render/Camera;Lnet/minecraft/client/render/GameRenderer;Lnet/minecraft/client/render/LightmapTextureManager;Lorg/joml/Matrix4f;)V",
-        at = @At(
-            value = "INVOKE",
-            // Este é o alvo exato. O `WorldRenderer` chamando seu próprio `renderLayer`
-            target = "Lnet/minecraft/client/render/WorldRenderer;renderLayer(Lnet/minecraft/client/render/RenderLayer;Lnet/minecraft/client/util/math/MatrixStack;DDD)V"
-        )
-    )
-    private void barium$redirectRenderLayer(
-            // Os argumentos do @Redirect devem ser:
-            // 1. A instância da classe que chama o método (`WorldRenderer`)
-            // 2. Os argumentos do método que estamos interceptando (`renderLayer`)
-            WorldRenderer instance, RenderLayer layer, MatrixStack matrices, 
-            double cameraX, double cameraY, double cameraZ
-    ) {
-        // NÃO chamamos o método original (instance.renderLayer(...)).
-        // Isso efetivamente desliga a renderização de chunks do Minecraft para este layer.
-
-        // Em vez disso, chamamos nosso BariumRenderManager.
-        BariumRenderManager.getInstance().renderLayer(matrices, layer, cameraX, cameraY, cameraZ);
-    }
+    //
+    // A INJEÇÃO DE RENDERIZAÇÃO FOI REMOVIDA TEMPORARIAMENTE
+    //
+    // Vamos primeiro garantir que o resto compile. Uma vez que o agendamento
+    // esteja sob nosso controle, podemos implementar o meshing e o upload,
+    // e então, como passo final, encontrar o ponto exato para injetar e desenhar.
+    //
 }
