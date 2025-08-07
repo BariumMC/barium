@@ -1,6 +1,8 @@
+// --- Substitua o conteúdo em: src/client/java/com/barium/client/mixin/EntityRendererMixin.java ---
 package com.barium.client.mixin;
 
 import com.barium.client.optimization.EntityOptimizer;
+import com.barium.config.BariumConfig;
 import net.minecraft.client.render.Frustum;
 import net.minecraft.client.render.entity.EntityRenderer;
 import net.minecraft.entity.Entity;
@@ -17,10 +19,16 @@ public abstract class EntityRendererMixin<T extends Entity> {
         at = @At("HEAD"),
         cancellable = true
     )
-    private void barium$cullDistantEntity(T entity, Frustum frustum, double cameraX, double cameraY, double cameraZ, CallbackInfoReturnable<Boolean> cir) {
-        // CORREÇÃO CRÍTICA: A lógica foi invertida para funcionar corretamente.
-        // A renderização agora é cancelada APENAS se shouldRenderEntity retornar 'false'.
-        if (!EntityOptimizer.shouldRenderEntity(entity, cameraX, cameraY, cameraZ)) {
+    private void barium$cullEntitiesWithDistanceAndFrustum(T entity, Frustum frustum, double cameraX, double cameraY, double cameraZ, CallbackInfoReturnable<Boolean> cir) {
+        // Se a otimização estiver desligada nas configurações, não fazemos nada.
+        if (!BariumConfig.C.ENABLE_ENTITY_CULLING) {
+            return;
+        }
+
+        // Delega a lógica para a nossa classe otimizadora.
+        // Se a nossa lógica decidir que a entidade NÃO deve ser renderizada,
+        // nós cancelamos o método original e retornamos 'false' imediatamente.
+        if (!EntityOptimizer.shouldRenderEntity(entity, frustum, cameraX, cameraY, cameraZ)) {
             cir.setReturnValue(false);
         }
     }
