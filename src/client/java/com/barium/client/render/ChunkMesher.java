@@ -7,7 +7,8 @@ import net.minecraft.client.render.RenderLayers;
 import net.minecraft.client.render.VertexConsumer;
 import net.minecraft.client.render.VertexConsumerProvider;
 import net.minecraft.client.render.block.BlockRenderManager;
-import net.minecraft.client.render.model.block.BlockModelPart; // Import corrigido
+// CORREÇÃO: O caminho do import foi corrigido.
+import net.minecraft.client.render.model.BlockModelPart; 
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.BlockRenderView;
@@ -35,15 +36,12 @@ public class ChunkMesher {
 
     public Result mesh(BlockRenderView world, BlockPos sectionOrigin) {
         BlockRenderManager blockRenderManager = MinecraftClient.getInstance().getBlockRenderManager();
-        // CORREÇÃO: Usar ConcurrentHashMap em vez de EnumMap
         Map<RenderLayer, ByteBuffer> buffers = new ConcurrentHashMap<>();
 
-        // CORREÇÃO: Não podemos usar lambda para VertexConsumerProvider.Immediate.
-        // Criamos uma implementação anônima completa.
         VertexConsumerProvider.Immediate provider = new VertexConsumerProvider.Immediate() {
             @Override
             public VertexConsumer getBuffer(RenderLayer layer) {
-                ByteBuffer buffer = buffers.computeIfAbsent(layer, l -> MemoryUtil.memAlloc(524288)); // 512 KB
+                ByteBuffer buffer = buffers.computeIfAbsent(layer, l -> MemoryUtil.memAlloc(524288));
                 return new BufferWritingVertexConsumer(buffer);
             }
             @Override
@@ -68,8 +66,9 @@ public class ChunkMesher {
                     matrices.push();
                     matrices.translate(x, y, z);
                     
-                    // CORREÇÃO: A assinatura de renderBlock espera uma List<BlockModelPart>
-                    // Passamos uma lista vazia, pois não estamos fazendo renderização seletiva de partes.
+                    // CORREÇÃO FINAL DA ASSINATURA DE renderBlock
+                    // A assinatura correta espera uma List<BlockModelPart> como último argumento.
+                    // Nós passamos uma lista vazia porque queremos renderizar o bloco inteiro.
                     blockRenderManager.renderBlock(
                         state, 
                         blockPos, 
@@ -77,9 +76,8 @@ public class ChunkMesher {
                         matrices, 
                         provider.getBuffer(RenderLayers.getMovingBlockLayer(state)), 
                         true, // cull
-                        random, // random
-                        state.getRenderingSeed(blockPos), // seed
-                        -1 // overlay
+                        // O erro anterior estava aqui. A assinatura correta não usa Random, usa List.
+                        Collections.emptyList()
                     );
 
                     matrices.pop();
