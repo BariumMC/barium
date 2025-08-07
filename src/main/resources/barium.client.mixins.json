@@ -17,8 +17,7 @@
 		"ParticleManagerMixin",
 		"ParticleMixin",
 		"TextureAtlasMixin",
-		"WorldRendererMixin",
-		"WorldRendererChunkPriorityMixin"
+		"WorldRendererMixin"
 	],
 	"injectors": {
 		"defaultRequire": 1
