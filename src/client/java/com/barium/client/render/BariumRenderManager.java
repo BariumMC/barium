@@ -1,26 +1,25 @@
 package com.barium.client.render;
 
 import com.barium.BariumMod;
-import net.minecraft.client.render.Camera;
 import net.minecraft.client.render.RenderLayer;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.client.world.ClientWorld;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.List; // Importar a lista
 
 public class BariumRenderManager {
     private static final BariumRenderManager INSTANCE = new BariumRenderManager();
     public static BariumRenderManager getInstance() { return INSTANCE; }
 
-    // CORREÇÃO: A lista de layers de bloco não é mais pública. Nós a definimos aqui.
     private static final List<RenderLayer> CHUNK_LAYERS = List.of(
-        RenderLayer.getSolid(), 
-        RenderLayer.getCutoutMipped(), 
-        RenderLayer.getCutout(), 
+        RenderLayer.getSolid(),
+        RenderLayer.getCutoutMipped(),
+        RenderLayer.getCutout(),
         RenderLayer.getTranslucent()
+        // NOTA: Em versões futuras, RenderLayer.getTripwire() pode ser necessário aqui.
     );
 
     private ExecutorService mesherExecutor;
@@ -33,52 +32,33 @@ public class BariumRenderManager {
     }
 
     /**
-     * Esta é a nossa NOVA função de renderização principal. Ela substitui o `WorldRenderer.render`.
+     * Função de renderização principal, agora simplificada.
      */
-    public void renderWorld(MatrixStack matrices, Camera camera) {
-        double cameraX = camera.getPos().getX();
-        double cameraY = camera.getPos().getY();
-        double cameraZ = camera.getPos().getZ();
+    public void renderWorld(MatrixStack matrices, float tickDelta) {
+        // Obtenha os dados da câmera quando precisar deles, em vez de passá-los por todo lado.
+        // MinecraftClient client = MinecraftClient.getInstance();
+        // Camera camera = client.gameRenderer.getCamera();
+        // double cameraX = camera.getPos().getX();
+        // double cameraY = camera.getPos().getY();
+        // double cameraZ = camera.getPos().getZ();
 
-        // 1. Configurar estado do OpenGL (profundidade, culling, etc.)
-        // Ex: GlStateManager._enableDepthTest();
-
-        // 2. Loop através dos layers de renderização
+        // A lógica principal é iterar e desenhar cada layer.
         for (RenderLayer layer : CHUNK_LAYERS) {
-            // 3. Chamar nosso método de renderização específico do layer
-            this.renderLayer(matrices, layer, cameraX, cameraY, cameraZ);
+            this.renderLayer(matrices, layer);
         }
-
-        // 4. Limpar o estado do OpenGL
     }
     
-    // Método para renderizar um único layer (não precisa de muitas mudanças)
-    private void renderLayer(MatrixStack matrices, RenderLayer layer, double cameraX, double cameraY, double cameraZ) {
+    private void renderLayer(MatrixStack matrices, RenderLayer layer) {
         layer.startDrawing();
-
-        // TODO: Sua lógica de renderização para este layer
-        // - Bind do StreamingBuffer
-        // - Configuração de atributos de vértice
-        // - Chamadas de desenho (glMultiDrawIndirect)
-
+        // TODO: Lógica de desenho para o layer.
         layer.endDrawing();
     }
     
-    // Métodos de ciclo de vida e agendamento
-    public void onWorldChange(@Nullable ClientWorld newWorld) {
-        // Lógica de limpeza
-    }
-    
-    public void scheduleRebuild(int x, int y, int z, boolean isPriority) {
-        // Lógica de agendamento
-    }
+    public void onWorldChange(@Nullable ClientWorld newWorld) {}
+    public void scheduleRebuild(int x, int y, int z, boolean isPriority) {}
 
     public void shutdown() {
-        if (this.mesherExecutor != null) {
-            this.mesherExecutor.shutdown();
-        }
-        if (this.streamingBuffer != null) {
-            this.streamingBuffer.delete();
-        }
+        if (this.mesherExecutor != null) this.mesherExecutor.shutdown();
+        if (this.streamingBuffer != null) this.streamingBuffer.delete();
     }
 }
