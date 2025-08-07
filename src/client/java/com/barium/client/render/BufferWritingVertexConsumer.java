@@ -12,10 +12,10 @@ public class BufferWritingVertexConsumer implements VertexConsumer {
         this.writer = new BariumVertexFormat.Writer(buffer);
     }
     
-    // A assinatura CORRETA para 1.21.x
+    // CORREÇÃO: Usando a assinatura com float que o compilador exige.
     @Override
-    public VertexConsumer vertex(double x, double y, double z) {
-        this.writer.writePosNormal((float)x, (float)y, (float)z, this.normal);
+    public VertexConsumer vertex(float x, float y, float z) {
+        this.writer.writePosNormal(x, y, z, this.normal);
         return this;
     }
 
@@ -47,8 +47,16 @@ public class BufferWritingVertexConsumer implements VertexConsumer {
         return this; // Ignored
     }
 
+    // CORREÇÃO: O nome do método é endVertex(), não next().
     @Override
-    public void next() {
+    public void endVertex() {
         this.writer.next();
     }
+    
+    // Métodos adicionais exigidos pela interface em algumas versões
+    @Override
+    public void fixedColor(int red, int green, int blue, int alpha) {}
+
+    @Override
+    public void unfixColor() {}
 }
