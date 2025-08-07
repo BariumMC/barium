@@ -4,8 +4,7 @@ import net.minecraft.client.render.VertexConsumer;
 import java.nio.ByteBuffer;
 
 /**
- * Um VertexConsumer que não desenha nada, mas em vez disso, escreve
- * os dados dos vértices diretamente em um ByteBuffer usando nosso formato customizado.
+ * VERSÃO CORRIGIDA: Implementa a interface VertexConsumer da 1.21.8
  */
 public class BufferWritingVertexConsumer implements VertexConsumer {
 
@@ -16,12 +15,10 @@ public class BufferWritingVertexConsumer implements VertexConsumer {
         this.writer = new BariumVertexFormat.Writer(buffer);
     }
 
+    // CORREÇÃO: A interface agora usa floats para o método vertex.
     @Override
-    public VertexConsumer vertex(double x, double y, double z) {
-        // A lógica de `vertex` é chamada primeiro, então guardamos os dados.
-        // O `writer` avançará o ponteiro quando todos os dados forem escritos.
-        // Por simplicidade, assumimos que a posição é relativa à seção (0-16).
-        this.writer.writePosNormal((float) x, (float) y, (float) z, this.normal);
+    public VertexConsumer vertex(float x, float y, float z) {
+        this.writer.writePosNormal(x, y, z, this.normal);
         return this;
     }
 
@@ -39,7 +36,7 @@ public class BufferWritingVertexConsumer implements VertexConsumer {
 
     @Override
     public VertexConsumer overlay(int u, int v) {
-        // TODO: Mapear o overlay para nosso formato
+        // Ignoramos por enquanto
         return this;
     }
 
@@ -51,15 +48,24 @@ public class BufferWritingVertexConsumer implements VertexConsumer {
 
     @Override
     public VertexConsumer normal(float x, float y, float z) {
-        // TODO: Compactar a normal em 2-3 bits e guardá-la.
-        // this.normal = ...
+        // TODO: Compactar a normal
         return this;
     }
 
+    // CORREÇÃO: O método next() agora é `endVertex()`
     @Override
-    public void next() {
-        // O método `next()` do VertexConsumer indica que um vértice está completo.
-        // No nosso caso, o writer já avançou o ponteiro, então não precisamos fazer nada.
+    public void endVertex() {
         this.writer.next();
+    }
+
+    // Métodos que precisam ser implementados, mas que podemos deixar vazios
+    @Override
+    public void fixedColor(int red, int green, int blue, int alpha) {
+        // Não usado por modelos de bloco
+    }
+
+    @Override
+    public void unfixColor() {
+        // Não usado por modelos de bloco
     }
 }

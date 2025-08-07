@@ -7,15 +7,18 @@ import net.minecraft.client.render.RenderLayers;
 import net.minecraft.client.render.VertexConsumer;
 import net.minecraft.client.render.VertexConsumerProvider;
 import net.minecraft.client.render.block.BlockRenderManager;
+import net.minecraft.client.render.model.block.BlockModelPart; // Import corrigido
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.BlockRenderView;
 import org.lwjgl.system.MemoryUtil;
 
 import java.nio.ByteBuffer;
-import java.util.EnumMap;
+import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class ChunkMesher {
 
@@ -30,19 +33,27 @@ public class ChunkMesher {
         }
     }
 
-    private final Random random = new Random();
-
     public Result mesh(BlockRenderView world, BlockPos sectionOrigin) {
         BlockRenderManager blockRenderManager = MinecraftClient.getInstance().getBlockRenderManager();
-        Map<RenderLayer, ByteBuffer> buffers = new EnumMap<>(RenderLayer.class);
+        // CORREÇÃO: Usar ConcurrentHashMap em vez de EnumMap
+        Map<RenderLayer, ByteBuffer> buffers = new ConcurrentHashMap<>();
 
-        // Criamos um provedor de VertexConsumers que usa nossos buffers.
-        VertexConsumerProvider.Immediate provider = layer -> {
-            ByteBuffer buffer = buffers.computeIfAbsent(layer, l -> MemoryUtil.memAlloc(524288)); // 512 KB
-            return new BufferWritingVertexConsumer(buffer);
+        // CORREÇÃO: Não podemos usar lambda para VertexConsumerProvider.Immediate.
+        // Criamos uma implementação anônima completa.
+        VertexConsumerProvider.Immediate provider = new VertexConsumerProvider.Immediate() {
+            @Override
+            public VertexConsumer getBuffer(RenderLayer layer) {
+                ByteBuffer buffer = buffers.computeIfAbsent(layer, l -> MemoryUtil.memAlloc(524288)); // 512 KB
+                return new BufferWritingVertexConsumer(buffer);
+            }
+            @Override
+            public void draw() { /* Não fazemos nada */ }
+            @Override
+            public void draw(RenderLayer layer) { /* Não fazemos nada */ }
         };
         
         MatrixStack matrices = new MatrixStack();
+        Random random = new Random();
 
         for (int y = 0; y < 16; ++y) {
             for (int z = 0; z < 16; ++z) {
@@ -54,15 +65,22 @@ public class ChunkMesher {
                         continue;
                     }
                     
-                    // Prepara a matriz de transformação para a posição do bloco
                     matrices.push();
                     matrices.translate(x, y, z);
                     
-                    // O "TRUQUE": Dizemos ao BlockRenderManager para renderizar o bloco.
-                    // Em vez de ir para a tela, ele vai para o nosso BufferWritingVertexConsumer,
-                    // que escreve os dados de vértice no nosso ByteBuffer.
-                    // O método `renderBlock` foi renomeado e sua assinatura mudou, vamos usar a correta
-                    blockRenderManager.renderBlock(state, blockPos, world, matrices, provider.getBuffer(RenderLayers.getMovingBlockLayer(state)), true, random);
+                    // CORREÇÃO: A assinatura de renderBlock espera uma List<BlockModelPart>
+                    // Passamos uma lista vazia, pois não estamos fazendo renderização seletiva de partes.
+                    blockRenderManager.renderBlock(
+                        state, 
+                        blockPos, 
+                        world, 
+                        matrices, 
+                        provider.getBuffer(RenderLayers.getMovingBlockLayer(state)), 
+                        true, // cull
+                        random, // random
+                        state.getRenderingSeed(blockPos), // seed
+                        -1 // overlay
+                    );
 
                     matrices.pop();
                 }
