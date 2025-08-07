@@ -24,9 +24,9 @@ public class BariumConfigScreenFactory {
         ConfigBuilder builder = ConfigBuilder.create()
                 .setParentScreen(parent)
                 .setTitle(Text.translatable("category.barium.general"))
-                .setSavingRunnable(BariumConfigScreenFactory::save)
-                .setTransparentBackground(true) // Impede que o Cloth desenhe seu próprio fundo
-                .setDoesNotSave(true);          // Remove os botões de salvar/cancelar do Cloth
+                .setTransparentBackground(true); // Impede que o Cloth desenhe seu próprio fundo
+
+        // REMOVIDO: .setSavingRunnable(...) e .setDoesNotSave(...)
 
         ConfigEntryBuilder entryBuilder = builder.entryBuilder();
         ConfigCategory general = builder.getOrCreateCategory(Text.translatable("category.barium.general"));
@@ -44,9 +44,7 @@ public class BariumConfigScreenFactory {
         ConfigBuilder builder = ConfigBuilder.create()
                 .setParentScreen(parent)
                 .setTitle(Text.translatable("category.barium.quality"))
-                .setSavingRunnable(BariumConfigScreenFactory::save)
-                .setTransparentBackground(true) // Impede que o Cloth desenhe seu próprio fundo
-                .setDoesNotSave(true);          // Remove os botões de salvar/cancelar do Cloth
+                .setTransparentBackground(true); // Impede que o Cloth desenhe seu próprio fundo
 
         ConfigEntryBuilder entryBuilder = builder.entryBuilder();
         ConfigCategory quality = builder.getOrCreateCategory(Text.translatable("category.barium.quality"));
@@ -62,9 +60,7 @@ public class BariumConfigScreenFactory {
         ConfigBuilder builder = ConfigBuilder.create()
                 .setParentScreen(parent)
                 .setTitle(Text.translatable("category.barium.performance"))
-                .setSavingRunnable(BariumConfigScreenFactory::save)
-                .setTransparentBackground(true) // Impede que o Cloth desenhe seu próprio fundo
-                .setDoesNotSave(true);          // Remove os botões de salvar/cancelar do Cloth
+                .setTransparentBackground(true); // Impede que o Cloth desenhe seu próprio fundo
 
         ConfigEntryBuilder entryBuilder = builder.entryBuilder();
         ConfigData defaults = new ConfigData();
@@ -81,9 +77,7 @@ public class BariumConfigScreenFactory {
         ConfigBuilder builder = ConfigBuilder.create()
                 .setParentScreen(parent)
                 .setTitle(Text.translatable("category.barium.advanced"))
-                .setSavingRunnable(BariumConfigScreenFactory::save)
-                .setTransparentBackground(true) // Impede que o Cloth desenhe seu próprio fundo
-                .setDoesNotSave(true);          // Remove os botões de salvar/cancelar do Cloth
+                .setTransparentBackground(true); // Impede que o Cloth desenhe seu próprio fundo
 
         ConfigEntryBuilder entryBuilder = builder.entryBuilder();
         ConfigData defaults = new ConfigData();
