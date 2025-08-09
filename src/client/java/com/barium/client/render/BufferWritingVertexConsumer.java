@@ -4,7 +4,9 @@ import net.minecraft.client.render.VertexConsumer;
 import java.nio.ByteBuffer;
 
 /**
- * VERSÃO FINAL - CONSTRUÍDA A PARTIR DOS ERROS DE COMPILAÇÃO
+ * VERSÃO FINAL E MÍNIMA - Obedecendo ao compilador.
+ * Contém apenas os métodos que a interface VertexConsumer exige,
+ * sem nenhum extra que cause erros de @Override.
  */
 public class BufferWritingVertexConsumer implements VertexConsumer {
 
@@ -14,15 +16,15 @@ public class BufferWritingVertexConsumer implements VertexConsumer {
     public BufferWritingVertexConsumer(ByteBuffer buffer) {
         this.writer = new BariumVertexFormat.Writer(buffer);
     }
-    
-    // CORREÇÃO 1: A assinatura EXATA que o compilador exigiu.
+
+    // A assinatura com float, que o compilador exigiu.
     @Override
     public VertexConsumer vertex(float x, float y, float z) {
         this.writer.writePosNormal(x, y, z, this.normal);
         return this;
     }
 
-    // Métodos padrão que sabemos que estão corretos.
+    // Os métodos a seguir são padrão e nunca deram erro.
     @Override
     public VertexConsumer color(int red, int green, int blue, int alpha) {
         this.writer.writeColor(red / 255.0f, green / 255.0f, blue / 255.0f, alpha / 255.0f);
@@ -50,22 +52,11 @@ public class BufferWritingVertexConsumer implements VertexConsumer {
     public VertexConsumer normal(float x, float y, float z) {
         return this; // Ignorado
     }
-    
-    // CORREÇÃO 2: O compilador nos disse que 'next()' não existe.
-    // A alternativa lógica e padrão é 'endVertex()'.
-    @Override
-    public void endVertex() {
-        this.writer.next(); // Nosso writer interno ainda usa 'next' para avançar, o nome não importa.
-    }
-    
-    // Adicionando os métodos que podem ser necessários em algumas builds para satisfazer a interface
-    @Override
-    public void fixedColor(int red, int green, int blue, int alpha) {
-        // Deixado vazio, a implementação default pode não existir
-    }
 
+    // O método 'next()' é o único método de finalização que resta.
+    // O compilador rejeitou 'endVertex'.
     @Override
-    public void unfixColor() {
-        // Deixado vazio
+    public void next() {
+        this.writer.next();
     }
 }
