@@ -11,7 +11,6 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 import org.jetbrains.annotations.Nullable;
 
-import java.nio.ByteBuffer;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -24,35 +23,26 @@ public class BariumRenderManager {
     public static BariumRenderManager getInstance() { return INSTANCE; }
 
     private static final List<RenderLayer> CHUNK_LAYERS = List.of(
-        RenderLayer.getSolid(), 
-        RenderLayer.getCutoutMipped(), 
-        RenderLayer.getCutout(), 
-        RenderLayer.getTranslucentMovingBlock() // Substituto para getTranslucent()
+        RenderLayer.getSolid(), RenderLayer.getCutoutMipped(), RenderLayer.getCutout(), RenderLayer.getTranslucent()
     );
 
     private final Map<Long, RenderableChunk> chunks = new ConcurrentHashMap<>();
     private final AtomicBoolean initialized = new AtomicBoolean(false);
     private ExecutorService mesherExecutor;
-    private StreamingBuffer streamingBuffer;
     private ChunkMesher chunkMesher;
     private World world;
 
     private void init() {
         this.mesherExecutor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
-        this.streamingBuffer = new StreamingBuffer(256 * 1024 * 1024);
         this.chunkMesher = new ChunkMesher();
         BariumMod.LOGGER.info("Barium Render Manager inicializado.");
     }
 
     private void ensureInitialized() {
-        if (this.initialized.compareAndSet(false, true)) {
-            this.init();
-        }
+        if (this.initialized.compareAndSet(false, true)) this.init();
     }
 
-    public boolean isActive() {
-        return this.initialized.get();
-    }
+    public boolean isActive() { return this.initialized.get(); }
 
     public void onWorldChange(@Nullable ClientWorld newWorld) {
         this.ensureInitialized();
@@ -66,32 +56,13 @@ public class BariumRenderManager {
     public void scheduleRebuild(int sectionX, int sectionY, int sectionZ, boolean isPriority) {
         this.ensureInitialized();
         if (this.world == null) return;
-        
         BlockPos origin = new BlockPos(sectionX << 4, sectionY << 4, sectionZ << 4);
         RenderableChunk chunk = this.chunks.computeIfAbsent(origin.asLong(), k -> new RenderableChunk(origin));
-        
         if (chunk.needsRebuild()) {
             this.mesherExecutor.submit(new ChunkRebuildTask(chunk, this.world, this.chunkMesher));
         }
     }
 
-    public void uploadMeshedChunk(RenderableChunk chunk) {
-        if (!this.isActive()) return;
-        ChunkMesher.Result result = chunk.getMeshResult();
-        if (result == null || result.isEmpty()) return;
-        
-        for (Map.Entry<RenderLayer, ByteBuffer> entry : result.layerBuffers().entrySet()) {
-            RenderLayer layer = entry.getKey();
-            ByteBuffer buffer = entry.getValue();
-            
-            StreamingBuffer.Region region = this.streamingBuffer.alloc(buffer.remaining());
-            this.streamingBuffer.upload(region, buffer);
-            chunk.upload(layer, region);
-        }
-        result.free();
-        chunk.setMeshResult(null);
-    }
-    
     public void render(MatrixStack matrices, Camera camera, Frustum frustum) {
         if (!this.isActive()) return;
 
@@ -104,8 +75,6 @@ public class BariumRenderManager {
         
         for (RenderLayer layer : CHUNK_LAYERS) {
             layer.startDrawing();
-            this.streamingBuffer.bind();
-            BariumVertexFormat.setupAttributes();
             
             for (RenderableChunk chunk : this.chunks.values()) {
                 if (frustum != null && !frustum.isVisible(chunk.getBoundingBox())) {
@@ -113,12 +82,11 @@ public class BariumRenderManager {
                 }
                 matrices.push();
                 matrices.translate(chunk.origin.getX(), chunk.origin.getY(), chunk.origin.getZ());
-                // TODO: Passar a matriz para o shader (essencial para posicionamento)
+                // TODO: Passar a matriz para o shader
                 chunk.draw(layer);
                 matrices.pop();
             }
             
-            BariumVertexFormat.clearAttributes();
             layer.endDrawing();
         }
         
@@ -140,8 +108,7 @@ public class BariumRenderManager {
         public void run() {
             ChunkMesher.Result result = this.mesher.mesh(this.world, chunk.origin);
             MinecraftClient.getInstance().execute(() -> {
-                chunk.setMeshResult(result);
-                BariumRenderManager.getInstance().uploadMeshedChunk(chunk);
+                chunk.setGeometry(result.layerBuffers());
             });
         }
     }
