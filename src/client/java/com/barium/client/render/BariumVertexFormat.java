@@ -6,12 +6,6 @@ import org.lwjgl.system.MemoryUtil;
 import java.nio.ByteBuffer;
 
 public final class BariumVertexFormat {
-    // 3 floats (pos)   = 12 bytes
-    // 4 bytes (color)  = 4 bytes
-    // 2 floats (uv)    = 8 bytes
-    // 4 bytes (light/overlay packed) = 4 bytes
-    // 4 bytes (normal packed) = 4 bytes
-    // TOTAL = 32 bytes
     public static final int STRIDE = 32;
 
     public static void setupAttributes() {
@@ -22,7 +16,7 @@ public final class BariumVertexFormat {
         GL20.glEnableVertexAttribArray(2); // Textura
         GL20.glVertexAttribPointer(2, 2, GL11.GL_FLOAT, false, STRIDE, 16);
         GL20.glEnableVertexAttribArray(3); // Luz/Overlay
-        GL20.glVertexAttribPointer(3, 2, GL11.GL_SHORT, false, STRIDE, 24);
+        GL20.glVertexAttribPointer(3, 2, GL11.GL_SHORT, true, STRIDE, 24); // Luz
         GL20.glEnableVertexAttribArray(4); // Normal
         GL20.glVertexAttribPointer(4, 3, GL11.GL_BYTE, true, STRIDE, 28);
     }
@@ -61,7 +55,7 @@ public final class BariumVertexFormat {
             MemoryUtil.memPutFloat(pointer + 16, u);
             MemoryUtil.memPutFloat(pointer + 20, v);
             MemoryUtil.memPutShort(pointer + 24, (short) lightU);
-            MemoryUtil.memPutShort(pointer + 26, (short) overlayU); // Overlay U, V
+            MemoryUtil.memPutShort(pointer + 26, (short) overlayU);
             MemoryUtil.memPutByte(pointer + 28, (byte)(nx * 127));
             MemoryUtil.memPutByte(pointer + 29, (byte)(ny * 127));
             MemoryUtil.memPutByte(pointer + 30, (byte)(nz * 127));

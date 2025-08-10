@@ -23,7 +23,6 @@ public class BariumRenderManager {
     private static final BariumRenderManager INSTANCE = new BariumRenderManager();
     public static BariumRenderManager getInstance() { return INSTANCE; }
 
-    // Usando os getters corretos e estáveis para os RenderLayers
     private static final List<RenderLayer> CHUNK_LAYERS = List.of(
         RenderLayer.getSolid(), 
         RenderLayer.getCutoutMipped(), 
@@ -42,7 +41,7 @@ public class BariumRenderManager {
         this.mesherExecutor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
         this.streamingBuffer = new StreamingBuffer(256 * 1024 * 1024);
         this.chunkMesher = new ChunkMesher();
-        BariumMod.LOGGER.info("Barium Render Manager inicializado (on-demand).");
+        BariumMod.LOGGER.info("Barium Render Manager inicializado.");
     }
 
     private void ensureInitialized() {
@@ -51,11 +50,6 @@ public class BariumRenderManager {
         }
     }
 
-    /**
-     * NOVO MÉTODO: Permite que outros Mixins (como o BufferBuilderMixin) saibam
-     * se nosso renderizador está ativo e se devem silenciar o vanilla.
-     * @return true se o renderizador customizado estiver inicializado.
-     */
     public boolean isActive() {
         return this.initialized.get();
     }
@@ -82,18 +76,22 @@ public class BariumRenderManager {
     }
 
     public void uploadMeshedChunk(RenderableChunk chunk) {
-        if (!this.initialized.get()) return;
+        if (!this.isActive()) return;
         ChunkMesher.Result result = chunk.getMeshResult();
         if (result == null || result.isEmpty()) return;
         
         for (Map.Entry<RenderLayer, ByteBuffer> entry : result.layerBuffers().entrySet()) {
-            // A upload agora é tratada pelo RenderableChunk, que usa o buffer global
-            chunk.upload(entry.getKey(), entry.getValue());
+            RenderLayer layer = entry.getKey();
+            ByteBuffer buffer = entry.getValue();
+            
+            StreamingBuffer.Region region = this.streamingBuffer.alloc(buffer.remaining());
+            this.streamingBuffer.upload(region, buffer);
+            chunk.upload(layer, region);
         }
         result.free();
         chunk.setMeshResult(null);
     }
-
+    
     public void render(MatrixStack matrices, Camera camera, Frustum frustum) {
         if (!this.isActive()) return;
 
@@ -106,6 +104,8 @@ public class BariumRenderManager {
         
         for (RenderLayer layer : CHUNK_LAYERS) {
             layer.startDrawing();
+            this.streamingBuffer.bind();
+            BariumVertexFormat.setupAttributes();
             
             for (RenderableChunk chunk : this.chunks.values()) {
                 if (frustum != null && !frustum.isVisible(chunk.getBoundingBox())) {
@@ -113,11 +113,12 @@ public class BariumRenderManager {
                 }
                 matrices.push();
                 matrices.translate(chunk.origin.getX(), chunk.origin.getY(), chunk.origin.getZ());
-                // TODO: Passar a matriz para o shader antes de desenhar
+                // TODO: Passar a matriz para o shader (essencial para posicionamento)
                 chunk.draw(layer);
                 matrices.pop();
             }
             
+            BariumVertexFormat.clearAttributes();
             layer.endDrawing();
         }
         
@@ -142,14 +143,6 @@ public class BariumRenderManager {
                 chunk.setMeshResult(result);
                 BariumRenderManager.getInstance().uploadMeshedChunk(chunk);
             });
-        }
-    }
-
-    // O método de shutdown não foi adicionado antes, é importante
-    public void shutdown() {
-        if (this.initialized.get()) {
-            if (this.mesherExecutor != null) this.mesherExecutor.shutdown();
-            if (this.streamingBuffer != null) this.streamingBuffer.delete();
         }
     }
 }

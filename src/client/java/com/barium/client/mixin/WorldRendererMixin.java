@@ -2,18 +2,18 @@ package com.barium.client.mixin;
 
 import com.barium.client.render.BariumRenderManager;
 import net.minecraft.block.BlockState;
-import net.minecraft.client.render.*;
+import net.minecraft.client.render.Camera;
+import net.minecraft.client.render.Frustum;
+import net.minecraft.client.render.WorldRenderer;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.client.world.ClientWorld;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.BlockView;
 import org.jetbrains.annotations.Nullable;
-import org.joml.Matrix4f;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
-import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 @Mixin(WorldRenderer.class)
@@ -42,14 +42,12 @@ public abstract class WorldRendererMixin {
     }
     
     /**
-     * Injeta no final do método de renderização principal e desenha nosso mundo.
-     * Isso acontece depois que o vanilla tentou (e falhou em) desenhar os chunks.
+     * Ponto de injeção final e estável para a nossa renderização.
+     * `setupTerrain` é chamado a cada frame antes da renderização dos chunks.
+     * Desenhamos nosso mundo aqui, e o `BufferBuilderMixin` impede o vanilla de desenhar depois.
      */
-    @Inject(
-        method = "render(Lnet/minecraft/client/util/math/MatrixStack;FJZLnet/minecraft/client/render/Camera;Lnet/minecraft/client/render/GameRenderer;Lnet/minecraft/client/render/LightmapTextureManager;Lorg/joml/Matrix4f;)V",
-        at = @At("TAIL")
-    )
-    private void barium$renderOurWorld(MatrixStack matrices, float tickDelta, long limitTime, boolean renderBlockOutline, Camera camera, GameRenderer gameRenderer, LightmapTextureManager lightmapTextureManager, Matrix4f projectionMatrix, CallbackInfo ci) {
-        BariumRenderManager.getInstance().render(matrices, camera, this.frustum);
+    @Inject(method = "setupTerrain", at = @At("TAIL"))
+    private void barium$renderOurWorld(Camera camera, Frustum frustum, boolean hasForcedFrustum, boolean spectator, CallbackInfo ci) {
+        BariumRenderManager.getInstance().render(new MatrixStack(), camera, frustum);
     }
 }
