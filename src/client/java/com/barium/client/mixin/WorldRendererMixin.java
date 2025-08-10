@@ -9,13 +9,16 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.BlockView;
 import org.jetbrains.annotations.Nullable;
 import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
-import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 @Mixin(WorldRenderer.class)
 public abstract class WorldRendererMixin {
+
+    @Shadow private @Nullable ClientWorld world;
+    @Shadow private Frustum frustum;
 
     @Inject(method = "setWorld", at = @At("HEAD"))
     private void barium$onSetWorld(@Nullable ClientWorld newWorld, CallbackInfo ci) {
@@ -38,6 +41,6 @@ public abstract class WorldRendererMixin {
 
     @Inject(method = "renderLayer", at = @At("TAIL"))
     private void barium$drawOurChunks(RenderLayer renderLayer, MatrixStack matrices, Camera camera, CallbackInfo ci) {
-        BariumRenderManager.getInstance().renderLayer(renderLayer, matrices, camera);
+        BariumRenderManager.getInstance().renderLayer(renderLayer, matrices, camera, this.frustum);
     }
 }

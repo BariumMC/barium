@@ -46,9 +46,7 @@ public class BufferWritingVertexConsumer implements VertexConsumer {
         writer.setNormal(x, y, z);
         return this;
     }
-
-    @Override
-    public void next() {
-        writer.write();
-    }
+    
+    // O método 'next()' foi removido. O fim de um vértice é implícito.
+    // O método 'write()' do nosso writer será chamado após os 4 vértices de um quad.
 }

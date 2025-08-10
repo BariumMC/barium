@@ -1,7 +1,6 @@
 package com.barium.client.render;
 
 import com.barium.BariumMod;
-import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.render.Camera;
 import net.minecraft.client.render.Frustum;
@@ -13,6 +12,7 @@ import net.minecraft.world.World;
 import org.jetbrains.annotations.Nullable;
 
 import java.nio.ByteBuffer;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
@@ -22,6 +22,10 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public class BariumRenderManager {
     private static final BariumRenderManager INSTANCE = new BariumRenderManager();
     public static BariumRenderManager getInstance() { return INSTANCE; }
+
+    private static final List<RenderLayer> CHUNK_LAYERS = List.of(
+        RenderLayer.getSolid(), RenderLayer.getCutoutMipped(), RenderLayer.getCutout(), RenderLayer.getTranslucent()
+    );
 
     private final Map<Long, RenderableChunk> chunks = new ConcurrentHashMap<>();
     private final AtomicBoolean initialized = new AtomicBoolean(false);
@@ -72,10 +76,10 @@ public class BariumRenderManager {
         result.free();
         chunk.setMeshResult(null);
     }
-    
-    public void renderLayer(RenderLayer layer, MatrixStack matrices, Camera camera) {
-        if (!this.initialized.get() || !layer.isBlock() || layer == RenderLayer.getTripwire()) return;
-        
+
+    public void renderLayer(RenderLayer layer, MatrixStack matrices, Camera camera, Frustum frustum) {
+        if (!this.initialized.get()) return;
+
         double camX = camera.getPos().getX();
         double camY = camera.getPos().getY();
         double camZ = camera.getPos().getZ();
@@ -87,12 +91,14 @@ public class BariumRenderManager {
         BariumVertexFormat.setupAttributes();
         
         for (RenderableChunk chunk : this.chunks.values()) {
+            if (frustum != null && !frustum.isVisible(chunk.getBoundingBox())) {
+                continue;
+            }
+            
             matrices.push();
             matrices.translate(chunk.origin.getX(), chunk.origin.getY(), chunk.origin.getZ());
-            
-            RenderSystem.setShaderGameTime(RenderSystem.getShaderGameTime());
-            chunk.draw(layer, matrices.peek().getPositionMatrix());
-            
+            // TODO: Passar a matriz para o shader
+            chunk.draw(layer);
             matrices.pop();
         }
         
@@ -101,7 +107,6 @@ public class BariumRenderManager {
     }
 
     private static class ChunkRebuildTask implements Runnable {
-        // ... (código da tarefa de rebuild)
         private final RenderableChunk chunk;
         private final World world;
         private final ChunkMesher mesher;
@@ -121,8 +126,7 @@ public class BariumRenderManager {
             });
         }
     }
-    
-    // O shutdown não foi incluído antes, é importante
+
     public void shutdown() {
         if (this.initialized.get()) {
             if (this.mesherExecutor != null) this.mesherExecutor.shutdown();

@@ -1,24 +1,30 @@
 package com.barium.client.render;
 
+import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL20;
 import org.lwjgl.system.MemoryUtil;
 import java.nio.ByteBuffer;
 
 public final class BariumVertexFormat {
-    // 3 floats (pos) + 4 bytes (color) + 2 floats (uv) + 2 shorts (light/overlay) + 4 bytes (normal) = 32 bytes
+    // 3 floats (pos)   = 12 bytes
+    // 4 bytes (color)  = 4 bytes
+    // 2 floats (uv)    = 8 bytes
+    // 4 bytes (light/overlay packed) = 4 bytes
+    // 4 bytes (normal packed) = 4 bytes
+    // TOTAL = 32 bytes
     public static final int STRIDE = 32;
 
     public static void setupAttributes() {
         GL20.glEnableVertexAttribArray(0); // Posição
-        GL20.glVertexAttribPointer(0, 3, GL20.GL_FLOAT, false, STRIDE, 0);
+        GL20.glVertexAttribPointer(0, 3, GL11.GL_FLOAT, false, STRIDE, 0);
         GL20.glEnableVertexAttribArray(1); // Cor
-        GL20.glVertexAttribPointer(1, 4, GL20.GL_UNSIGNED_BYTE, true, STRIDE, 12);
+        GL20.glVertexAttribPointer(1, 4, GL11.GL_UNSIGNED_BYTE, true, STRIDE, 12);
         GL20.glEnableVertexAttribArray(2); // Textura
-        GL20.glVertexAttribPointer(2, 2, GL20.GL_FLOAT, false, STRIDE, 16);
+        GL20.glVertexAttribPointer(2, 2, GL11.GL_FLOAT, false, STRIDE, 16);
         GL20.glEnableVertexAttribArray(3); // Luz/Overlay
-        GL20.glVertexAttribPointer(3, 4, GL20.GL_SHORT, false, STRIDE, 24);
+        GL20.glVertexAttribPointer(3, 2, GL11.GL_SHORT, false, STRIDE, 24);
         GL20.glEnableVertexAttribArray(4); // Normal
-        GL20.glVertexAttribPointer(4, 4, GL20.GL_UNSIGNED_BYTE, true, STRIDE, 28);
+        GL20.glVertexAttribPointer(4, 3, GL11.GL_BYTE, true, STRIDE, 28);
     }
 
     public static void clearAttributes() {
@@ -44,7 +50,7 @@ public final class BariumVertexFormat {
         public void setOverlay(int u, int v) { this.overlayU = u; this.overlayV = v; }
         public void setNormal(float nx, float ny, float nz) { this.nx = nx; this.ny = ny; this.nz = nz; }
 
-        public void write() {
+        public void writeAndAdvance() {
             MemoryUtil.memPutFloat(pointer, x);
             MemoryUtil.memPutFloat(pointer + 4, y);
             MemoryUtil.memPutFloat(pointer + 8, z);
@@ -55,17 +61,11 @@ public final class BariumVertexFormat {
             MemoryUtil.memPutFloat(pointer + 16, u);
             MemoryUtil.memPutFloat(pointer + 20, v);
             MemoryUtil.memPutShort(pointer + 24, (short) lightU);
-            MemoryUtil.memPutShort(pointer + 25, (short) lightV);
-            MemoryUtil.memPutShort(pointer + 26, (short) overlayU);
-            MemoryUtil.memPutShort(pointer + 27, (short) overlayV);
+            MemoryUtil.memPutShort(pointer + 26, (short) overlayU); // Overlay U, V
             MemoryUtil.memPutByte(pointer + 28, (byte)(nx * 127));
             MemoryUtil.memPutByte(pointer + 29, (byte)(ny * 127));
             MemoryUtil.memPutByte(pointer + 30, (byte)(nz * 127));
-            MemoryUtil.memPutByte(pointer + 31, (byte)0);
             pointer += STRIDE;
-        }
-        
-        public void next() {
             buffer.position((int)(this.pointer - MemoryUtil.memAddress(this.buffer)));
         }
     }

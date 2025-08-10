@@ -1,10 +1,9 @@
 package com.barium.client.render;
 
-import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.client.render.RenderLayer;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Box;
-import org.joml.Matrix4f;
+import org.lwjgl.opengl.GL11;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -19,14 +18,10 @@ public class RenderableChunk {
 
     public RenderableChunk(BlockPos origin) {
         this.origin = origin;
-        this.boundingBox = new Box(origin.getX(), origin.getY(), origin.getZ(),
-                                   origin.getX() + 16, origin.getY() + 16, origin.getZ() + 16);
+        this.boundingBox = new Box(origin);
     }
 
-    public Box getBoundingBox() {
-        return this.boundingBox;
-    }
-    
+    public Box getBoundingBox() { return this.boundingBox; }
     public boolean needsRebuild() { return this.needsRebuild.getAndSet(false); }
     public void setMeshResult(ChunkMesher.Result result) { this.lastMeshResult = result; }
     public ChunkMesher.Result getMeshResult() { return this.lastMeshResult; }
@@ -39,12 +34,11 @@ public class RenderableChunk {
         }
     }
 
-    public void draw(RenderLayer layer, Matrix4f modelViewMatrix) {
+    public void draw(RenderLayer layer) {
         StreamingBuffer.Region region = this.regions.get(layer);
         if (region != null && region.getVertexCount() > 0) {
-            RenderSystem.getShader().getModelViewMat().set(modelViewMatrix);
-            RenderSystem.getShader().bind();
-            layer.getDrawMode().draw(region.offset(), region.getVertexCount());
+            // A chamada de desenho mais básica e universal
+            GL11.glDrawArrays(GL11.GL_QUADS, (int) (region.offset() / BariumVertexFormat.STRIDE), region.getVertexCount());
         }
     }
 }
