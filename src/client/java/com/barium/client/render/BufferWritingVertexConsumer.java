@@ -20,6 +20,8 @@ public class BufferWritingVertexConsumer implements VertexConsumer {
     @Override
     public VertexConsumer color(int red, int green, int blue, int alpha) {
         writer.setColor(red, green, blue, alpha);
+        // Após a cor, todos os dados do vértice anterior foram definidos, então escrevemos.
+        writer.writeAndAdvance();
         return this;
     }
 
@@ -46,9 +48,7 @@ public class BufferWritingVertexConsumer implements VertexConsumer {
         writer.setNormal(x, y, z);
         return this;
     }
-
-    @Override
-    public void next() {
-        writer.writeAndAdvance();
-    }
+    
+    // CORREÇÃO: O método next() foi removido, pois o compilador provou que ele não existe na interface.
+    // A lógica de escrita foi movida para o final da cadeia de chamadas (no método `color`).
 }

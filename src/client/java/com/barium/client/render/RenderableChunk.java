@@ -19,7 +19,11 @@ public class RenderableChunk {
 
     public RenderableChunk(BlockPos origin) {
         this.origin = origin;
-        this.boundingBox = new Box(origin, origin.add(16, 16, 16));
+        // CORREÇÃO: Usando o construtor de Box com coordenadas double, que é universal.
+        this.boundingBox = new Box(
+            origin.getX(), origin.getY(), origin.getZ(),
+            origin.getX() + 16, origin.getY() + 16, origin.getZ() + 16
+        );
     }
 
     public Box getBoundingBox() { return this.boundingBox; }
