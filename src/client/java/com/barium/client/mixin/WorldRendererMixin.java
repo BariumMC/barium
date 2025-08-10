@@ -1,7 +1,6 @@
 package com.barium.client.mixin;
 
 import com.barium.client.render.BariumRenderManager;
-import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.block.BlockState;
 import net.minecraft.client.render.*;
 import net.minecraft.client.util.math.MatrixStack;
@@ -16,9 +15,9 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-// Novos imports para a API FrameGraph
-import net.minecraft.client.render.object.ObjectAllocator;
-import net.minecraft.client.util.GpuBufferSlice;
+// Imports CORRIGIDOS para a API FrameGraph
+import net.minecraft.client.util.ObjectAllocator;
+import com.mojang.blaze3d.buffers.GpuBufferSlice;
 import org.joml.Vector4f;
 
 @Mixin(WorldRenderer.class)
@@ -47,13 +46,15 @@ public abstract class WorldRendererMixin {
     }
     
     /**
-     * Ponto de injeção final e correto.
-     * Injetamos no final do método `render` com a assinatura `FrameGraph` que o crash report confirmou.
-     * Desenhamos nosso mundo por cima do mundo vanilla (que estará vazio).
+     * Ponto de injeção final e correto, usando a assinatura FrameGraph.
      */
     @Inject(
-        method = "render(Lnet/minecraft/client/render/object/ObjectAllocator;Lnet/minecraft/client/render/RenderTickCounter;ZLnet/minecraft/client/render/Camera;Lorg/joml/Matrix4f;Lorg/joml/Matrix4f;Lnet/minecraft/client/util/GpuBufferSlice;Lorg/joml/Vector4f;Z)V",
-        at = @At("TAIL")
+        method = "render(Lnet/minecraft/client/util/ObjectAllocator;Lnet/minecraft/client/render/RenderTickCounter;ZLnet/minecraft/client/render/Camera;Lorg/joml/Matrix4f;Lorg/joml/Matrix4f;Lcom/mojang/blaze3d/buffers/GpuBufferSlice;Lorg/joml/Vector4f;Z)V",
+        at = @At(
+            value = "INVOKE",
+            target = "Lnet/minecraft/client/render/WorldRenderer;renderSky(Lnet/minecraft/client/util/math/MatrixStack;Lorg/joml/Matrix4f;FLnet/minecraft/client/render/Camera;Z)V"
+        ),
+        cancellable = true
     )
     private void barium$renderBariumWorld(
             ObjectAllocator allocator, RenderTickCounter tickCounter, boolean renderBlockOutline,
@@ -61,10 +62,14 @@ public abstract class WorldRendererMixin {
             GpuBufferSlice fog, Vector4f fogColor, boolean shouldRenderSky,
             CallbackInfo ci) 
     {
-        // Precisamos de um MatrixStack para o nosso renderizador. Vamos criar um a partir da matriz de posição.
+        // Cria um MatrixStack a partir da matriz de posição
         MatrixStack matrices = new MatrixStack();
         matrices.peek().getPositionMatrix().mul(positionMatrix);
 
+        // Chama nosso renderizador para desenhar tudo
         BariumRenderManager.getInstance().render(matrices, camera, this.frustum);
+
+        // Cancela o resto do método render do vanilla
+        ci.cancel();
     }
 }
