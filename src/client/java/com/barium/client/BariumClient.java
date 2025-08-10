@@ -13,7 +13,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 @Environment(EnvType.CLIENT)
 public class BariumClient implements ClientModInitializer {
 
-    // CORREÇÃO: Restaurado para que ChunkVisibilityManager e FloodFillVisibilityManager funcionem.
     public static final ExecutorService RENDER_THREAD_POOL = Executors.newSingleThreadExecutor(new ThreadFactory() {
         private final AtomicInteger threadId = new AtomicInteger(0);
         @Override
@@ -28,6 +27,5 @@ public class BariumClient implements ClientModInitializer {
     @Override
     public void onInitializeClient() {
         BariumMod.LOGGER.info("Barium Client está inicializando.");
-        // A inicialização do Render Manager continua sendo sob demanda (lazy) e está correta.
     }
 }

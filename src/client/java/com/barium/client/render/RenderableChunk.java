@@ -1,9 +1,9 @@
 package com.barium.client.render;
 
-import net.minecraft.client.render.BuiltBuffer;
 import net.minecraft.client.render.RenderLayer;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Box;
+import org.lwjgl.opengl.GL11;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -12,8 +12,9 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public class RenderableChunk {
     public final BlockPos origin;
     private final Box boundingBox;
-    private final Map<RenderLayer, BuiltBuffer> geometry = new ConcurrentHashMap<>();
+    private final Map<RenderLayer, StreamingBuffer.Region> regions = new ConcurrentHashMap<>();
     private final AtomicBoolean needsRebuild = new AtomicBoolean(true);
+    private ChunkMesher.Result lastMeshResult = null;
 
     public RenderableChunk(BlockPos origin) {
         this.origin = origin;
@@ -25,21 +26,22 @@ public class RenderableChunk {
 
     public Box getBoundingBox() { return this.boundingBox; }
     public boolean needsRebuild() { return this.needsRebuild.getAndSet(false); }
-    
-    public void setGeometry(Map<RenderLayer, BuiltBuffer> newGeometry) {
-        this.delete(); // Limpa a geometria antiga
-        this.geometry.putAll(newGeometry);
-    }
+    public void setMeshResult(ChunkMesher.Result result) { this.lastMeshResult = result; }
+    public ChunkMesher.Result getMeshResult() { return this.lastMeshResult; }
+    public void upload(RenderLayer layer, StreamingBuffer.Region region) { this.regions.put(layer, region); }
     
     public void delete() {
-        this.geometry.values().forEach(BuiltBuffer::close);
-        this.geometry.clear();
+        this.regions.clear();
+        if (this.lastMeshResult != null) {
+            this.lastMeshResult.free();
+            this.lastMeshResult = null;
+        }
     }
 
     public void draw(RenderLayer layer) {
-        BuiltBuffer buffer = this.geometry.get(layer);
-        if (buffer != null) {
-            layer.draw(buffer);
+        StreamingBuffer.Region region = this.regions.get(layer);
+        if (region != null && region.getVertexCount() > 0) {
+            GL11.glDrawArrays(GL11.GL_QUADS, (int) (region.offset() / BariumVertexFormat.STRIDE), region.getVertexCount());
         }
     }
 }

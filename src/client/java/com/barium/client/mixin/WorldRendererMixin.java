@@ -41,11 +41,6 @@ public abstract class WorldRendererMixin {
         BariumRenderManager.getInstance().scheduleRebuild(sectionX, sectionY, sectionZ, false);
     }
     
-    /**
-     * Ponto de injeção final e estável para a nossa renderização.
-     * `setupTerrain` é chamado a cada frame antes da renderização dos chunks.
-     * Desenhamos nosso mundo aqui, e o `BufferBuilderMixin` impede o vanilla de desenhar depois.
-     */
     @Inject(method = "setupTerrain", at = @At("TAIL"))
     private void barium$renderOurWorld(Camera camera, Frustum frustum, boolean hasForcedFrustum, boolean spectator, CallbackInfo ci) {
         BariumRenderManager.getInstance().render(new MatrixStack(), camera, frustum);

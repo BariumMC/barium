@@ -11,11 +11,6 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 @Mixin(BufferBuilder.class)
 public class BufferBuilderMixin {
 
-    /**
-     * Intercepta a finalização de um buffer de desenho.
-     * Se o BariumRenderManager estiver ativo, nós impedimos o buffer vanilla
-     * de ser finalizado, efetivamente o esvaziando e silenciando o desenho de chunks.
-     */
     @Inject(method = "end", at = @At("HEAD"), cancellable = true)
     private void barium$preventVanillaChunkDraw(CallbackInfoReturnable<BuiltBuffer> cir) {
         if (BariumRenderManager.getInstance().isActive()) {
