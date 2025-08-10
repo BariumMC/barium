@@ -13,12 +13,8 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
-
-// Imports CORRIGIDOS para a API FrameGraph
-import net.minecraft.client.util.ObjectAllocator;
-import com.mojang.blaze3d.buffers.GpuBufferSlice;
-import org.joml.Vector4f;
 
 @Mixin(WorldRenderer.class)
 public abstract class WorldRendererMixin {
@@ -46,30 +42,23 @@ public abstract class WorldRendererMixin {
     }
     
     /**
-     * Ponto de injeção final e correto, usando a assinatura FrameGraph.
+     * A tomada de controle final.
+     * Interceptamos CADA chamada para `WorldRenderer.renderLayer` que o jogo faz.
+     * Em vez de deixar o vanilla renderizar, chamamos nosso próprio sistema.
+     * Isso é robusto porque não dependemos da assinatura de `render()`, apenas de `renderLayer()`.
      */
-    @Inject(
-        method = "render(Lnet/minecraft/client/util/ObjectAllocator;Lnet/minecraft/client/render/RenderTickCounter;ZLnet/minecraft/client/render/Camera;Lorg/joml/Matrix4f;Lorg/joml/Matrix4f;Lcom/mojang/blaze3d/buffers/GpuBufferSlice;Lorg/joml/Vector4f;Z)V",
+    @Redirect(
+        method = "render(Lnet/minecraft/client/util/math/MatrixStack;FJZLnet/minecraft/client/render/Camera;Lnet/minecraft/client/render/GameRenderer;Lnet/minecraft/client/render/LightmapTextureManager;Lorg/joml/Matrix4f;)V",
         at = @At(
             value = "INVOKE",
-            target = "Lnet/minecraft/client/render/WorldRenderer;renderSky(Lnet/minecraft/client/util/math/MatrixStack;Lorg/joml/Matrix4f;FLnet/minecraft/client/render/Camera;Z)V"
-        ),
-        cancellable = true
+            target = "Lnet/minecraft/client/render/WorldRenderer;renderLayer(Lnet/minecraft/client/render/RenderLayer;Lnet/minecraft/client/util/math/MatrixStack;Lnet/minecraft/client/render/Camera;)V"
+        )
     )
-    private void barium$renderBariumWorld(
-            ObjectAllocator allocator, RenderTickCounter tickCounter, boolean renderBlockOutline,
-            Camera camera, Matrix4f positionMatrix, Matrix4f projectionMatrix,
-            GpuBufferSlice fog, Vector4f fogColor, boolean shouldRenderSky,
-            CallbackInfo ci) 
-    {
-        // Cria um MatrixStack a partir da matriz de posição
-        MatrixStack matrices = new MatrixStack();
-        matrices.peek().getPositionMatrix().mul(positionMatrix);
+    private void barium$redirectRenderLayer(WorldRenderer instance, RenderLayer layer, MatrixStack matrices, Camera camera) {
+        // O jogo nos dá o layer correto (SOLID, CUTOUT, etc.).
+        // Nós simplesmente o pegamos e o desenhamos com nosso sistema.
+        BariumRenderManager.getInstance().renderLayer(layer, matrices, camera, this.frustum);
 
-        // Chama nosso renderizador para desenhar tudo
-        BariumRenderManager.getInstance().render(matrices, camera, this.frustum);
-
-        // Cancela o resto do método render do vanilla
-        ci.cancel();
+        // O render vanilla para este layer é pulado porque não chamamos `instance.renderLayer(...)`.
     }
 }
