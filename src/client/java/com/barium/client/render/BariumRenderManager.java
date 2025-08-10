@@ -11,7 +11,6 @@ import net.minecraft.client.world.ClientWorld;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 import org.jetbrains.annotations.Nullable;
-import org.joml.Matrix4f;
 
 import java.nio.ByteBuffer;
 import java.util.List;
@@ -98,8 +97,6 @@ public class BariumRenderManager {
         matrices.push();
         matrices.translate(-camX, -camY, -camZ);
         
-        Matrix4f modelViewMatrix = matrices.peek().getPositionMatrix();
-
         for (RenderLayer layer : CHUNK_LAYERS) {
             layer.startDrawing();
             this.streamingBuffer.bind();
@@ -110,10 +107,15 @@ public class BariumRenderManager {
                     continue;
                 }
                 
-                // Passa a matriz para o shader e desenha
-                RenderSystem.getShader().getModelViewMat().set(modelViewMatrix.translate(chunk.origin.getX(), chunk.origin.getY(), chunk.origin.getZ()));
-                RenderSystem.getShader().bind();
+                matrices.push();
+                matrices.translate(chunk.origin.getX(), chunk.origin.getY(), chunk.origin.getZ());
+                
+                // CORREÇÃO: Usa RenderSystem para aplicar a matriz, que é a API correta e estável.
+                RenderSystem.setProjectionMatrix(matrices.peek().getPositionMatrix(), RenderSystem.getVertexSorting());
+                
                 chunk.draw(layer);
+                
+                matrices.pop();
             }
             
             BariumVertexFormat.clearAttributes();
