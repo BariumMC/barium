@@ -12,7 +12,6 @@ import net.minecraft.world.World;
 import org.jetbrains.annotations.Nullable;
 
 import java.nio.ByteBuffer;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
@@ -23,13 +22,7 @@ public class BariumRenderManager {
     private static final BariumRenderManager INSTANCE = new BariumRenderManager();
     public static BariumRenderManager getInstance() { return INSTANCE; }
 
-    // CORREÇÃO APLICADA: Usando os campos estáticos em vez dos getters.
-    private static final List<RenderLayer> CHUNK_LAYERS = List.of(
-        RenderLayer.SOLID, 
-        RenderLayer.CUTOUT_MIPPED, 
-        RenderLayer.CUTOUT, 
-        RenderLayer.TRANSLUCENT
-    );
+    // A LISTA DE LAYERS FOI REMOVIDA. NÃO PRECISAMOS MAIS DELA.
 
     private final Map<Long, RenderableChunk> chunks = new ConcurrentHashMap<>();
     private final AtomicBoolean initialized = new AtomicBoolean(false);
@@ -80,8 +73,9 @@ public class BariumRenderManager {
         result.free();
         chunk.setMeshResult(null);
     }
-
-    public void render(MatrixStack matrices, Camera camera, Frustum frustum) {
+    
+    // Este método agora é chamado para CADA layer pelo @Redirect
+    public void renderLayer(RenderLayer layer, MatrixStack matrices, Camera camera, Frustum frustum) {
         if (!this.initialized.get()) return;
 
         double camX = camera.getPos().getX();
@@ -91,25 +85,24 @@ public class BariumRenderManager {
         matrices.push();
         matrices.translate(-camX, -camY, -camZ);
         
-        for (RenderLayer layer : CHUNK_LAYERS) {
-            layer.startDrawing();
-            this.streamingBuffer.bind();
-            BariumVertexFormat.setupAttributes();
-            
-            for (RenderableChunk chunk : this.chunks.values()) {
-                if (frustum != null && !frustum.isVisible(chunk.getBoundingBox())) {
-                    continue;
-                }
-                matrices.push();
-                matrices.translate(chunk.origin.getX(), chunk.origin.getY(), chunk.origin.getZ());
-                // TODO: Passar a matriz para o shader
-                chunk.draw(layer);
-                matrices.pop();
+        // Não precisamos do loop, pois o jogo já está iterando para nós.
+        layer.startDrawing();
+        this.streamingBuffer.bind();
+        BariumVertexFormat.setupAttributes();
+        
+        for (RenderableChunk chunk : this.chunks.values()) {
+            if (frustum != null && !frustum.isVisible(chunk.getBoundingBox())) {
+                continue;
             }
-            
-            BariumVertexFormat.clearAttributes();
-            layer.endDrawing();
+            matrices.push();
+            matrices.translate(chunk.origin.getX(), chunk.origin.getY(), chunk.origin.getZ());
+            // TODO: Passar a matriz para o shader
+            chunk.draw(layer);
+            matrices.pop();
         }
+        
+        BariumVertexFormat.clearAttributes();
+        layer.endDrawing();
         
         matrices.pop();
     }
