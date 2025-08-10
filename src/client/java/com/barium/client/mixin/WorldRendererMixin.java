@@ -42,23 +42,14 @@ public abstract class WorldRendererMixin {
     }
     
     /**
-     * A tomada de controle final.
-     * Interceptamos CADA chamada para `WorldRenderer.renderLayer` que o jogo faz.
-     * Em vez de deixar o vanilla renderizar, chamamos nosso próprio sistema.
-     * Isso é robusto porque não dependemos da assinatura de `render()`, apenas de `renderLayer()`.
+     * Injeta no final do método de renderização principal e desenha nosso mundo.
+     * Isso acontece depois que o vanilla tentou (e falhou em) desenhar os chunks.
      */
-    @Redirect(
+    @Inject(
         method = "render(Lnet/minecraft/client/util/math/MatrixStack;FJZLnet/minecraft/client/render/Camera;Lnet/minecraft/client/render/GameRenderer;Lnet/minecraft/client/render/LightmapTextureManager;Lorg/joml/Matrix4f;)V",
-        at = @At(
-            value = "INVOKE",
-            target = "Lnet/minecraft/client/render/WorldRenderer;renderLayer(Lnet/minecraft/client/render/RenderLayer;Lnet/minecraft/client/util/math/MatrixStack;Lnet/minecraft/client/render/Camera;)V"
-        )
+        at = @At("TAIL")
     )
-    private void barium$redirectRenderLayer(WorldRenderer instance, RenderLayer layer, MatrixStack matrices, Camera camera) {
-        // O jogo nos dá o layer correto (SOLID, CUTOUT, etc.).
-        // Nós simplesmente o pegamos e o desenhamos com nosso sistema.
-        BariumRenderManager.getInstance().renderLayer(layer, matrices, camera, this.frustum);
-
-        // O render vanilla para este layer é pulado porque não chamamos `instance.renderLayer(...)`.
+    private void barium$renderOurWorld(MatrixStack matrices, float tickDelta, long limitTime, boolean renderBlockOutline, Camera camera, GameRenderer gameRenderer, LightmapTextureManager lightmapTextureManager, Matrix4f projectionMatrix, CallbackInfo ci) {
+        BariumRenderManager.getInstance().render(matrices, camera, this.frustum);
     }
 }
