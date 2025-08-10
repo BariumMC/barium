@@ -110,8 +110,9 @@ public class BariumRenderManager {
                 matrices.push();
                 matrices.translate(chunk.origin.getX(), chunk.origin.getY(), chunk.origin.getZ());
                 
-                // CORREÇÃO: Usa RenderSystem para aplicar a matriz, que é a API correta e estável.
-                RenderSystem.setProjectionMatrix(matrices.peek().getPositionMatrix(), RenderSystem.getVertexSorting());
+                // CORREÇÃO: Usa a sobrecarga mais simples de setProjectionMatrix.
+                // Isso é suficiente para posicionar os chunks corretamente.
+                RenderSystem.setProjectionMatrix(matrices.peek().getPositionMatrix());
                 
                 chunk.draw(layer);
                 
