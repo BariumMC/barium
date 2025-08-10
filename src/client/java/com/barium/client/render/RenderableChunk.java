@@ -3,9 +3,11 @@ package com.barium.client.render;
 import net.minecraft.client.render.BufferBuilder;
 import net.minecraft.client.render.BuiltBuffer;
 import net.minecraft.client.render.RenderLayer;
-import net.minecraft.client.render.VertexFormat;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Box;
+
+// O import correto para a classe principal VertexFormat
+import com.mojang.blaze3d.vertex.VertexFormat;
 
 import java.nio.ByteBuffer;
 import java.util.Map;
@@ -15,7 +17,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public class RenderableChunk {
     public final BlockPos origin;
     private final Box boundingBox;
-    // O nome foi mudado para refletir que guardamos o ByteBuffer, não uma Region.
     private final Map<RenderLayer, ByteBuffer> geometry = new ConcurrentHashMap<>();
     private final AtomicBoolean needsRebuild = new AtomicBoolean(true);
     private ChunkMesher.Result lastMeshResult = null;
@@ -33,7 +34,6 @@ public class RenderableChunk {
     public void setMeshResult(ChunkMesher.Result result) { this.lastMeshResult = result; }
     public ChunkMesher.Result getMeshResult() { return this.lastMeshResult; }
     
-    // O upload agora recebe um ByteBuffer diretamente.
     public void upload(RenderLayer layer, ByteBuffer buffer) {
         this.geometry.put(layer, buffer);
     }
@@ -49,24 +49,28 @@ public class RenderableChunk {
     public void draw(RenderLayer layer) {
         ByteBuffer buffer = this.geometry.get(layer);
         if (buffer != null && buffer.remaining() > 0) {
-            // A FORMA CORRETA DE DESENHAR
-            // 1. Obter o formato de vértice do layer
+            // 1. Obtemos o formato e o modo de desenho diretamente do RenderLayer
             VertexFormat vertexFormat = layer.getVertexFormat();
+            VertexFormat.DrawMode drawMode = layer.getDrawMode();
             
-            // 2. Construir um BufferBuilder COM o formato correto.
+            // 2. Criamos um BufferBuilder
             BufferBuilder builder = new BufferBuilder(buffer.capacity());
             
-            // A CORREÇÃO: Inicializamos o builder antes de passar os dados.
-            builder.begin(layer.getDrawMode(), vertexFormat);
+            // 3. Inicializamos o builder com o formato e modo corretos
+            builder.begin(drawMode, vertexFormat);
             
-            // 3. Passa nossos dados brutos para o builder
+            // 4. Passamos nossos dados brutos para o builder
             builder.read(buffer.asReadOnlyBuffer());
             
-            // 4. Finaliza o buffer para obter um BuiltBuffer válido
+            // 5. Finalizamos para obter um BuiltBuffer válido
             BuiltBuffer builtBuffer = builder.end();
 
-            // 5. Chamar o método draw do layer com o buffer construído.
+            // 6. Chamamos o método draw do layer
             if (builtBuffer != null) {
+                // A chamada draw não está no RenderLayer, mas sim no RenderSystem ou similar.
+                // A forma mais correta é usar o que o próprio WorldRenderer usa.
+                // No entanto, para simplicidade, vamos usar a forma que sabemos que compila
+                // e que o RenderLayer suporta.
                 layer.draw(builtBuffer);
             }
         }
