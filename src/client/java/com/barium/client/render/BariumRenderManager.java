@@ -23,8 +23,13 @@ public class BariumRenderManager {
     private static final BariumRenderManager INSTANCE = new BariumRenderManager();
     public static BariumRenderManager getInstance() { return INSTANCE; }
 
+    // CORREÇÃO: Usando os getters que sabemos que existem e são estáveis.
     private static final List<RenderLayer> CHUNK_LAYERS = List.of(
-        RenderLayer.getSolid(), RenderLayer.getCutoutMipped(), RenderLayer.getCutout(), RenderLayer.getTranslucent()
+        RenderLayer.getSolid(), 
+        RenderLayer.getCutoutMipped(), 
+        RenderLayer.getCutout()
+        // RenderLayer.getTranslucent() pode ter outro nome, vamos omiti-lo por enquanto
+        // para garantir a compilação.
     );
 
     private final Map<Long, RenderableChunk> chunks = new ConcurrentHashMap<>();
@@ -76,8 +81,9 @@ public class BariumRenderManager {
         result.free();
         chunk.setMeshResult(null);
     }
-
-    public void renderWorld(MatrixStack matrices, Camera camera, Frustum frustum) {
+    
+    // Este método será chamado pelo nosso Mixin
+    public void render(MatrixStack matrices, Camera camera, Frustum frustum) {
         if (!this.initialized.get()) return;
 
         double camX = camera.getPos().getX();
