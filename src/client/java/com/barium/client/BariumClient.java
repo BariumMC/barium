@@ -12,7 +12,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 @Environment(EnvType.CLIENT)
 public class BariumClient implements ClientModInitializer {
 
-    // RESTAURADO: Esta thread é usada pelos seus managers de visibilidade.
     public static final ExecutorService RENDER_THREAD_POOL = Executors.newSingleThreadExecutor(new ThreadFactory() {
         private final AtomicInteger threadId = new AtomicInteger(0);
         @Override
@@ -26,6 +25,5 @@ public class BariumClient implements ClientModInitializer {
     @Override
     public void onInitializeClient() {
         BariumMod.LOGGER.info("Barium Client está inicializando.");
-        // A inicialização do Render Manager é feita sob demanda (lazy) e está correta.
     }
 }

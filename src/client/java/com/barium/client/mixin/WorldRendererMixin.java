@@ -1,19 +1,25 @@
 package com.barium.client.mixin;
 
 import com.barium.client.render.BariumRenderManager;
+import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.block.BlockState;
-import net.minecraft.client.render.Camera;
-import net.minecraft.client.render.Frustum;
-import net.minecraft.client.render.WorldRenderer;
+import net.minecraft.client.render.*;
+import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.client.world.ClientWorld;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.BlockView;
 import org.jetbrains.annotations.Nullable;
+import org.joml.Matrix4f;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+
+// Novos imports para a API FrameGraph
+import net.minecraft.client.render.object.ObjectAllocator;
+import net.minecraft.client.util.GpuBufferSlice;
+import org.joml.Vector4f;
 
 @Mixin(WorldRenderer.class)
 public abstract class WorldRendererMixin {
@@ -39,24 +45,26 @@ public abstract class WorldRendererMixin {
         int sectionZ = pos.getZ() >> 4;
         BariumRenderManager.getInstance().scheduleRebuild(sectionX, sectionY, sectionZ, false);
     }
-
-    /**
-     * Ponto de injeção para a nossa renderização.
-     * `setupTerrain` é chamado a cada frame, antes da renderização dos chunks, e tem o Frustum.
-     * É o lugar perfeito para desenhar nosso mundo, antes que o vanilla tente desenhar o dele (que estará vazio).
-     */
-    @Inject(method = "setupTerrain", at = @At("TAIL"))
-    private void barium$renderBariumWorld(Camera camera, Frustum frustum, boolean hasForcedFrustum, boolean spectator, CallbackInfo ci) {
-        // O `matrices` não está disponível aqui, mas podemos obtê-lo.
-        // No entanto, para simplificar, vamos injetar em um lugar melhor.
-        // `render` é muito complexo. `renderLayer` não existe.
-        // A solução é injetar no final do método que prepara tudo.
-    }
     
-    // Vamos usar um ponto de injeção mais estável que tem todos os argumentos.
-    // O final de `render` é o melhor lugar.
-    @Inject(method = "render", at = @At("TAIL"))
-    private void barium$renderBariumWorldAfterVanilla(net.minecraft.client.util.math.MatrixStack matrices, float tickDelta, long limitTime, boolean renderBlockOutline, Camera camera, net.minecraft.client.render.GameRenderer gameRenderer, net.minecraft.client.render.LightmapTextureManager lightmapTextureManager, org.joml.Matrix4f projectionMatrix, CallbackInfo ci) {
-         BariumRenderManager.getInstance().render(matrices, camera, this.frustum);
+    /**
+     * Ponto de injeção final e correto.
+     * Injetamos no final do método `render` com a assinatura `FrameGraph` que o crash report confirmou.
+     * Desenhamos nosso mundo por cima do mundo vanilla (que estará vazio).
+     */
+    @Inject(
+        method = "render(Lnet/minecraft/client/render/object/ObjectAllocator;Lnet/minecraft/client/render/RenderTickCounter;ZLnet/minecraft/client/render/Camera;Lorg/joml/Matrix4f;Lorg/joml/Matrix4f;Lnet/minecraft/client/util/GpuBufferSlice;Lorg/joml/Vector4f;Z)V",
+        at = @At("TAIL")
+    )
+    private void barium$renderBariumWorld(
+            ObjectAllocator allocator, RenderTickCounter tickCounter, boolean renderBlockOutline,
+            Camera camera, Matrix4f positionMatrix, Matrix4f projectionMatrix,
+            GpuBufferSlice fog, Vector4f fogColor, boolean shouldRenderSky,
+            CallbackInfo ci) 
+    {
+        // Precisamos de um MatrixStack para o nosso renderizador. Vamos criar um a partir da matriz de posição.
+        MatrixStack matrices = new MatrixStack();
+        matrices.peek().getPositionMatrix().mul(positionMatrix);
+
+        BariumRenderManager.getInstance().render(matrices, camera, this.frustum);
     }
 }

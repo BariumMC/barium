@@ -23,13 +23,13 @@ public class BariumRenderManager {
     private static final BariumRenderManager INSTANCE = new BariumRenderManager();
     public static BariumRenderManager getInstance() { return INSTANCE; }
 
-    // CORREÇÃO: Usando os getters que sabemos que existem e são estáveis.
+    // CORREÇÃO: RenderLayer.getTranslucent() foi movido. O acesso agora é direto ao campo estático.
+    // Esta é a forma correta para 1.21.x.
     private static final List<RenderLayer> CHUNK_LAYERS = List.of(
         RenderLayer.getSolid(), 
         RenderLayer.getCutoutMipped(), 
-        RenderLayer.getCutout()
-        // RenderLayer.getTranslucent() pode ter outro nome, vamos omiti-lo por enquanto
-        // para garantir a compilação.
+        RenderLayer.getCutout(), 
+        RenderLayer.getTranslucent()
     );
 
     private final Map<Long, RenderableChunk> chunks = new ConcurrentHashMap<>();
@@ -43,11 +43,13 @@ public class BariumRenderManager {
         this.mesherExecutor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
         this.streamingBuffer = new StreamingBuffer(256 * 1024 * 1024);
         this.chunkMesher = new ChunkMesher();
-        BariumMod.LOGGER.info("Barium Render Manager inicializado.");
+        BariumMod.LOGGER.info("Barium Render Manager inicializado (on-demand).");
     }
 
     private void ensureInitialized() {
-        if (this.initialized.compareAndSet(false, true)) this.init();
+        if (this.initialized.compareAndSet(false, true)) {
+            this.init();
+        }
     }
 
     public void onWorldChange(@Nullable ClientWorld newWorld) {
@@ -62,8 +64,10 @@ public class BariumRenderManager {
     public void scheduleRebuild(int sectionX, int sectionY, int sectionZ, boolean isPriority) {
         this.ensureInitialized();
         if (this.world == null) return;
+        
         BlockPos origin = new BlockPos(sectionX << 4, sectionY << 4, sectionZ << 4);
         RenderableChunk chunk = this.chunks.computeIfAbsent(origin.asLong(), k -> new RenderableChunk(origin));
+        
         if (chunk.needsRebuild()) {
             this.mesherExecutor.submit(new ChunkRebuildTask(chunk, this.world, this.chunkMesher));
         }
@@ -73,6 +77,7 @@ public class BariumRenderManager {
         if (!this.initialized.get()) return;
         ChunkMesher.Result result = chunk.getMeshResult();
         if (result == null || result.isEmpty()) return;
+        
         for (Map.Entry<RenderLayer, ByteBuffer> entry : result.layerBuffers().entrySet()) {
             StreamingBuffer.Region region = this.streamingBuffer.alloc(entry.getValue().remaining());
             this.streamingBuffer.upload(region, entry.getValue());
@@ -81,8 +86,10 @@ public class BariumRenderManager {
         result.free();
         chunk.setMeshResult(null);
     }
-    
-    // Este método será chamado pelo nosso Mixin
+
+    /**
+     * O método de renderização principal que será chamado pelo nosso Mixin em WorldRenderer.
+     */
     public void render(MatrixStack matrices, Camera camera, Frustum frustum) {
         if (!this.initialized.get()) return;
 
@@ -102,6 +109,9 @@ public class BariumRenderManager {
                 if (frustum != null && !frustum.isVisible(chunk.getBoundingBox())) {
                     continue;
                 }
+                
+                // A matriz já foi transladada para a posição correta do chunk.
+                // Não precisamos de mais transformações aqui.
                 chunk.draw(layer);
             }
             
@@ -130,6 +140,13 @@ public class BariumRenderManager {
                 chunk.setMeshResult(result);
                 BariumRenderManager.getInstance().uploadMeshedChunk(chunk);
             });
+        }
+    }
+
+    public void shutdown() {
+        if (this.initialized.get()) {
+            if (this.mesherExecutor != null) this.mesherExecutor.shutdown();
+            if (this.streamingBuffer != null) this.streamingBuffer.delete();
         }
     }
 }
