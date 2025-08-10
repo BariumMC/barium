@@ -1,6 +1,8 @@
 package com.barium.client;
 
 import com.barium.BariumMod;
+// Import para o nosso Render Manager
+import com.barium.client.render.BariumRenderManager; 
 import com.barium.client.util.ChunkRenderManager;
 import com.barium.client.util.ChunkVisibilityManager;
 import net.fabricmc.api.ClientModInitializer;
@@ -18,9 +20,10 @@ public class BariumClient implements ClientModInitializer {
 
     private static BariumClient instance;
 
-    // CORREÇÃO: O ChunkRenderManager foi adicionado de volta
+    // Seu código original
     private final ChunkRenderManager chunkRenderManager = ChunkRenderManager.getInstance();
 
+    // Seu RENDER_THREAD_POOL original
     public static final ExecutorService RENDER_THREAD_POOL = Executors.newSingleThreadExecutor(new ThreadFactory() {
         private final AtomicInteger threadId = new AtomicInteger(0);
         @Override
@@ -36,11 +39,19 @@ public class BariumClient implements ClientModInitializer {
     public void onInitializeClient() {
         instance = this;
         BariumMod.LOGGER.info("Initializing Barium Client...");
+        
+        // ====================================================================
+        // A CORREÇÃO ADICIONADA:
+        // Inicializa nosso sistema de renderização customizado aqui.
+        // Isso garante que o 'mesherExecutor' e outros componentes sejam
+        // criados antes que o jogo tente usá-los, resolvendo o NullPointerException.
+        BariumRenderManager.getInstance().init();
+        // ====================================================================
 
+        // Seu código original para o Tick Event
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
             if (client.world == null) {
                 ChunkVisibilityManager.getInstance().clear();
-                // CORREÇÃO: A chamada ao método clear() agora funcionará.
                 this.chunkRenderManager.clear();
             }
         });
@@ -51,8 +62,7 @@ public class BariumClient implements ClientModInitializer {
     public static BariumClient getInstance() {
         return instance;
     }
-
-    // CORREÇÃO: O método getter foi adicionado de volta para que os mixins possam usá-lo
+    
     public ChunkRenderManager getChunkRenderManager() {
         return chunkRenderManager;
     }
