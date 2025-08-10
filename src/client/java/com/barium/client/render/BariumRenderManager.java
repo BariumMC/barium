@@ -112,7 +112,7 @@ public class BariumRenderManager {
                 
                 // CORREÇÃO: Usa a sobrecarga mais simples de setProjectionMatrix.
                 // Isso é suficiente para posicionar os chunks corretamente.
-                RenderSystem.setProjectionMatrix(matrices.peek().getPositionMatrix());
+             //   RenderSystem.setProjectionMatrix(matrices.peek().getPositionMatrix());
                 
                 chunk.draw(layer);
                 
