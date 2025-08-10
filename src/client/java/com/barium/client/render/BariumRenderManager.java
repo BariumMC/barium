@@ -23,13 +23,12 @@ public class BariumRenderManager {
     private static final BariumRenderManager INSTANCE = new BariumRenderManager();
     public static BariumRenderManager getInstance() { return INSTANCE; }
 
-    // CORREÇÃO: RenderLayer.getTranslucent() foi movido. O acesso agora é direto ao campo estático.
-    // Esta é a forma correta para 1.21.x.
+    // CORREÇÃO APLICADA: Usando os campos estáticos em vez dos getters.
     private static final List<RenderLayer> CHUNK_LAYERS = List.of(
-        RenderLayer.getSolid(), 
-        RenderLayer.getCutoutMipped(), 
-        RenderLayer.getCutout(), 
-        RenderLayer.getTranslucent()
+        RenderLayer.SOLID, 
+        RenderLayer.CUTOUT_MIPPED, 
+        RenderLayer.CUTOUT, 
+        RenderLayer.TRANSLUCENT
     );
 
     private final Map<Long, RenderableChunk> chunks = new ConcurrentHashMap<>();
@@ -43,13 +42,11 @@ public class BariumRenderManager {
         this.mesherExecutor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
         this.streamingBuffer = new StreamingBuffer(256 * 1024 * 1024);
         this.chunkMesher = new ChunkMesher();
-        BariumMod.LOGGER.info("Barium Render Manager inicializado (on-demand).");
+        BariumMod.LOGGER.info("Barium Render Manager inicializado.");
     }
 
     private void ensureInitialized() {
-        if (this.initialized.compareAndSet(false, true)) {
-            this.init();
-        }
+        if (this.initialized.compareAndSet(false, true)) this.init();
     }
 
     public void onWorldChange(@Nullable ClientWorld newWorld) {
@@ -64,10 +61,8 @@ public class BariumRenderManager {
     public void scheduleRebuild(int sectionX, int sectionY, int sectionZ, boolean isPriority) {
         this.ensureInitialized();
         if (this.world == null) return;
-        
         BlockPos origin = new BlockPos(sectionX << 4, sectionY << 4, sectionZ << 4);
         RenderableChunk chunk = this.chunks.computeIfAbsent(origin.asLong(), k -> new RenderableChunk(origin));
-        
         if (chunk.needsRebuild()) {
             this.mesherExecutor.submit(new ChunkRebuildTask(chunk, this.world, this.chunkMesher));
         }
@@ -77,7 +72,6 @@ public class BariumRenderManager {
         if (!this.initialized.get()) return;
         ChunkMesher.Result result = chunk.getMeshResult();
         if (result == null || result.isEmpty()) return;
-        
         for (Map.Entry<RenderLayer, ByteBuffer> entry : result.layerBuffers().entrySet()) {
             StreamingBuffer.Region region = this.streamingBuffer.alloc(entry.getValue().remaining());
             this.streamingBuffer.upload(region, entry.getValue());
@@ -87,9 +81,6 @@ public class BariumRenderManager {
         chunk.setMeshResult(null);
     }
 
-    /**
-     * O método de renderização principal que será chamado pelo nosso Mixin em WorldRenderer.
-     */
     public void render(MatrixStack matrices, Camera camera, Frustum frustum) {
         if (!this.initialized.get()) return;
 
@@ -109,10 +100,11 @@ public class BariumRenderManager {
                 if (frustum != null && !frustum.isVisible(chunk.getBoundingBox())) {
                     continue;
                 }
-                
-                // A matriz já foi transladada para a posição correta do chunk.
-                // Não precisamos de mais transformações aqui.
+                matrices.push();
+                matrices.translate(chunk.origin.getX(), chunk.origin.getY(), chunk.origin.getZ());
+                // TODO: Passar a matriz para o shader
                 chunk.draw(layer);
+                matrices.pop();
             }
             
             BariumVertexFormat.clearAttributes();
@@ -140,13 +132,6 @@ public class BariumRenderManager {
                 chunk.setMeshResult(result);
                 BariumRenderManager.getInstance().uploadMeshedChunk(chunk);
             });
-        }
-    }
-
-    public void shutdown() {
-        if (this.initialized.get()) {
-            if (this.mesherExecutor != null) this.mesherExecutor.shutdown();
-            if (this.streamingBuffer != null) this.streamingBuffer.delete();
         }
     }
 }
