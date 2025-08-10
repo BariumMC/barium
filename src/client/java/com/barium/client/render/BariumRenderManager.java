@@ -1,6 +1,7 @@
 package com.barium.client.render;
 
 import com.barium.BariumMod;
+import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.render.Camera;
 import net.minecraft.client.render.Frustum;
@@ -10,6 +11,7 @@ import net.minecraft.client.world.ClientWorld;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 import org.jetbrains.annotations.Nullable;
+import org.joml.Matrix4f;
 
 import java.nio.ByteBuffer;
 import java.util.List;
@@ -27,7 +29,7 @@ public class BariumRenderManager {
         RenderLayer.getSolid(), 
         RenderLayer.getCutoutMipped(), 
         RenderLayer.getCutout(), 
-        RenderLayer.getTranslucentMovingBlock() // Única forma estável de obter um layer translúcido
+        RenderLayer.getTranslucentMovingBlock()
     );
 
     private final Map<Long, RenderableChunk> chunks = new ConcurrentHashMap<>();
@@ -96,6 +98,8 @@ public class BariumRenderManager {
         matrices.push();
         matrices.translate(-camX, -camY, -camZ);
         
+        Matrix4f modelViewMatrix = matrices.peek().getPositionMatrix();
+
         for (RenderLayer layer : CHUNK_LAYERS) {
             layer.startDrawing();
             this.streamingBuffer.bind();
@@ -105,11 +109,11 @@ public class BariumRenderManager {
                 if (frustum != null && !frustum.isVisible(chunk.getBoundingBox())) {
                     continue;
                 }
-                matrices.push();
-                matrices.translate(chunk.origin.getX(), chunk.origin.getY(), chunk.origin.getZ());
-                // TODO: Passar a matriz model-view para o shader
+                
+                // Passa a matriz para o shader e desenha
+                RenderSystem.getShader().getModelViewMat().set(modelViewMatrix.translate(chunk.origin.getX(), chunk.origin.getY(), chunk.origin.getZ()));
+                RenderSystem.getShader().bind();
                 chunk.draw(layer);
-                matrices.pop();
             }
             
             BariumVertexFormat.clearAttributes();

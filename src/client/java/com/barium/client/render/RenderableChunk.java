@@ -38,10 +38,16 @@ public class RenderableChunk {
         }
     }
 
+    /**
+     * CORREÇÃO: Voltamos a usar glDrawArrays.
+     * Esta é a forma de baixo nível que nos dá controle total e não depende
+     * da API frágil de `BuiltBuffer`.
+     */
     public void draw(RenderLayer layer) {
         StreamingBuffer.Region region = this.regions.get(layer);
         if (region != null && region.getVertexCount() > 0) {
-            GL11.glDrawArrays(GL11.GL_QUADS, (int) (region.offset() / BariumVertexFormat.STRIDE), region.getVertexCount());
+            // Usa o modo de desenho (ex: GL_QUADS) que o RenderLayer especifica.
+            GL11.glDrawArrays(layer.getDrawMode().glMode, (int) (region.offset() / BariumVertexFormat.STRIDE), region.getVertexCount());
         }
     }
 }
