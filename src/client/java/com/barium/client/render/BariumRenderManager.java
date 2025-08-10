@@ -77,7 +77,7 @@ public class BariumRenderManager {
         chunk.setMeshResult(null);
     }
 
-    public void renderLayer(RenderLayer layer, MatrixStack matrices, Camera camera, Frustum frustum) {
+    public void renderWorld(MatrixStack matrices, Camera camera, Frustum frustum) {
         if (!this.initialized.get()) return;
 
         double camX = camera.getPos().getX();
@@ -87,22 +87,22 @@ public class BariumRenderManager {
         matrices.push();
         matrices.translate(-camX, -camY, -camZ);
         
-        this.streamingBuffer.bind();
-        BariumVertexFormat.setupAttributes();
-        
-        for (RenderableChunk chunk : this.chunks.values()) {
-            if (frustum != null && !frustum.isVisible(chunk.getBoundingBox())) {
-                continue;
+        for (RenderLayer layer : CHUNK_LAYERS) {
+            layer.startDrawing();
+            this.streamingBuffer.bind();
+            BariumVertexFormat.setupAttributes();
+            
+            for (RenderableChunk chunk : this.chunks.values()) {
+                if (frustum != null && !frustum.isVisible(chunk.getBoundingBox())) {
+                    continue;
+                }
+                chunk.draw(layer);
             }
             
-            matrices.push();
-            matrices.translate(chunk.origin.getX(), chunk.origin.getY(), chunk.origin.getZ());
-            // TODO: Passar a matriz para o shader
-            chunk.draw(layer);
-            matrices.pop();
+            BariumVertexFormat.clearAttributes();
+            layer.endDrawing();
         }
         
-        BariumVertexFormat.clearAttributes();
         matrices.pop();
     }
 
@@ -124,13 +124,6 @@ public class BariumRenderManager {
                 chunk.setMeshResult(result);
                 BariumRenderManager.getInstance().uploadMeshedChunk(chunk);
             });
-        }
-    }
-
-    public void shutdown() {
-        if (this.initialized.get()) {
-            if (this.mesherExecutor != null) this.mesherExecutor.shutdown();
-            if (this.streamingBuffer != null) this.streamingBuffer.delete();
         }
     }
 }
