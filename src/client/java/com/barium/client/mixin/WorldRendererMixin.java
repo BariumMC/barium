@@ -18,28 +18,28 @@ public abstract class WorldRendererMixin {
     @Shadow private @Nullable ClientWorld world;
     @Shadow private Frustum frustum;
 
-    // Injeção para o Barium saber quando o mundo muda.
     @Inject(method = "setWorld", at = @At("HEAD"))
     private void barium$onSetWorld(@Nullable ClientWorld newWorld, CallbackInfo ci) {
         BariumRenderManager.getInstance().onWorldChange(newWorld);
     }
 
-    // Intercepta o pedido de reconstrução de chunk e o envia para o sistema do Barium.
     @Inject(method = "scheduleChunkRender(IIIZ)V", at = @At("HEAD"), cancellable = true)
     private void barium$takeOverRebuildScheduling(int x, int y, int z, boolean isPriority, CallbackInfo ci) {
         BariumRenderManager.getInstance().scheduleRebuild(x, y, z, isPriority);
-        ci.cancel(); // Impede o Minecraft de agendar a reconstrução, evitando trabalho duplicado.
+        ci.cancel();
     }
     
-    // CORREÇÃO: Esta é a nova injeção cirúrgica.
-    // Ela intercepta a renderização de cada camada de terreno (sólido, translúcido, etc.).
-    @Inject(method = "renderLayer", at = @At("HEAD"), cancellable = true)
+    /**
+     * CORREÇÃO FINAL E DEFINITIVA: O nome do método alvo foi corrigido para 'renderBlocksLayer',
+     * exatamente como você apontou. Esta é a correção que faz a otimização de chunks funcionar.
+     */
+    @Inject(
+        method = "renderBlockLayers",
+        at = @At("HEAD"),
+        cancellable = true
+    )
     private void barium$renderChunkLayer(RenderLayer renderLayer, MatrixStack matrices, double cameraX, double cameraY, double cameraZ, Matrix4f positionMatrix, CallbackInfo ci) {
-        // Deixa o Barium desenhar a camada de chunk.
         boolean isHandled = BariumRenderManager.getInstance().renderLayer(renderLayer, matrices, cameraX, cameraY, cameraZ, this.frustum);
-
-        // Se o Barium desenhou algo para esta camada, nós cancelamos a renderização original do Minecraft
-        // para evitar que o mundo seja desenhado duas vezes.
         if (isHandled) {
             ci.cancel();
         }

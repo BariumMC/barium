@@ -3,7 +3,6 @@ package com.barium.client.render;
 import com.barium.BariumMod;
 import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.render.Camera;
 import net.minecraft.client.render.Frustum;
 import net.minecraft.client.render.RenderLayer;
 import net.minecraft.client.util.math.MatrixStack;
@@ -24,12 +23,12 @@ public class BariumRenderManager {
     private static final BariumRenderManager INSTANCE = new BariumRenderManager();
     public static BariumRenderManager getInstance() { return INSTANCE; }
 
-    // Define quais camadas de renderização pertencem aos chunks do mundo.
     private static final List<RenderLayer> CHUNK_LAYERS = List.of(
         RenderLayer.getSolid(), 
         RenderLayer.getCutoutMipped(), 
         RenderLayer.getCutout(), 
-        RenderLayer.getTranslucent()
+        // CORREÇÃO: O método 'getTranslucent()' foi substituído por 'getTranslucentMovingBlock()', que é o correto para chunks.
+        RenderLayer.getTranslucentMovingBlock()
     );
 
     private final Map<Long, RenderableChunk> chunks = new ConcurrentHashMap<>();
@@ -88,10 +87,9 @@ public class BariumRenderManager {
         chunk.setMeshResult(null);
     }
     
-    // CORREÇÃO: Este é o novo método de renderização.
     public boolean renderLayer(RenderLayer layer, MatrixStack matrices, double camX, double camY, double camZ, Frustum frustum) {
         if (!isActive() || !CHUNK_LAYERS.contains(layer)) {
-            return false; // Se não for uma camada de chunk, o Barium não faz nada.
+            return false;
         }
 
         layer.startDrawing();
@@ -105,7 +103,10 @@ public class BariumRenderManager {
             
             matrices.push();
             matrices.translate(chunk.origin.getX() - camX, chunk.origin.getY() - camY, chunk.origin.getZ() - camZ);
-            RenderSystem.setProjectionMatrix(matrices.peek().getPositionMatrix(), RenderSystem.getVertexSorting());
+            
+            // CORREÇÃO: O método 'setProjectionMatrix' agora só aceita um argumento. 'getVertexSorting()' foi removido.
+            RenderSystem.setProjectionMatrix(matrices.peek().getPositionMatrix());
+            
             chunk.draw(layer);
             matrices.pop();
         }
@@ -113,7 +114,7 @@ public class BariumRenderManager {
         BariumVertexFormat.clearAttributes();
         layer.endDrawing();
         
-        return true; // Informa que o Barium lidou com esta camada.
+        return true;
     }
 
     private static class ChunkRebuildTask implements Runnable {
