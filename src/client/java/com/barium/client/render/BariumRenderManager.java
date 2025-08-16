@@ -24,7 +24,13 @@ public class BariumRenderManager {
     private static final BariumRenderManager INSTANCE = new BariumRenderManager();
     public static BariumRenderManager getInstance() { return INSTANCE; }
 
-    private static final List<RenderLayer> CHUNK_LAYERS = RenderLayer.getBlockLayers();
+    // CORREÇÃO 3: O método getBlockLayers() não existe. Criamos a lista manualmente.
+    private static final List<RenderLayer> CHUNK_LAYERS = List.of(
+        RenderLayer.getSolid(), 
+        RenderLayer.getCutoutMipped(), 
+        RenderLayer.getCutout(), 
+        RenderLayer.getTranslucent()
+    );
 
     private final Map<Long, RenderableChunk> chunks = new ConcurrentHashMap<>();
     private final AtomicBoolean initialized = new AtomicBoolean(false);
@@ -35,7 +41,7 @@ public class BariumRenderManager {
 
     private void init() {
         this.mesherExecutor = Executors.newFixedThreadPool(Math.max(1, Runtime.getRuntime().availableProcessors() / 2));
-        this.streamingBuffer = new StreamingBuffer(256 * 1024 * 1024); // 256 MB VRAM buffer
+        this.streamingBuffer = new StreamingBuffer(256 * 1024 * 1024);
         this.chunkMesher = new ChunkMesher();
         BariumMod.LOGGER.info("Barium Render Manager inicializado.");
     }
@@ -70,7 +76,7 @@ public class BariumRenderManager {
         ChunkMesher.Result result = chunk.getMeshResult();
         if (result == null || result.isEmpty()) return;
         
-        chunk.delete(); // Limpa dados antigos antes de fazer upload dos novos
+        chunk.delete();
 
         for (Map.Entry<RenderLayer, ByteBuffer> entry : result.layerBuffers().entrySet()) {
             RenderLayer layer = entry.getKey();
@@ -111,10 +117,8 @@ public class BariumRenderManager {
                 BlockPos origin = chunk.getOrigin();
                 matrices.translate(origin.getX(), origin.getY(), origin.getZ());
                 
-                // CORREÇÃO CRÍTICA: Aplica a matriz de transformação atual ao shader.
-                // A chamada a 'setProjectionMatrix' estava errada e foi removida. O sistema de shaders
-                // do RenderLayer usará a matriz no topo da pilha automaticamente.
-                RenderSystem.setShaderMatrices(matrices.peek(), RenderSystem.getProjectionMatrix());
+                // CORREÇÃO 4: A chamada a setShaderMatrices foi removida pois estava incorreta e causava o erro.
+                // O sistema de RenderLayer já cuida do estado do shader.
                 
                 chunk.draw(layer);
                 
@@ -143,7 +147,6 @@ public class BariumRenderManager {
         @Override
         public void run() {
             ChunkMesher.Result result = this.mesher.mesh(this.world, chunk.getOrigin());
-            // Envia a tarefa de upload de volta para a thread principal do jogo
             MinecraftClient.getInstance().execute(() -> {
                 chunk.setMeshResult(result);
                 BariumRenderManager.getInstance().uploadMeshedChunk(chunk);

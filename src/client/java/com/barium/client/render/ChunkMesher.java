@@ -36,7 +36,7 @@ public class ChunkMesher {
         Map<RenderLayer, ByteBuffer> buffers = new ConcurrentHashMap<>();
 
         VertexConsumerProvider provider = layer -> consumerMap.computeIfAbsent(layer, l -> {
-            ByteBuffer buffer = MemoryUtil.memAlloc(1024 * 512); // 0.5 MB per layer buffer
+            ByteBuffer buffer = MemoryUtil.memAlloc(1024 * 512);
             buffers.put(l, buffer);
             return new BufferWritingVertexConsumer(buffer);
         });
@@ -49,20 +49,21 @@ public class ChunkMesher {
                     BlockPos blockPos = sectionOrigin.add(x, y, z);
                     BlockState state = world.getBlockState(blockPos);
 
-                    if (state.isOpaqueFullCube(world, blockPos)) continue;
+                    // CORREÇÃO 1: O método isOpaqueFullCube() não recebe argumentos.
+                    if (state.isOpaqueFullCube()) continue;
                     
                     matrices.push();
                     matrices.translate(x, y, z);
                     
                     RenderLayer layer = RenderLayers.getMovingBlockLayer(state);
-                    blockRenderManager.renderBlock(state, blockPos, world, matrices, provider.getBuffer(layer), true, this.random);
+                    // CORREÇÃO 2: O método renderBlock espera uma List, não um Random.
+                    blockRenderManager.renderBlock(state, blockPos, world, matrices, provider.getBuffer(layer), true, Collections.emptyList());
 
                     matrices.pop();
                 }
             }
         }
         
-        // Finaliza os buffers, ajustando seu tamanho para o conteúdo real
         buffers.forEach((layer, buffer) -> {
             BufferWritingVertexConsumer consumer = consumerMap.get(layer);
             if(consumer != null) {
