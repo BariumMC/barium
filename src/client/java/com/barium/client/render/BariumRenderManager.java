@@ -24,12 +24,12 @@ public class BariumRenderManager {
     private static final BariumRenderManager INSTANCE = new BariumRenderManager();
     public static BariumRenderManager getInstance() { return INSTANCE; }
 
-    // CORREÇÃO FINAL: O nome correto do método é 'getTranslucentMovingBlock()'.
+    // Define quais camadas de renderização pertencem aos chunks do mundo.
     private static final List<RenderLayer> CHUNK_LAYERS = List.of(
         RenderLayer.getSolid(), 
         RenderLayer.getCutoutMipped(), 
         RenderLayer.getCutout(), 
-        RenderLayer.getTranslucentMovingBlock() 
+        RenderLayer.getTranslucent()
     );
 
     private final Map<Long, RenderableChunk> chunks = new ConcurrentHashMap<>();
@@ -40,7 +40,7 @@ public class BariumRenderManager {
     private World world;
 
     private void init() {
-        this.mesherExecutor = Executors.newFixedThreadPool(Math.max(1, Runtime.getRuntime().availableProcessors() / 2));
+        this.mesherExecutor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
         this.streamingBuffer = new StreamingBuffer(256 * 1024 * 1024);
         this.chunkMesher = new ChunkMesher();
         BariumMod.LOGGER.info("Barium Render Manager inicializado.");
@@ -76,58 +76,44 @@ public class BariumRenderManager {
         ChunkMesher.Result result = chunk.getMeshResult();
         if (result == null || result.isEmpty()) return;
         
-        chunk.delete();
-
         for (Map.Entry<RenderLayer, ByteBuffer> entry : result.layerBuffers().entrySet()) {
             RenderLayer layer = entry.getKey();
             ByteBuffer buffer = entry.getValue();
             
             StreamingBuffer.Region region = this.streamingBuffer.alloc(buffer.remaining());
-            if (region != null) {
-                this.streamingBuffer.upload(region, buffer);
-                chunk.upload(layer, region);
-            }
+            this.streamingBuffer.upload(region, buffer);
+            chunk.upload(layer, region);
         }
         result.free();
         chunk.setMeshResult(null);
     }
     
-    public void render(MatrixStack matrices, Camera camera, Frustum frustum) {
-        if (!this.isActive() || this.world == null) return;
+    // CORREÇÃO: Este é o novo método de renderização.
+    public boolean renderLayer(RenderLayer layer, MatrixStack matrices, double camX, double camY, double camZ, Frustum frustum) {
+        if (!isActive() || !CHUNK_LAYERS.contains(layer)) {
+            return false; // Se não for uma camada de chunk, o Barium não faz nada.
+        }
 
-        double camX = camera.getPos().getX();
-        double camY = camera.getPos().getY();
-        double camZ = camera.getPos().getZ();
-
-        RenderSystem.assertOnRenderThread();
-        matrices.push();
-        matrices.translate(-camX, -camY, -camZ);
+        layer.startDrawing();
+        this.streamingBuffer.bind();
+        BariumVertexFormat.setupAttributes();
         
-        for (RenderLayer layer : CHUNK_LAYERS) {
-            layer.startDrawing();
-            this.streamingBuffer.bind();
-            BariumVertexFormat.setupAttributes();
-            
-            for (RenderableChunk chunk : this.chunks.values()) {
-                if (frustum != null && !frustum.isVisible(chunk.getBoundingBox())) {
-                    continue;
-                }
-                
-                matrices.push();
-                BlockPos origin = chunk.getOrigin();
-                matrices.translate(origin.getX(), origin.getY(), origin.getZ());
-                
-                chunk.draw(layer);
-                
-                matrices.pop();
+        for (RenderableChunk chunk : this.chunks.values()) {
+            if (frustum != null && !frustum.isVisible(chunk.getBoundingBox())) {
+                continue;
             }
             
-            BariumVertexFormat.clearAttributes();
-            layer.endDrawing();
+            matrices.push();
+            matrices.translate(chunk.origin.getX() - camX, chunk.origin.getY() - camY, chunk.origin.getZ() - camZ);
+            RenderSystem.setProjectionMatrix(matrices.peek().getPositionMatrix(), RenderSystem.getVertexSorting());
+            chunk.draw(layer);
+            matrices.pop();
         }
         
-        this.streamingBuffer.unbind();
-        matrices.pop();
+        BariumVertexFormat.clearAttributes();
+        layer.endDrawing();
+        
+        return true; // Informa que o Barium lidou com esta camada.
     }
 
     private static class ChunkRebuildTask implements Runnable {
@@ -143,7 +129,7 @@ public class BariumRenderManager {
 
         @Override
         public void run() {
-            ChunkMesher.Result result = this.mesher.mesh(this.world, chunk.getOrigin());
+            ChunkMesher.Result result = this.mesher.mesh(this.world, chunk.origin);
             MinecraftClient.getInstance().execute(() -> {
                 chunk.setMeshResult(result);
                 BariumRenderManager.getInstance().uploadMeshedChunk(chunk);

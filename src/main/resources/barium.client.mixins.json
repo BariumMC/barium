@@ -17,7 +17,6 @@
 		"ParticleManagerMixin",
 		"ParticleMixin",
 		"TextureAtlasMixin",
-		"BufferBuilderMixin",
 		"WorldRendererMixin"
 	],
 	"injectors": {
