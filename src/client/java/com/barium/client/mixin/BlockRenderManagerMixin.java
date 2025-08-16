@@ -1,3 +1,4 @@
+// src/client/java/com/barium/client/mixin/BlockRenderManagerMixin.java
 package com.barium.client.mixin;
 
 import com.barium.config.BariumConfig;
@@ -5,28 +6,29 @@ import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
 import net.minecraft.client.render.VertexConsumer;
 import net.minecraft.client.render.block.BlockRenderManager;
+import net.minecraft.client.render.model.BlockModelPart;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.random.Random; // Import corrigido
 import net.minecraft.world.BlockRenderView;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+import java.util.List;
 
 @Mixin(BlockRenderManager.class)
 public class BlockRenderManagerMixin {
 
     /**
-     * CORREÇÃO: A assinatura do método foi atualizada para a 1.21.8.
-     * O último parâmetro agora é 'Random', não 'List'.
+     * CORREÇÃO: A assinatura do método foi revertida para a versão correta com 'List',
+     * pois a versão com 'Random' não é a correta para esta injeção.
      */
     @Inject(
-        method = "renderBlock(Lnet/minecraft/block/BlockState;Lnet/minecraft/util/math/BlockPos;Lnet/minecraft/world/BlockRenderView;Lnet/minecraft/client/util/math/MatrixStack;Lnet/minecraft/client/render/VertexConsumer;ZLnet/minecraft/util/math/random/Random;)V",
+        method = "renderBlock(Lnet/minecraft/block/BlockState;Lnet/minecraft/util/math/BlockPos;Lnet/minecraft/world/BlockRenderView;Lnet/minecraft/client/util/math/MatrixStack;Lnet/minecraft/client/render/VertexConsumer;ZLjava/util/List;)V",
         at = @At("HEAD"),
         cancellable = true
     )
-    private void barium$cullDenseFoliage(BlockState state, BlockPos pos, BlockRenderView world, MatrixStack matrices, VertexConsumer vertexConsumer, boolean cull, Random random, CallbackInfo ci) {
+    private void barium$cullDenseFoliage(BlockState state, BlockPos pos, BlockRenderView world, MatrixStack matrices, VertexConsumer vertexConsumer, boolean cull, List<BlockModelPart> parts, CallbackInfo ci) {
         int level = BariumConfig.C.DENSE_FOLIAGE_CULLING_LEVEL;
         if (!BariumConfig.C.ENABLE_DENSE_FOLIAGE_CULLING || level <= 0) {
             return;
@@ -71,7 +73,8 @@ public class BlockRenderManagerMixin {
                state.isOf(Blocks.PINK_TULIP) ||
                state.isOf(Blocks.OXEYE_DAISY) ||
                state.isOf(Blocks.CORNFLOWER) ||
-               state.isof(Blocks.LILY_OF_THE_VALLEY) ||
+               // CORREÇÃO: Corrigido erro de digitação de 'isof' para 'isOf'.
+               state.isOf(Blocks.LILY_OF_THE_VALLEY) ||
                state.isOf(Blocks.BROWN_MUSHROOM) ||
                state.isOf(Blocks.RED_MUSHROOM);
     }

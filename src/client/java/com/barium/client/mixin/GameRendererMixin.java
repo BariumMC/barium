@@ -1,3 +1,4 @@
+// src/client/java/com/barium/client/mixin/GameRendererMixin.java
 package com.barium.client.mixin;
 
 import com.barium.config.BariumConfig;
@@ -20,9 +21,9 @@ public class GameRendererMixin {
         if (BariumConfig.C.ENABLE_HALF_RESOLUTION_ENTITY_OUTLINES) {
             Framebuffer entityOutlinesFramebuffer = MinecraftClient.getInstance().worldRenderer.getEntityOutlinesFramebuffer();
             
-            // CORREÇÃO: Adicionada verificação para evitar NullPointerException durante a inicialização.
             if (entityOutlinesFramebuffer != null) {
-                entityOutlinesFramebuffer.resize(width / 2, height / 2, MinecraftClient.IS_SYSTEM_MAC);
+                // CORREÇÃO: A assinatura do método 'resize' em 1.21.8 aceita apenas 2 argumentos (width, height).
+                entityOutlinesFramebuffer.resize(width / 2, height / 2);
             }
         }
     }
