@@ -24,12 +24,12 @@ public class BariumRenderManager {
     private static final BariumRenderManager INSTANCE = new BariumRenderManager();
     public static BariumRenderManager getInstance() { return INSTANCE; }
 
-    // CORREÇÃO 3: O método getBlockLayers() não existe. Criamos a lista manualmente.
+    // CORREÇÃO DEFINITIVA: Trocado 'getTranslucent()' por 'TRANSLUCENT'.
     private static final List<RenderLayer> CHUNK_LAYERS = List.of(
         RenderLayer.getSolid(), 
         RenderLayer.getCutoutMipped(), 
         RenderLayer.getCutout(), 
-        RenderLayer.getTranslucent()
+        RenderLayer.TRANSLUCENT 
     );
 
     private final Map<Long, RenderableChunk> chunks = new ConcurrentHashMap<>();
@@ -116,9 +116,6 @@ public class BariumRenderManager {
                 matrices.push();
                 BlockPos origin = chunk.getOrigin();
                 matrices.translate(origin.getX(), origin.getY(), origin.getZ());
-                
-                // CORREÇÃO 4: A chamada a setShaderMatrices foi removida pois estava incorreta e causava o erro.
-                // O sistema de RenderLayer já cuida do estado do shader.
                 
                 chunk.draw(layer);
                 
