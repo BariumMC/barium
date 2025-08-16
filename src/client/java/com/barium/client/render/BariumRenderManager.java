@@ -24,12 +24,7 @@ public class BariumRenderManager {
     private static final BariumRenderManager INSTANCE = new BariumRenderManager();
     public static BariumRenderManager getInstance() { return INSTANCE; }
 
-    private static final List<RenderLayer> CHUNK_LAYERS = List.of(
-        RenderLayer.getSolid(), 
-        RenderLayer.getCutoutMipped(), 
-        RenderLayer.getCutout(), 
-        RenderLayer.getTranslucentMovingBlock()
-    );
+    private static final List<RenderLayer> CHUNK_LAYERS = RenderLayer.getBlockLayers();
 
     private final Map<Long, RenderableChunk> chunks = new ConcurrentHashMap<>();
     private final AtomicBoolean initialized = new AtomicBoolean(false);
@@ -39,8 +34,8 @@ public class BariumRenderManager {
     private World world;
 
     private void init() {
-        this.mesherExecutor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
-        this.streamingBuffer = new StreamingBuffer(256 * 1024 * 1024);
+        this.mesherExecutor = Executors.newFixedThreadPool(Math.max(1, Runtime.getRuntime().availableProcessors() / 2));
+        this.streamingBuffer = new StreamingBuffer(256 * 1024 * 1024); // 256 MB VRAM buffer
         this.chunkMesher = new ChunkMesher();
         BariumMod.LOGGER.info("Barium Render Manager inicializado.");
     }
@@ -75,25 +70,30 @@ public class BariumRenderManager {
         ChunkMesher.Result result = chunk.getMeshResult();
         if (result == null || result.isEmpty()) return;
         
+        chunk.delete(); // Limpa dados antigos antes de fazer upload dos novos
+
         for (Map.Entry<RenderLayer, ByteBuffer> entry : result.layerBuffers().entrySet()) {
             RenderLayer layer = entry.getKey();
             ByteBuffer buffer = entry.getValue();
             
             StreamingBuffer.Region region = this.streamingBuffer.alloc(buffer.remaining());
-            this.streamingBuffer.upload(region, buffer);
-            chunk.upload(layer, region);
+            if (region != null) {
+                this.streamingBuffer.upload(region, buffer);
+                chunk.upload(layer, region);
+            }
         }
         result.free();
         chunk.setMeshResult(null);
     }
     
     public void render(MatrixStack matrices, Camera camera, Frustum frustum) {
-        if (!this.isActive()) return;
+        if (!this.isActive() || this.world == null) return;
 
         double camX = camera.getPos().getX();
         double camY = camera.getPos().getY();
         double camZ = camera.getPos().getZ();
 
+        RenderSystem.assertOnRenderThread();
         matrices.push();
         matrices.translate(-camX, -camY, -camZ);
         
@@ -108,11 +108,13 @@ public class BariumRenderManager {
                 }
                 
                 matrices.push();
-                matrices.translate(chunk.origin.getX(), chunk.origin.getY(), chunk.origin.getZ());
+                BlockPos origin = chunk.getOrigin();
+                matrices.translate(origin.getX(), origin.getY(), origin.getZ());
                 
-                // CORREÇÃO: Usa a sobrecarga mais simples de setProjectionMatrix.
-                // Isso é suficiente para posicionar os chunks corretamente.
-             //   RenderSystem.setProjectionMatrix(matrices.peek().getPositionMatrix());
+                // CORREÇÃO CRÍTICA: Aplica a matriz de transformação atual ao shader.
+                // A chamada a 'setProjectionMatrix' estava errada e foi removida. O sistema de shaders
+                // do RenderLayer usará a matriz no topo da pilha automaticamente.
+                RenderSystem.setShaderMatrices(matrices.peek(), RenderSystem.getProjectionMatrix());
                 
                 chunk.draw(layer);
                 
@@ -123,6 +125,7 @@ public class BariumRenderManager {
             layer.endDrawing();
         }
         
+        this.streamingBuffer.unbind();
         matrices.pop();
     }
 
@@ -139,7 +142,8 @@ public class BariumRenderManager {
 
         @Override
         public void run() {
-            ChunkMesher.Result result = this.mesher.mesh(this.world, chunk.origin);
+            ChunkMesher.Result result = this.mesher.mesh(this.world, chunk.getOrigin());
+            // Envia a tarefa de upload de volta para a thread principal do jogo
             MinecraftClient.getInstance().execute(() -> {
                 chunk.setMeshResult(result);
                 BariumRenderManager.getInstance().uploadMeshedChunk(chunk);

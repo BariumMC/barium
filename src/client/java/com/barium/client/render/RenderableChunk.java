@@ -4,6 +4,7 @@ import net.minecraft.client.render.RenderLayer;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Box;
 import org.lwjgl.opengl.GL11;
+import org.lwjgl.opengl.GL30;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -24,6 +25,7 @@ public class RenderableChunk {
         );
     }
 
+    public BlockPos getOrigin() { return this.origin; }
     public Box getBoundingBox() { return this.boundingBox; }
     public boolean needsRebuild() { return this.needsRebuild.getAndSet(false); }
     public void setMeshResult(ChunkMesher.Result result) { this.lastMeshResult = result; }
@@ -31,18 +33,9 @@ public class RenderableChunk {
     public void upload(RenderLayer layer, StreamingBuffer.Region region) { this.regions.put(layer, region); }
     
     public void delete() {
-        this.regions.clear();
-        if (this.lastMeshResult != null) {
-            this.lastMeshResult.free();
-            this.lastMeshResult = null;
-        }
+        this.regions.clear(); // As regiões no VBO serão sobrescritas, não precisam de limpeza
     }
 
-    /**
-     * CORREÇÃO: Voltamos a usar glDrawArrays com GL_QUADS.
-     * Esta é a forma mais básica e garantida de desenhar, que não depende de
-     * nenhuma API de alto nível que possa ter mudado.
-     */
     public void draw(RenderLayer layer) {
         StreamingBuffer.Region region = this.regions.get(layer);
         if (region != null && region.getVertexCount() > 0) {

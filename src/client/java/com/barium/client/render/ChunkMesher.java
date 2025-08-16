@@ -1,4 +1,3 @@
-// src/client/java/com/barium/client/render/ChunkMesher.java
 package com.barium.client.render;
 
 import net.minecraft.block.BlockState;
@@ -9,6 +8,7 @@ import net.minecraft.client.render.VertexConsumerProvider;
 import net.minecraft.client.render.block.BlockRenderManager;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.random.Random;
 import net.minecraft.world.BlockRenderView;
 import org.lwjgl.system.MemoryUtil;
 
@@ -27,15 +27,19 @@ public class ChunkMesher {
             }
         }
     }
+    
+    private final Random random = Random.create();
 
     public Result mesh(BlockRenderView world, BlockPos sectionOrigin) {
         BlockRenderManager blockRenderManager = MinecraftClient.getInstance().getBlockRenderManager();
+        Map<RenderLayer, BufferWritingVertexConsumer> consumerMap = new ConcurrentHashMap<>();
         Map<RenderLayer, ByteBuffer> buffers = new ConcurrentHashMap<>();
 
-        VertexConsumerProvider provider = layer -> {
-            ByteBuffer buffer = buffers.computeIfAbsent(layer, l -> MemoryUtil.memAlloc(524288));
+        VertexConsumerProvider provider = layer -> consumerMap.computeIfAbsent(layer, l -> {
+            ByteBuffer buffer = MemoryUtil.memAlloc(1024 * 512); // 0.5 MB per layer buffer
+            buffers.put(l, buffer);
             return new BufferWritingVertexConsumer(buffer);
-        };
+        });
         
         MatrixStack matrices = new MatrixStack();
 
@@ -45,27 +49,27 @@ public class ChunkMesher {
                     BlockPos blockPos = sectionOrigin.add(x, y, z);
                     BlockState state = world.getBlockState(blockPos);
 
-                    if (state.isAir()) continue;
+                    if (state.isOpaqueFullCube(world, blockPos)) continue;
                     
                     matrices.push();
                     matrices.translate(x, y, z);
                     
-                    // CORREÇÃO: Revertido para 'getMovingBlockLayer', que retorna o tipo 'RenderLayer' correto.
-                    blockRenderManager.renderBlock(
-                        state, 
-                        blockPos, 
-                        world, 
-                        matrices, 
-                        provider.getBuffer(RenderLayers.getMovingBlockLayer(state)), 
-                        true,
-                        Collections.emptyList()
-                    );
+                    RenderLayer layer = RenderLayers.getMovingBlockLayer(state);
+                    blockRenderManager.renderBlock(state, blockPos, world, matrices, provider.getBuffer(layer), true, this.random);
 
                     matrices.pop();
                 }
             }
         }
         
+        // Finaliza os buffers, ajustando seu tamanho para o conteúdo real
+        buffers.forEach((layer, buffer) -> {
+            BufferWritingVertexConsumer consumer = consumerMap.get(layer);
+            if(consumer != null) {
+                buffer.limit(consumer.getBytesWritten());
+            }
+        });
+
         return new Result(buffers);
     }
 }
