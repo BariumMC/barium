@@ -24,12 +24,12 @@ public class BariumRenderManager {
     private static final BariumRenderManager INSTANCE = new BariumRenderManager();
     public static BariumRenderManager getInstance() { return INSTANCE; }
 
-    // CORREÇÃO DEFINITIVA: Trocado 'getTranslucent()' por 'TRANSLUCENT'.
+    // CORREÇÃO FINAL: O nome correto do método é 'getTranslucentMovingBlock()'.
     private static final List<RenderLayer> CHUNK_LAYERS = List.of(
         RenderLayer.getSolid(), 
         RenderLayer.getCutoutMipped(), 
         RenderLayer.getCutout(), 
-        RenderLayer.TRANSLUCENT 
+        RenderLayer.getTranslucentMovingBlock() 
     );
 
     private final Map<Long, RenderableChunk> chunks = new ConcurrentHashMap<>();
