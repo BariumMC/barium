@@ -18,13 +18,11 @@ public class GameRendererMixin {
     )
     private void barium$forceResizeEntityOutlineFramebuffer(int width, int height, CallbackInfo ci) {
         if (BariumConfig.C.ENABLE_HALF_RESOLUTION_ENTITY_OUTLINES) {
-            // Acessa o WorldRenderer através do singleton do MinecraftClient
             Framebuffer entityOutlinesFramebuffer = MinecraftClient.getInstance().worldRenderer.getEntityOutlinesFramebuffer();
             
-            // CORREÇÃO: Verifica se o framebuffer existe antes de tentar redimensioná-lo.
+            // CORREÇÃO: Adicionada verificação para evitar NullPointerException durante a inicialização.
             if (entityOutlinesFramebuffer != null) {
-                // A sua assinatura de resize() com 2 argumentos está correta para 1.21.x
-                entityOutlinesFramebuffer.resize(width / 2, height / 2);
+                entityOutlinesFramebuffer.resize(width / 2, height / 2, MinecraftClient.IS_SYSTEM_MAC);
             }
         }
     }

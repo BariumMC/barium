@@ -4,18 +4,15 @@ import net.minecraft.block.BlockState;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.render.RenderLayer;
 import net.minecraft.client.render.RenderLayers;
-import net.minecraft.client.render.VertexConsumer;
 import net.minecraft.client.render.VertexConsumerProvider;
 import net.minecraft.client.render.block.BlockRenderManager;
-import net.minecraft.client.render.model.BlockModelPart;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.random.Random;
 import net.minecraft.world.BlockRenderView;
 import org.lwjgl.system.MemoryUtil;
 
 import java.nio.ByteBuffer;
-import java.util.Collections;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -30,15 +27,20 @@ public class ChunkMesher {
         }
     }
 
+    // Adicionado um objeto Random para a chamada de renderBlock
+    private final Random random = Random.create();
+
     public Result mesh(BlockRenderView world, BlockPos sectionOrigin) {
         BlockRenderManager blockRenderManager = MinecraftClient.getInstance().getBlockRenderManager();
         Map<RenderLayer, ByteBuffer> buffers = new ConcurrentHashMap<>();
 
-        VertexConsumerProvider provider = layer -> {
-            ByteBuffer buffer = buffers.computeIfAbsent(layer, l -> MemoryUtil.memAlloc(524288));
-            return new BufferWritingVertexConsumer(buffer);
-        };
-        
+        VertexConsumerProvider.Immediate provider = VertexConsumerProvider.immediate(new ConcurrentHashMap<RenderLayer, ByteBuffer>() {
+            @Override
+            public ByteBuffer get(Object layer) {
+                return buffers.computeIfAbsent((RenderLayer) layer, l -> MemoryUtil.memAlloc(524288));
+            }
+        });
+
         MatrixStack matrices = new MatrixStack();
 
         for (int y = 0; y < 16; ++y) {
@@ -48,18 +50,22 @@ public class ChunkMesher {
                     BlockState state = world.getBlockState(blockPos);
 
                     if (state.isAir()) continue;
+
+                    // CORREÇÃO: Obtém a camada de renderização correta para o estado do bloco
+                    RenderLayer renderLayer = RenderLayers.getRenderLayer(state);
                     
                     matrices.push();
                     matrices.translate(x, y, z);
                     
+                    // CORREÇÃO: Passa o 'random' e usa o buffer da camada correta
                     blockRenderManager.renderBlock(
                         state, 
                         blockPos, 
                         world, 
                         matrices, 
-                        provider.getBuffer(RenderLayers.getMovingBlockLayer(state)), 
+                        provider.getBuffer(renderLayer), 
                         true,
-                        Collections.emptyList()
+                        this.random
                     );
 
                     matrices.pop();
@@ -67,6 +73,7 @@ public class ChunkMesher {
             }
         }
         
+        provider.draw();
         return new Result(buffers);
     }
 }
