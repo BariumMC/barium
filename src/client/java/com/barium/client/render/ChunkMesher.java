@@ -5,7 +5,6 @@ import net.minecraft.block.BlockState;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.render.RenderLayer;
 import net.minecraft.client.render.RenderLayers;
-import net.minecraft.client.render.VertexConsumer;
 import net.minecraft.client.render.VertexConsumerProvider;
 import net.minecraft.client.render.block.BlockRenderManager;
 import net.minecraft.client.util.math.MatrixStack;
@@ -33,8 +32,6 @@ public class ChunkMesher {
         BlockRenderManager blockRenderManager = MinecraftClient.getInstance().getBlockRenderManager();
         Map<RenderLayer, ByteBuffer> buffers = new ConcurrentHashMap<>();
 
-        // CORREÇÃO: A criação do VertexConsumerProvider foi revertida para a forma correta
-        // que não usa VertexConsumerProvider.immediate, que causava o erro de tipo.
         VertexConsumerProvider provider = layer -> {
             ByteBuffer buffer = buffers.computeIfAbsent(layer, l -> MemoryUtil.memAlloc(524288));
             return new BufferWritingVertexConsumer(buffer);
@@ -53,14 +50,13 @@ public class ChunkMesher {
                     matrices.push();
                     matrices.translate(x, y, z);
                     
-                    // CORREÇÃO: O método correto para obter a camada é 'RenderLayers.getBlockLayer'.
-                    // E o último parâmetro de 'renderBlock' deve ser uma lista vazia, não um 'Random'.
+                    // CORREÇÃO: Revertido para 'getMovingBlockLayer', que retorna o tipo 'RenderLayer' correto.
                     blockRenderManager.renderBlock(
                         state, 
                         blockPos, 
                         world, 
                         matrices, 
-                        provider.getBuffer(RenderLayers.getBlockLayer(state)), 
+                        provider.getBuffer(RenderLayers.getMovingBlockLayer(state)), 
                         true,
                         Collections.emptyList()
                     );
