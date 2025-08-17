@@ -16,7 +16,9 @@
 		"ParticleAccessor",
 		"ParticleManagerMixin",
 		"ParticleMixin",
+		"SpriteLoaderMixin",
 		"TextureAtlasMixin",
+		"WorldRendererAccessor",
 		"WorldRendererMixin"
 	],
 	"injectors": {
