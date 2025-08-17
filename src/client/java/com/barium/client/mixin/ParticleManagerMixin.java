@@ -7,10 +7,8 @@ import net.minecraft.client.particle.ParticleManager;
 import net.minecraft.client.particle.ParticleTextureSheet;
 import net.minecraft.client.render.Camera;
 import net.minecraft.client.render.Frustum;
-import net.minecraft.client.render.LightmapTextureManager;
 import net.minecraft.client.render.VertexConsumerProvider;
 import net.minecraft.client.render.WorldRenderer;
-import net.minecraft.client.util.math.MatrixStack;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -45,17 +43,17 @@ public class ParticleManagerMixin {
 
     // Optimization: Particle Frustum Culling (using a stable Local Capture Inject)
     @Inject(
-        // This is the correct signature for the main particle render loop in Minecraft 1.21.8
-        method = "renderParticles(Lnet/minecraft/client/util/math/MatrixStack;Lnet/minecraft/client/render/VertexConsumerProvider$Immediate;Lnet/minecraft/client/render/LightmapTextureManager;Lnet/minecraft/client/render/Camera;)V",
+        // This is the correct signature for the internal helper method provided by your mappings.
+        method = "renderParticles(Lnet/minecraft/client/render/Camera;FLnet/minecraft/client/render/VertexConsumerProvider$Immediate;Lnet/minecraft/client/particle/ParticleTextureSheet;Ljava/util/Queue;)V",
         at = @At(
             value = "INVOKE",
-            // The buildGeometry signature has also been updated in 1.21.8
+            // The target remains the same: the method call that builds the particle's geometry for rendering.
             target = "Lnet/minecraft/client/particle/Particle;buildGeometry(Lnet/minecraft/client/render/VertexConsumer;Lnet/minecraft/client/render/Camera;FFFFFF)V"
         ),
         cancellable = true,
         locals = LocalCapture.CAPTURE_FAILHARD
     )
-    private void barium$cullParticlesInFrustum(MatrixStack matrices, VertexConsumerProvider.Immediate vertexConsumers, LightmapTextureManager lightmap, Camera camera, CallbackInfo ci, ParticleTextureSheet particleTextureSheet, Queue queue, Iterator var8, Particle particle) {
+    private void barium$cullParticlesInFrustum(Camera camera, float tickDelta, VertexConsumerProvider.Immediate vertexConsumers, ParticleTextureSheet sheet, Queue<Particle> particles, CallbackInfo ci, Iterator var7, Particle particle) {
         if (BariumConfig.C.ENABLE_PARTICLE_FRUSTUM_CULLING) {
             WorldRenderer worldRenderer = MinecraftClient.getInstance().worldRenderer;
             // The Accessor allows us to safely get the frustum object
