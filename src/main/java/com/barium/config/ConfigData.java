@@ -15,7 +15,7 @@ public class ConfigData {
     public boolean ENABLE_EMPTY_CHUNK_SECTION_CULLING = true;
     public boolean ENABLE_CHUNK_UPDATE_THROTTLING = true;
     public boolean ENABLE_DIRECTIONAL_CHUNK_LOADING = true;
-    public int MAX_CHUNK_UPLOODS_PER_FRAME = 4;
+    public int MAX_CHUNK_UPLOADS_PER_FRAME = 4;
 
     // ================== Culling & Level of Detail (LOD) ================== //
     public boolean ENABLE_ENTITY_CULLING = true;

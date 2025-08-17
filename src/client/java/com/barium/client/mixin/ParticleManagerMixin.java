@@ -1,6 +1,7 @@
 package com.barium.client.mixin;
 
 import com.barium.config.BariumConfig;
+import com.barium.client.mixin.WorldRendererAccessor; // Import added
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.particle.Particle;
 import net.minecraft.client.particle.ParticleManager;
@@ -8,7 +9,6 @@ import net.minecraft.client.particle.ParticleTextureSheet;
 import net.minecraft.client.render.Camera;
 import net.minecraft.client.render.Frustum;
 import net.minecraft.client.render.LightmapTextureManager;
-import net.minecraft.client.render.VertexConsumer;
 import net.minecraft.client.render.VertexConsumerProvider;
 import net.minecraft.client.render.WorldRenderer;
 import net.minecraft.client.util.math.MatrixStack;
@@ -17,9 +17,10 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
-import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+import org.spongepowered.asm.mixin.injection.callback.LocalCapture;
 
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Queue;
 
@@ -43,23 +44,25 @@ public class ParticleManagerMixin {
         }
     }
 
-    // Optimization: Particle Frustum Culling
-    @Redirect(
-        // This is the correct signature for the main particle render loop in this version
+    // Optimization: Particle Frustum Culling (using a stable Local Capture Inject)
+    @Inject(
         method = "renderParticles(Lnet/minecraft/client/util/math/MatrixStack;Lnet/minecraft/client/render/VertexConsumerProvider$Immediate;Lnet/minecraft/client/render/LightmapTextureManager;Lnet/minecraft/client/render/Camera;F)V",
-        at = @At(value = "INVOKE", target = "Lnet/minecraft/client/particle/Particle;buildGeometry(Lnet/minecraft/client/render/VertexConsumer;Lnet/minecraft/client/render/Camera;F)V")
+        at = @At(
+            value = "INVOKE",
+            // The new buildGeometry signature, required for the injection point to be valid
+            target = "Lnet/minecraft/client/particle/Particle;buildGeometry(Lnet/minecraft/client/render/VertexConsumer;Lnet/minecraft/client/render/Camera;FFFFF)V"
+        ),
+        cancellable = true,
+        locals = LocalCapture.CAPTURE_FAILHARD
     )
-    private void barium$cullParticlesInFrustum(Particle particle, VertexConsumer vertexConsumer, Camera camera, float tickDelta) {
+    private void barium$cullParticlesInFrustum(MatrixStack matrices, VertexConsumerProvider.Immediate vertexConsumers, LightmapTextureManager lightmap, Camera camera, float tickDelta, CallbackInfo ci, ParticleTextureSheet particleTextureSheet, Queue queue, Iterator var9, Particle particle) {
         if (BariumConfig.C.ENABLE_PARTICLE_FRUSTUM_CULLING) {
             WorldRenderer worldRenderer = MinecraftClient.getInstance().worldRenderer;
-            // Use the accessor to safely get the frustum from the WorldRenderer
             Frustum frustum = ((WorldRendererAccessor) worldRenderer).getFrustum();
 
             if (frustum != null && !frustum.isVisible(particle.getBoundingBox())) {
-                return; // Don't render the particle if it's outside the camera view
+                ci.cancel(); // Skip calling buildGeometry for this particle
             }
         }
-        // If the optimization is off, or the particle is visible, render it normally.
-        particle.buildGeometry(vertexConsumer, camera, tickDelta);
     }
 }
