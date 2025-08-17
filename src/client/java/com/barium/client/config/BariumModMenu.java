@@ -66,6 +66,8 @@ public class BariumModMenu implements ModMenuApi {
             
             mainCategory.addEntry(entryBuilder.startBooleanToggle(Text.translatable("option.barium.enable_particle_optimizations"), BariumConfig.C.ENABLE_PARTICLE_OPTIMIZATION)
                     .setDefaultValue(defaults.ENABLE_PARTICLE_OPTIMIZATION).setTooltip(Text.translatable("tooltip.barium.enable_particle_optimizations")).setSaveConsumer(v -> BariumConfig.C.ENABLE_PARTICLE_OPTIMIZATION = v).build());
+            mainCategory.addEntry(entryBuilder.startBooleanToggle(Text.translatable("option.barium.enable_particle_frustum_culling"), BariumConfig.C.ENABLE_PARTICLE_FRUSTUM_CULLING)
+                    .setDefaultValue(defaults.ENABLE_PARTICLE_FRUSTUM_CULLING).setTooltip(Text.translatable("tooltip.barium.enable_particle_frustum_culling")).setSaveConsumer(v -> BariumConfig.C.ENABLE_PARTICLE_FRUSTUM_CULLING = v).build());
             mainCategory.addEntry(entryBuilder.startBooleanToggle(Text.translatable("option.barium.reduce_explosion_particles"), BariumConfig.C.ENABLE_EXPLOSION_PARTICLE_REDUCTION)
                     .setDefaultValue(defaults.ENABLE_EXPLOSION_PARTICLE_REDUCTION).setTooltip(Text.translatable("tooltip.barium.reduce_explosion_particles")).setSaveConsumer(v -> BariumConfig.C.ENABLE_EXPLOSION_PARTICLE_REDUCTION = v).build());
             mainCategory.addEntry(entryBuilder.startBooleanToggle(Text.translatable("option.barium.enable_global_particle_limit"), BariumConfig.C.ENABLE_GLOBAL_PARTICLE_LIMIT)
@@ -80,6 +82,8 @@ public class BariumModMenu implements ModMenuApi {
 
             mainCategory.addEntry(entryBuilder.startBooleanToggle(Text.translatable("option.barium.disable_texture_animations"), BariumConfig.C.DISABLE_TEXTURE_ANIMATIONS)
                     .setDefaultValue(defaults.DISABLE_TEXTURE_ANIMATIONS).setTooltip(Text.translatable("tooltip.barium.disable_texture_animations")).setSaveConsumer(v -> BariumConfig.C.DISABLE_TEXTURE_ANIMATIONS = v).build());
+            mainCategory.addEntry(entryBuilder.startIntSlider(Text.translatable("option.barium.mipmap_level_override"), BariumConfig.C.MIPMAP_LEVEL_OVERRIDE, 0, 4)
+                    .setDefaultValue(defaults.MIPMAP_LEVEL_OVERRIDE).setTooltip(Text.translatable("tooltip.barium.mipmap_level_override")).setSaveConsumer(v -> BariumConfig.C.MIPMAP_LEVEL_OVERRIDE = v).build());
             mainCategory.addEntry(entryBuilder.startBooleanToggle(Text.translatable("option.barium.cache_debug_hud"), BariumConfig.C.CACHE_DEBUG_HUD)
                     .setDefaultValue(defaults.CACHE_DEBUG_HUD).setTooltip(Text.translatable("tooltip.barium.cache_debug_hud")).setSaveConsumer(v -> BariumConfig.C.CACHE_DEBUG_HUD = v).build());
             mainCategory.addEntry(entryBuilder.startBooleanToggle(Text.translatable("option.barium.enable_tooltip_caching"), BariumConfig.C.ENABLE_TOOLTIP_CACHING)

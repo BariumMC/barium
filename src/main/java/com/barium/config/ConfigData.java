@@ -15,10 +15,10 @@ public class ConfigData {
     public boolean ENABLE_EMPTY_CHUNK_SECTION_CULLING = true;
     public boolean ENABLE_CHUNK_UPDATE_THROTTLING = true;
     public boolean ENABLE_DIRECTIONAL_CHUNK_LOADING = true;
-    public int MAX_CHUNK_UPLOADS_PER_FRAME = 4;
+    public int MAX_CHUNK_UPLOODS_PER_FRAME = 4;
 
     // ================== Culling & Level of Detail (LOD) ================== //
-    public boolean ENABLE_ENTITY_CULLING = true; // <-- ADICIONE ESTA LINHA
+    public boolean ENABLE_ENTITY_CULLING = true;
     public double MAX_ENTITY_RENDER_DISTANCE_SQ = 72 * 72;
     public boolean ENABLE_BLOCK_ENTITY_CULLING = true;
     public double MAX_BLOCK_ENTITY_RENDER_DISTANCE_SQ = 72 * 72;
@@ -31,6 +31,7 @@ public class ConfigData {
 
     // ================== Particle Optimizer ================== //
     public boolean ENABLE_PARTICLE_OPTIMIZATION = true;
+    public boolean ENABLE_PARTICLE_FRUSTUM_CULLING = true;
     public double PARTICLE_CULL_DISTANCE_SQ = 128 * 128;
     public boolean ENABLE_EXPLOSION_PARTICLE_REDUCTION = true;
     public boolean ENABLE_GLOBAL_PARTICLE_LIMIT = true;
@@ -47,6 +48,7 @@ public class ConfigData {
     public int ADAPTIVE_FOG_TARGET_FPS = 58;
     public boolean DISABLE_TRANSLUCENT_RENDERING = false;
     public boolean DISABLE_TEXTURE_ANIMATIONS = false;
+    public int MIPMAP_LEVEL_OVERRIDE = 0;
 
     // ================== Game Logic & Tick Optimizations ================== //
     public boolean ENABLE_ENTITY_TICK_CULLING = true;

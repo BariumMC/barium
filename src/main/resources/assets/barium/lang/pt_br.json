@@ -55,8 +55,10 @@
   "option.barium.enable_beacon_optimization": "Otimização de Sinalizadores",
   "tooltip.barium.enable_beacon_optimization": "Para de renderizar raios de sinalizadores muito distantes para melhorar o desempenho.",
 
-  "option.barium.enable_particle_optimizations": "Otimização de Partículas",
-  "tooltip.barium.enable_particle_optimizations": "Pula a renderização de partículas que estão fora da tela ou muito longe.",
+  "option.barium.enable_particle_optimizations": "Otimização de Partículas (Distância)",
+  "tooltip.barium.enable_particle_optimizations": "Pula a atualização de partículas que estão muito longe.",
+  "option.barium.enable_particle_frustum_culling": "Otimização de Partículas (Visão)",
+  "tooltip.barium.enable_particle_frustum_culling": "Impede a renderização de partículas que estão fora do campo de visão da câmera.\nReduz a carga na GPU em cenas com muitas partículas.",
   
   "option.barium.reduce_explosion_particles": "Reduzir Partículas de Explosão",
   "tooltip.barium.reduce_explosion_particles": "Reduz drasticamente a quantidade de partículas de explosões para prevenir picos de lag.",
@@ -75,6 +77,8 @@
   
   "option.barium.disable_texture_animations": "Desativar Animações de Textura",
   "tooltip.barium.disable_texture_animations": "Congela texturas animadas (água, lava, portais) para economizar uma pequena quantidade de CPU.",
+  "option.barium.mipmap_level_override": "Forçar Nível de Mipmap (0-4)",
+  "tooltip.barium.mipmap_level_override": "Força uma resolução de textura menor. Valores maiores reduzem o uso de VRAM e podem melhorar o FPS com pacotes de textura, mas deixam as texturas borradas.\nRequer reinicialização. 0=Desligado.",
   
   "option.barium.enable_entity_tick_culling": "Otimização de Ticks de Entidades",
   "tooltip.barium.enable_entity_tick_culling": "Reduz a frequência de atualização da lógica (IA) de entidades distantes.",

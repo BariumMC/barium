@@ -54,7 +54,9 @@
   "tooltip.barium.enable_beacon_optimization": "Stops rendering very distant beacon beams to improve performance.",
 
   "option.barium.enable_particle_optimizations": "Enable Particle Optimizations",
-  "tooltip.barium.enable_particle_optimizations": "Skips rendering particles that are outside the screen or too far away.",
+  "tooltip.barium.enable_particle_optimizations": "Skips updating particles that are too far away.",
+  "option.barium.enable_particle_frustum_culling": "Enable Particle Frustum Culling",
+  "tooltip.barium.enable_particle_frustum_culling": "Stops rendering particles that are outside the camera's view.\nReduces GPU load in particle-heavy scenes.",
   "option.barium.particle_cull_distance": "Particle Cull Distance",
   "tooltip.barium.particle_cull_distance": "Particles beyond this distance will not be rendered or ticked.",
   "option.barium.reduce_explosion_particles": "Reduce Explosion Particles",
@@ -87,6 +89,8 @@
   "tooltip.barium.disable_translucent_rendering": "Disables rendering of all translucent blocks like glass and water.\nProvides a significant FPS boost at the cost of visuals.",
   "option.barium.disable_texture_animations": "Disable Texture Animations",
   "tooltip.barium.disable_texture_animations": "Freezes animated textures (water, lava, portals) to save a small amount of CPU.",
+  "option.barium.mipmap_level_override": "Mipmap Level Override (0-4)",
+  "tooltip.barium.mipmap_level_override": "Forces a lower texture resolution. Higher values reduce VRAM usage and can improve FPS with resource packs, but make textures blurrier.\nRequires a game restart. 0=Off.",
 
   "option.barium.enable_entity_tick_culling": "Enable Entity Tick Culling",
   "tooltip.barium.enable_entity_tick_culling": "Reduces the update frequency of distant entities' logic (AI).",
@@ -104,7 +108,7 @@
   "option.barium.enable_occlusion_culling": "Enable Total Occlusion Culling",
   "tooltip.barium.enable_occlusion_culling": "Stops rendering chunk sections that are 100% surrounded by solid, opaque blocks. Highly effective underground and provides a large FPS boost with no visual bugs.",
 
-    "option.barium.enable_smart_sleep": "Enable Smart Sleep",
+  "option.barium.enable_smart_sleep": "Enable Smart Sleep",
   "tooltip.barium.enable_smart_sleep": "Replaces Minecraft's busy-waiting loop with an efficient sleep-based wait.\nDrastically reduces CPU usage and power consumption when not using VSync, without losing performance.",
 
   "title.barium.options": "Barium Options",

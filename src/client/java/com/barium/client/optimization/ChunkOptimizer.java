@@ -5,13 +5,27 @@ import com.barium.config.BariumConfig;
 import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.render.Camera;
+import net.minecraft.client.render.Frustum;
 import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.util.hit.HitResult;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.Box;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.RaycastContext;
+import net.minecraft.world.World;
 
 public class ChunkOptimizer {
+
+    // Pontos de teste na bounding box de uma entidade para o raycast de oclusão.
+    // Inclui cantos e centros das faces para uma verificação mais robusta.
+    private static final Vec3d[] OCCLUSION_TEST_POINTS = new Vec3d[]{
+            new Vec3d(0.5, 0.5, 0.5), // Center
+            new Vec3d(0.1, 0.1, 0.1), // Corner
+            new Vec3d(0.9, 0.1, 0.1), // Corner
+            new Vec3d(0.1, 0.9, 0.1), // Corner
+            new Vec3d(0.1, 0.1, 0.9), // Corner
+            new Vec3d(0.9, 0.9, 0.9)  // Corner
+    };
 
     public static void init() {
         BariumMod.LOGGER.info("Inicializando ChunkOptimizer");
@@ -28,57 +42,56 @@ public class ChunkOptimizer {
     }
 
     /**
-     * Verifica se uma entidade de bloco está obstruída por outra geometria do mundo.
-     * Esta é a versão CORRIGIDA e OTIMIZADA.
+     * Verifica se uma entidade de bloco está obstruída.
+     * Versão Agressiva: testa múltiplos pontos na bounding box da entidade.
+     * Se QUALQUER ponto for visível, a entidade não é considerada ocluída.
      */
     public static boolean isBlockEntityOccluded(BlockEntity blockEntity, Camera camera) {
-        // 1. Checa se a otimização está ligada
         if (!BariumConfig.C.ENABLE_BLOCK_ENTITY_OCCLUSION_CULLING) {
             return false;
         }
 
-        var world = blockEntity.getWorld();
+        World world = blockEntity.getWorld();
         if (world == null) {
-            return false; // Não podemos fazer nada sem um mundo
+            return false;
         }
 
         Vec3d cameraPos = camera.getPos();
         BlockPos blockEntityBlockPos = blockEntity.getPos();
-        Vec3d blockEntityCenterPos = Vec3d.ofCenter(blockEntityBlockPos);
-        
-        // 2. OTIMIZAÇÃO: Não faz o raycast para entidades muito próximas
-        double distanceSq = cameraPos.squaredDistanceTo(blockEntityCenterPos);
-        if (distanceSq < BariumConfig.C.BLOCK_ENTITY_OCCLUSION_MIN_DISTANCE_SQ) {
+
+        // Otimização: Não faz raycast para entidades muito próximas
+        if (cameraPos.squaredDistanceTo(Vec3d.ofCenter(blockEntityBlockPos)) < BariumConfig.C.BLOCK_ENTITY_OCCLUSION_MIN_DISTANCE_SQ) {
             return false;
         }
 
-        // 3. Dispara o raio da câmera para o centro da entidade de bloco
-        RaycastContext context = new RaycastContext(
-                cameraPos,
-                blockEntityCenterPos,
-                RaycastContext.ShapeType.COLLIDER, // Usa os colisores dos blocos
-                RaycastContext.FluidHandling.NONE,  // Ignora a água
-                MinecraftClient.getInstance().player
-        );
-        BlockHitResult hitResult = world.raycast(context);
+        // Obtém a Bounding Box real da entidade de bloco para o teste.
+        // Usamos a posição do bloco como base para a bounding box.
+        Box boundingBox = new Box(blockEntityBlockPos);
 
-        // 4. A GRANDE CORREÇÃO: Analisa o resultado do raio
-        if (hitResult.getType() == HitResult.Type.MISS) {
-            // O raio não acertou nada, então o caminho está livre. Não está ocluído.
-            return false;
-        }
-        
-        if (hitResult.getType() == HitResult.Type.BLOCK) {
-            // O raio acertou um bloco. Agora precisamos saber QUAL bloco.
-            BlockPos hitBlockPos = hitResult.getBlockPos();
-            
-            // Se a posição do bloco que o raio acertou for DIFERENTE da posição
-            // da nossa entidade de bloco, significa que há algo no caminho.
-            // Portanto, a entidade ESTÁ ocluída.
-            return !hitBlockPos.equals(blockEntityBlockPos);
+        for (Vec3d testPoint : OCCLUSION_TEST_POINTS) {
+            Vec3d targetPos = new Vec3d(
+                boundingBox.minX + (boundingBox.maxX - boundingBox.minX) * testPoint.x,
+                boundingBox.minY + (boundingBox.maxY - boundingBox.minY) * testPoint.y,
+                boundingBox.minZ + (boundingBox.maxZ - boundingBox.minZ) * testPoint.z
+            );
+
+            RaycastContext context = new RaycastContext(
+                    cameraPos,
+                    targetPos,
+                    RaycastContext.ShapeType.COLLIDER,
+                    RaycastContext.FluidHandling.NONE,
+                    MinecraftClient.getInstance().player
+            );
+            BlockHitResult hitResult = world.raycast(context);
+
+            // Se o raio não atingiu nada, ou se atingiu exatamente o bloco da nossa entidade,
+            // então este ponto é visível. A entidade inteira não está ocluída.
+            if (hitResult.getType() == HitResult.Type.MISS || hitResult.getBlockPos().equals(blockEntityBlockPos)) {
+                return false; // Visível, não ocluir.
+            }
         }
 
-        // Caso padrão: não ocluído.
-        return false;
+        // Se todos os pontos de teste foram bloqueados por outros blocos, a entidade está ocluída.
+        return true;
     }
 }
