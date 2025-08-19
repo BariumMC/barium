@@ -43,17 +43,17 @@ public class ParticleManagerMixin {
 
     // Optimization: Particle Frustum Culling (using a stable Local Capture Inject)
     @Inject(
-        // This is the correct signature for the internal helper method provided by your mappings.
+        // This is the correct signature for the internal helper method.
         method = "renderParticles(Lnet/minecraft/client/render/Camera;FLnet/minecraft/client/render/VertexConsumerProvider$Immediate;Lnet/minecraft/client/particle/ParticleTextureSheet;Ljava/util/Queue;)V",
         at = @At(
             value = "INVOKE",
-            // The target remains the same: the method call that builds the particle's geometry for rendering.
             target = "Lnet/minecraft/client/particle/Particle;buildGeometry(Lnet/minecraft/client/render/VertexConsumer;Lnet/minecraft/client/render/Camera;FFFFFF)V"
         ),
         cancellable = true,
         locals = LocalCapture.CAPTURE_FAILHARD
     )
-    private void barium$cullParticlesInFrustum(Camera camera, float tickDelta, VertexConsumerProvider.Immediate vertexConsumers, ParticleTextureSheet sheet, Queue<Particle> particles, CallbackInfo ci, Iterator var7, Particle particle) {
+    // THE FIX: The method is now static to match the target static method in the game code.
+    private static void barium$cullParticlesInFrustum(Camera camera, float tickDelta, VertexConsumerProvider.Immediate vertexConsumers, ParticleTextureSheet sheet, Queue<Particle> particles, CallbackInfo ci, Iterator var7, Particle particle) {
         if (BariumConfig.C.ENABLE_PARTICLE_FRUSTUM_CULLING) {
             WorldRenderer worldRenderer = MinecraftClient.getInstance().worldRenderer;
             // The Accessor allows us to safely get the frustum object
