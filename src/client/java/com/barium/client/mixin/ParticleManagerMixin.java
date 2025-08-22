@@ -51,16 +51,11 @@ public class ParticleManagerMixin {
      * @param originalQueue The original queue of particles for a given texture sheet.
      * @return The original queue, or a new queue containing only visible particles.
      */
-    @ModifyArg(
-        method = "renderParticles(Lnet/minecraft/client/render/Camera;FLnet/minecraft/client/render/VertexConsumerProvider$Immediate;Lnet/minecraft/client/particle/ParticleTextureSheet;Ljava/util/Queue;)V",
-        at = @At(
-            value = "INVOKE",
-            // We target the call to `vertexConsumers.getBuffer` which happens right before the loop,
-            // making it a perfect and stable place to modify the arguments.
-            target = "Lnet/minecraft/client/render/VertexConsumerProvider$Immediate;getBuffer(Lnet/minecraft/client/render/RenderLayer;)Lnet/minecraft/client/render/VertexConsumer;"
-        ),
-        index = 4 // The 5th argument (index 4) of renderParticles is the Queue<Particle>.
-    )
+@ModifyArg(
+    method = "renderParticles(Lnet/minecraft/client/render/Camera;FLnet/minecraft/client/render/VertexConsumerProvider$Immediate;Lnet/minecraft/client/particle/ParticleTextureSheet;Ljava/util/Queue;)V",
+    at = @At(value = "INVOKE", target = "Lnet/minecraft/client/render/VertexConsumerProvider$Immediate;getBuffer(Lnet/minecraft/client/render/RenderLayer;)Lnet/minecraft/client/render/VertexConsumer;"),
+    index = 4
+)
     private static Queue<Particle> barium$filterParticlesInFrustum(Queue<Particle> originalQueue) {
         if (BariumConfig.C.ENABLE_PARTICLE_FRUSTUM_CULLING) {
             WorldRenderer worldRenderer = MinecraftClient.getInstance().worldRenderer;
