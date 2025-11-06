@@ -6,15 +6,8 @@ import com.barium.client.util.ChunkVisibilityManager;
 import com.barium.client.util.FloodFillVisibilityManager;
 import com.barium.client.optimization.ChunkUploadThrottler;
 import com.barium.config.BariumConfig;
-import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.render.Camera;
-import net.minecraft.client.render.Frustum;
-import net.minecraft.client.render.GameRenderer;
-import net.minecraft.client.render.LightmapTextureManager;
-import net.minecraft.client.render.VertexConsumerProvider;
-import net.minecraft.client.render.WorldRenderer;
-import net.minecraft.client.render.block.entity.BlockEntityRenderer;
+import net.minecraft.client.render.*;
 import net.minecraft.client.render.chunk.ChunkBuilder;
 import net.minecraft.client.util.math.MatrixStack;
 import org.joml.Matrix4f;
@@ -26,6 +19,10 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.LocalCapture;
+
+import java.util.Iterator;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Mixin(WorldRenderer.class)
 public abstract class WorldRendererMixin {
@@ -64,31 +61,46 @@ public abstract class WorldRendererMixin {
     @Inject(method = "updateChunks(Lnet/minecraft/client/render/Camera;)V", at = @At("HEAD"))
     private void barium$beforeUpdateChunks(Camera camera, CallbackInfo ci) {
         if (this.chunkBuilder != null) {
-            // CORREÇÃO 25w45a #2: O método foi removido. Acesso agora é pelo campo público `pos`.
-            this.chunkBuilder.setCameraPosition(camera.pos);
+            // CORREÇÃO FINAL 25w45a: O método correto é getPos().
+            this.chunkBuilder.setCameraPosition(camera.getPos());
         }
         ChunkUploadThrottler.resetCounter();
     }
 
     /**
-     * CORREÇÃO 25w45a #2: O erro de "wrong number of type arguments" é um bug do Mixin com genéricos.
-     * A solução é usar o tipo bruto `BlockEntityRenderer` e suprimir o warning de unchecked cast.
-     * Também capturamos a `Camera` do método hospedeiro para usar na lógica de culling.
+     * CORREÇÃO FINAL 25w45a: A renderização de Block Entities mudou completamente.
+     * A nova estratégia é interceptar o iterador da lista de entidades a serem renderizadas.
+     * Nós filtramos essa lista com nossa lógica de culling e retornamos um novo iterador.
+     * Isso é mais limpo e mais eficiente do que tentar cancelar cada chamada individualmente.
      */
     @Redirect(
         method = "renderBlockEntities(Lnet/minecraft/client/util/math/MatrixStack;Lnet/minecraft/client/render/VertexConsumerProvider$Immediate;Lnet/minecraft/client/render/Camera;)V",
-        at = @At(value = "INVOKE", target = "Lnet/minecraft/client/render/block/entity/BlockEntityRenderer;render(Lnet/minecraft/block/entity/BlockEntity;FLnet/minecraft/client/util/math/MatrixStack;Lnet/minecraft/client/render/VertexConsumerProvider;II)V")
+        at = @At(value = "INVOKE", target = "Ljava/util/List;iterator()Ljava/util/Iterator;")
     )
-    @SuppressWarnings("unchecked")
-    private void barium$advancedBlockEntityCullingRedirect(BlockEntityRenderer renderer, BlockEntity blockEntity, float tickDelta, MatrixStack matrices, VertexConsumerProvider vertexConsumers, int light, int overlay, Camera camera) {
-        if (BariumConfig.C.ENABLE_BLOCK_ENTITY_CULLING && !ChunkOptimizer.shouldRenderBlockEntity(blockEntity, camera)) {
-            return;
-        }
-       
-        if (BariumConfig.C.ENABLE_BLOCK_ENTITY_OCCLUSION_CULLING && ChunkOptimizer.isBlockEntityOccluded(blockEntity, camera)) {
-            return;
+    private Iterator<BlockEntityRenderState> barium$cullBlockEntityList(List<BlockEntityRenderState> list, MatrixStack matrices, VertexConsumerProvider.Immediate vertexConsumers, Camera camera) {
+        if (list.isEmpty()) {
+            return list.iterator();
         }
 
-        renderer.render(blockEntity, tickDelta, matrices, vertexConsumers, light, overlay);
+        // Se ambas as opções de culling estiverem desativadas, retorna o iterador original sem processamento.
+        if (!BariumConfig.C.ENABLE_BLOCK_ENTITY_CULLING && !BariumConfig.C.ENABLE_BLOCK_ENTITY_OCCLUSION_CULLING) {
+            return list.iterator();
+        }
+
+        // Filtra a lista, mantendo apenas as entidades que devem ser renderizadas.
+        List<BlockEntityRenderState> filteredList = list.stream()
+            .filter(state -> {
+                if (BariumConfig.C.ENABLE_BLOCK_ENTITY_CULLING && !ChunkOptimizer.shouldRenderBlockEntity(state.getBlockEntity(), camera)) {
+                    return false; // Culling por distância
+                }
+                if (BariumConfig.C.ENABLE_BLOCK_ENTITY_OCCLUSION_CULLING && ChunkOptimizer.isBlockEntityOccluded(state.getBlockEntity(), camera)) {
+                    return false; // Culling por oclusão
+                }
+                return true; // Manter na lista
+            })
+            .collect(Collectors.toList());
+
+        // Retorna o iterador da nova lista filtrada.
+        return filteredList.iterator();
     }
 }

@@ -10,8 +10,8 @@ public class ChunkVisibilityOptimizer {
     private static final double MAX_RENDER_DISTANCE_SQUARED = 1024 * 1024;
 
     public static boolean isChunkVisible(Box boundingBox, Camera camera) {
-        // CORREÇÃO 25w45a #2: O método foi removido. Acesso agora é pelo campo público `pos`.
-        Vec3d camPos = camera.pos;
+        // CORREÇÃO FINAL 25w45a: O método correto é getPos().
+        Vec3d camPos = camera.getPos();
 
         double dx = adjustEpsilon(nearestToZero(boundingBox.minX + 1.0) - camPos.x);
         double dy = adjustEpsilon(nearestToZero(boundingBox.minY + 1.0) - camPos.y);

@@ -20,8 +20,8 @@ public abstract class ParticleMixin {
         Camera camera = MinecraftClient.getInstance().gameRenderer.getCamera();
         Particle self = (Particle)(Object)this;
 
-        // CORREÇÃO 25w45a #2: O método foi removido. Acesso agora é pelo campo público `pos`.
-        if (ParticleOptimizer.shouldSkipParticleTick(self, camera.pos)) {
+        // CORREÇÃO FINAL 25w45a: O método correto é getPos().
+        if (ParticleOptimizer.shouldSkipParticleTick(self, camera.getPos())) {
             ci.cancel();
         }
     }
