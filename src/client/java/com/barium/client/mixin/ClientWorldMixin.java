@@ -25,7 +25,8 @@ public abstract class ClientWorldMixin {
         MinecraftClient client = MinecraftClient.getInstance();
         if (client.player == null) return;
 
-        double distanceSq = entity.getPos().squaredDistanceTo(client.player.getPos());
+        // CORREÇÃO 25w45a: Entity.getPos() foi removido. Use entity.squaredDistanceTo(otherEntity).
+        double distanceSq = entity.squaredDistanceTo(client.player);
         if (distanceSq > BariumConfig.C.ENTITY_TICK_CULLING_DISTANCE_SQ) {
             if (entity.age % 4 != 0) {
                 ci.cancel();
@@ -45,6 +46,4 @@ public abstract class ClientWorldMixin {
             ci.cancel();
         }
     }
-
-    // O mixin addParticle foi removido para garantir a compilação.
 }

@@ -1,10 +1,10 @@
 package com.barium.client.util;
 
 import com.barium.client.BariumClient;
-import com.barium.config.BariumConfig;
 import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
 import it.unimi.dsi.fastutil.longs.LongSet;
 import net.minecraft.client.MinecraftClient;
+import net.minecraft.entity.Entity;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
 import net.minecraft.world.World;
@@ -20,10 +20,12 @@ public class FloodFillVisibilityManager {
     private final AtomicReference<LongSet> visibleSectionKeys = new AtomicReference<>(new LongOpenHashSet());
     private Future<?> visibilityTask = null;
     private long lastUpdateTime = 0;
-    private static final long UPDATE_INTERVAL_MS = 250; // Menos frequente que por frame, economiza CPU
+    private static final long UPDATE_INTERVAL_MS = 250;
 
     public void update(MinecraftClient client) {
-        if (client.world == null || client.cameraEntity == null) return;
+        // CORREÇÃO 25w45a: client.cameraEntity é privado. Use client.getCameraEntity().
+        Entity cameraEntity = client.getCameraEntity();
+        if (client.world == null || cameraEntity == null) return;
         
         long currentTime = System.currentTimeMillis();
         if ((currentTime - lastUpdateTime) < UPDATE_INTERVAL_MS) return;
@@ -31,8 +33,7 @@ public class FloodFillVisibilityManager {
         if (visibilityTask != null && !visibilityTask.isDone()) return;
         
         lastUpdateTime = currentTime;
-        // Delega a tarefa pesada para a thread de renderização do Barium
-        visibilityTask = BariumClient.RENDER_THREAD_POOL.submit(() -> runFloodFill(client.world, client.cameraEntity.getBlockPos()));
+        visibilityTask = BariumClient.RENDER_THREAD_POOL.submit(() -> runFloodFill(client.world, cameraEntity.getBlockPos()));
     }
     
     private void runFloodFill(World world, BlockPos startPos) {
@@ -54,10 +55,7 @@ public class FloodFillVisibilityManager {
             for(Direction direction : Direction.values()){
                 BlockPos neighborSectionPos = currentSectionPos.add(direction.getVector());
 
-                // Não verifica seções já visitadas
                 if (!sectionsToRender.contains(neighborSectionPos.asLong())) {
-                    // A "porta" está aberta se a face NÃO for opaca.
-                    // Verificamos a face da nossa seção atual que leva ao vizinho.
                     BlockPos ourSectionOrigin = new BlockPos(currentSectionPos.getX() * 16, currentSectionPos.getY() * 16, currentSectionPos.getZ() * 16);
                     if (!ChunkCullingUtils.isNeighboringFaceOpaque(world, ourSectionOrigin, direction)) {
                         sectionsToRender.add(neighborSectionPos.asLong());

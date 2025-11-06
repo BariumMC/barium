@@ -25,33 +25,24 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+import org.spongepowered.asm.mixin.injection.callback.LocalCapture;
 
 @Mixin(WorldRenderer.class)
 public abstract class WorldRendererMixin {
 
-    // CORREÇÃO 25w45a: O frustum não é mais um campo, então o capturamos do método render e o armazenamos aqui
     public static Frustum capturedFrustum;
 
     @Shadow @Final private MinecraftClient client;
     @Shadow private ChunkBuilder chunkBuilder;
 
-    /**
-     * CORREÇÃO 25w45a: O método `setupTerrain` foi removido.
-     * Esta injeção agora captura o frustum e chama os managers de atualização do Barium
-     * no início do método de renderização principal, que é o novo local correto.
-     */
     @Inject(
         method = "render(Lnet/minecraft/client/util/math/MatrixStack;FLJZLnet/minecraft/client/render/Camera;Lnet/minecraft/client/render/GameRenderer;Lnet/minecraft/client/render/LightmapTextureManager;Lorg/joml/Matrix4f;)V",
-        at = @At(
-            value = "INVOKE",
-            target = "Lnet/minecraft/client/render/Frustum;setPosition(DDD)V",
-            shift = At.Shift.AFTER
-        )
+        at = @At(value = "INVOKE", target = "Lnet/minecraft/client/render/WorldRenderer;setupTerrain(Lnet/minecraft/client/render/Camera;)V"),
+        locals = LocalCapture.CAPTURE_FAILHARD
     )
-    private void barium$captureFrustumAndUpdateManagers(MatrixStack matrices, float tickDelta, long limitTime, boolean renderBlockOutline, Camera camera, GameRenderer gameRenderer, LightmapTextureManager lightmapTextureManager, Matrix4f projectionMatrix, CallbackInfo ci, Frustum frustum) {
-        capturedFrustum = frustum; // Captura o frustum para outros mixins
+    private void barium$captureFrustumAndUpdateManagers(MatrixStack matrices, float tickDelta, long limitTime, boolean renderBlockOutline, Camera camera, GameRenderer gameRenderer, LightmapTextureManager lightmapTextureManager, Matrix4f projectionMatrix, CallbackInfo ci, boolean bl, Frustum frustum) {
+        capturedFrustum = frustum;
 
-        // Lógica do antigo `barium$updateAllChunkManagers`
         if (client.world == null || client.player == null) {
             FloodFillVisibilityManager.getInstance().clear();
             ChunkVisibilityManager.getInstance().clear();
@@ -73,37 +64,29 @@ public abstract class WorldRendererMixin {
     @Inject(method = "updateChunks(Lnet/minecraft/client/render/Camera;)V", at = @At("HEAD"))
     private void barium$beforeUpdateChunks(Camera camera, CallbackInfo ci) {
         if (this.chunkBuilder != null) {
-            this.chunkBuilder.setCameraPosition(camera.getPos());
+            // CORREÇÃO 25w45a: Camera.getPos() foi removido. Use camera.getPosition().
+            this.chunkBuilder.setCameraPosition(camera.getPosition());
         }
         ChunkUploadThrottler.resetCounter();
     }
 
     /**
-     * CORREÇÃO 25w45a: A classe `BlockEntityRenderDispatcher` foi removida.
-     * Este @Redirect substitui a chamada de renderização de cada entidade de bloco,
-     * permitindo-nos aplicar nossa lógica de culling (distância e oclusão) antes
-     * que a entidade seja efetivamente enviada para a GPU.
+     * CORREÇÃO 25w45a: A classe `BlockEntityRenderDispatcher` foi removida e a assinatura do renderizador mudou.
+     * Este @Redirect agora usa um tipo genérico <T> para funcionar com qualquer tipo de BlockEntity.
      */
     @Redirect(
-        method = "renderBlockEntities",
+        method = "renderBlockEntities(Lnet/minecraft/client/util/math/MatrixStack;Lnet/minecraft/client/render/VertexConsumerProvider$Immediate;Lnet/minecraft/client/render/Camera;)V",
         at = @At(value = "INVOKE", target = "Lnet/minecraft/client/render/block/entity/BlockEntityRenderer;render(Lnet/minecraft/block/entity/BlockEntity;FLnet/minecraft/client/util/math/MatrixStack;Lnet/minecraft/client/render/VertexConsumerProvider;II)V")
     )
-    private void barium$advancedBlockEntityCullingRedirect(BlockEntityRenderer<BlockEntity> renderer, BlockEntity blockEntity, float tickDelta, MatrixStack matrices, VertexConsumerProvider vertexConsumers, int light, int overlay, Camera camera) {
-        // Estágio 1: Culling por distância
-        if (BariumConfig.C.ENABLE_BLOCK_ENTITY_CULLING) {
-            if (!ChunkOptimizer.shouldRenderBlockEntity(blockEntity, camera)) {
-                return; // Pula a renderização
-            }
+    private <T extends BlockEntity> void barium$advancedBlockEntityCullingRedirect(BlockEntityRenderer<T> renderer, T blockEntity, float tickDelta, MatrixStack matrices, VertexConsumerProvider vertexConsumers, int light, int overlay, MatrixStack capturedMatrices, VertexConsumerProvider.Immediate capturedVertexConsumers, Camera camera) {
+        if (BariumConfig.C.ENABLE_BLOCK_ENTITY_CULLING && !ChunkOptimizer.shouldRenderBlockEntity(blockEntity, camera)) {
+            return;
         }
        
-        // Estágio 2: Culling por oclusão
-        if (BariumConfig.C.ENABLE_BLOCK_ENTITY_OCCLUSION_CULLING) {
-            if (ChunkOptimizer.isBlockEntityOccluded(blockEntity, camera)) {
-                return; // Pula a renderização
-            }
+        if (BariumConfig.C.ENABLE_BLOCK_ENTITY_OCCLUSION_CULLING && ChunkOptimizer.isBlockEntityOccluded(blockEntity, camera)) {
+            return;
         }
 
-        // Se passou em todas as verificações, renderiza normalmente
         renderer.render(blockEntity, tickDelta, matrices, vertexConsumers, light, overlay);
     }
 }

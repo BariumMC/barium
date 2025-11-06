@@ -1,7 +1,6 @@
 package com.barium.client.mixin;
 
 import com.barium.client.optimization.ParticleOptimizer;
-// CORREÇÃO: Import ausente adicionado.
 import com.barium.config.BariumConfig;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.particle.Particle;
@@ -21,7 +20,8 @@ public abstract class ParticleMixin {
         Camera camera = MinecraftClient.getInstance().gameRenderer.getCamera();
         Particle self = (Particle)(Object)this;
 
-        if (ParticleOptimizer.shouldSkipParticleTick(self, camera.getPos())) {
+        // CORREÇÃO 25w45a: Camera.getPos() foi removido. Use camera.getPosition().
+        if (ParticleOptimizer.shouldSkipParticleTick(self, camera.getPosition())) {
             ci.cancel();
         }
     }

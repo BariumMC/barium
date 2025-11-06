@@ -4,6 +4,7 @@ import com.barium.client.BariumClient;
 import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
 import it.unimi.dsi.fastutil.longs.LongSet;
 import net.minecraft.client.MinecraftClient;
+import net.minecraft.entity.Entity;
 import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.util.hit.HitResult;
 import net.minecraft.util.math.BlockPos;
@@ -29,7 +30,9 @@ public class ChunkVisibilityManager {
     private long lastUpdateTime = 0;
 
     public void update(MinecraftClient client) {
-        if (client.player == null || client.world == null) return;
+        // CORREÇÃO 25w45a: client.cameraEntity é privado. Use client.getCameraEntity().
+        Entity cameraEntity = client.getCameraEntity();
+        if (client.player == null || client.world == null || cameraEntity == null) return;
         if (visibilityTask != null && !visibilityTask.isDone()) return;
         
         long currentTime = System.currentTimeMillis();
@@ -40,9 +43,11 @@ public class ChunkVisibilityManager {
     }
 
     private void rebuildVisibilityMap(MinecraftClient client) {
-        if (client.player == null || client.world == null || client.cameraEntity == null) return;
+        // CORREÇÃO 25w45a: client.cameraEntity é privado. Use client.getCameraEntity().
+        Entity cameraEntity = client.getCameraEntity();
+        if (client.player == null || client.world == null || cameraEntity == null) return;
 
-        final Vec3d cameraPos = client.cameraEntity.getEyePos();
+        final Vec3d cameraPos = cameraEntity.getEyePos();
         final LongSet directlyHitChunks = new LongOpenHashSet();
         final LongSet hitSections = new LongOpenHashSet();
 
@@ -50,7 +55,7 @@ public class ChunkVisibilityManager {
             Vec3d direction = getFibonacciSphereVector(i, RAYS_TO_CAST);
             Vec3d targetPos = cameraPos.add(direction.multiply(MAX_RAY_DISTANCE));
             
-            RaycastContext context = new RaycastContext(cameraPos, targetPos, RaycastContext.ShapeType.COLLIDER, RaycastContext.FluidHandling.NONE, client.cameraEntity);
+            RaycastContext context = new RaycastContext(cameraPos, targetPos, RaycastContext.ShapeType.COLLIDER, RaycastContext.FluidHandling.NONE, cameraEntity);
             BlockHitResult hitResult = client.world.raycast(context);
 
             if (hitResult.getType() != HitResult.Type.MISS) {
@@ -82,20 +87,16 @@ public class ChunkVisibilityManager {
 
         final LongSet finalVisibleSections = new LongOpenHashSet();
 
-        // ** A CORREÇÃO **
-        // Adiciona as seções atingidas E suas vizinhas verticais para criar uma "margem de segurança"
-        // e evitar os buracos visuais no terreno.
         for(long sectionKey : hitSections) {
             int x = BlockPos.unpackLongX(sectionKey);
             int y = BlockPos.unpackLongY(sectionKey);
             int z = BlockPos.unpackLongZ(sectionKey);
 
-            finalVisibleSections.add(sectionKey); // A própria seção
-            finalVisibleSections.add(BlockPos.asLong(x, y + 1, z)); // A seção de cima
-            finalVisibleSections.add(BlockPos.asLong(x, y - 1, z)); // A seção de baixo
+            finalVisibleSections.add(sectionKey);
+            finalVisibleSections.add(BlockPos.asLong(x, y + 1, z));
+            finalVisibleSections.add(BlockPos.asLong(x, y - 1, z));
         }
 
-        // Garante que a área imediata ao redor do jogador esteja sempre visível.
         int playerSectionY = client.world.getSectionIndex(client.player.getBlockY());
         BlockPos playerSectionPos = new BlockPos(playerChunkPos.x, playerSectionY, playerChunkPos.z);
         for(int x = -1; x <= 1; x++) {
@@ -134,10 +135,10 @@ public class ChunkVisibilityManager {
             int e1 = 2 * err1;
             int e2 = 2 * err2;
             
-            boolean xMoved = false, yMoved = false, zMoved = false;
+            boolean xMoved = false;
 
             if (e1 > -dy) { err1 -= dy; x1 += sx; xMoved = true; }
-            if (e1 < dx) { err1 += dx; y1 += sy; yMoved = true; }
+            if (e1 < dx) { err1 += dx; y1 += sy; }
             if (e2 > -dz) { err2 -= dz; if (!xMoved) x1 += sx; }
             if (e2 < dx) { err2 += dx; z1 += sz; }
             
