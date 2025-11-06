@@ -33,8 +33,8 @@ public class ChunkOptimizer {
             return true;
         }
         Vec3d blockEntityPos = Vec3d.ofCenter(blockEntity.getPos());
-        // CORREÇÃO 25w45a: Camera.getPos() foi removido. Use camera.getPosition().
-        Vec3d cameraPos = camera.getPosition();
+        // CORREÇÃO 25w45a #2: O método foi removido. Acesso agora é pelo campo público `pos`.
+        Vec3d cameraPos = camera.pos;
         double distanceSq = blockEntityPos.squaredDistanceTo(cameraPos);
         return distanceSq <= BariumConfig.C.MAX_BLOCK_ENTITY_RENDER_DISTANCE_SQ;
     }
@@ -49,8 +49,8 @@ public class ChunkOptimizer {
             return false;
         }
 
-        // CORREÇÃO 25w45a: Camera.getPos() foi removido. Use camera.getPosition().
-        Vec3d cameraPos = camera.getPosition();
+        // CORREÇÃO 25w45a #2: O método foi removido. Acesso agora é pelo campo público `pos`.
+        Vec3d cameraPos = camera.pos;
         BlockPos blockEntityBlockPos = blockEntity.getPos();
 
         if (cameraPos.squaredDistanceTo(Vec3d.ofCenter(blockEntityBlockPos)) < BariumConfig.C.BLOCK_ENTITY_OCCLUSION_MIN_DISTANCE_SQ) {

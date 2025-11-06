@@ -64,21 +64,23 @@ public abstract class WorldRendererMixin {
     @Inject(method = "updateChunks(Lnet/minecraft/client/render/Camera;)V", at = @At("HEAD"))
     private void barium$beforeUpdateChunks(Camera camera, CallbackInfo ci) {
         if (this.chunkBuilder != null) {
-            // CORREÇÃO 25w45a: Camera.getPos() foi removido. Use camera.getPosition().
-            this.chunkBuilder.setCameraPosition(camera.getPosition());
+            // CORREÇÃO 25w45a #2: O método foi removido. Acesso agora é pelo campo público `pos`.
+            this.chunkBuilder.setCameraPosition(camera.pos);
         }
         ChunkUploadThrottler.resetCounter();
     }
 
     /**
-     * CORREÇÃO 25w45a: A classe `BlockEntityRenderDispatcher` foi removida e a assinatura do renderizador mudou.
-     * Este @Redirect agora usa um tipo genérico <T> para funcionar com qualquer tipo de BlockEntity.
+     * CORREÇÃO 25w45a #2: O erro de "wrong number of type arguments" é um bug do Mixin com genéricos.
+     * A solução é usar o tipo bruto `BlockEntityRenderer` e suprimir o warning de unchecked cast.
+     * Também capturamos a `Camera` do método hospedeiro para usar na lógica de culling.
      */
     @Redirect(
         method = "renderBlockEntities(Lnet/minecraft/client/util/math/MatrixStack;Lnet/minecraft/client/render/VertexConsumerProvider$Immediate;Lnet/minecraft/client/render/Camera;)V",
         at = @At(value = "INVOKE", target = "Lnet/minecraft/client/render/block/entity/BlockEntityRenderer;render(Lnet/minecraft/block/entity/BlockEntity;FLnet/minecraft/client/util/math/MatrixStack;Lnet/minecraft/client/render/VertexConsumerProvider;II)V")
     )
-    private <T extends BlockEntity> void barium$advancedBlockEntityCullingRedirect(BlockEntityRenderer<T> renderer, T blockEntity, float tickDelta, MatrixStack matrices, VertexConsumerProvider vertexConsumers, int light, int overlay, MatrixStack capturedMatrices, VertexConsumerProvider.Immediate capturedVertexConsumers, Camera camera) {
+    @SuppressWarnings("unchecked")
+    private void barium$advancedBlockEntityCullingRedirect(BlockEntityRenderer renderer, BlockEntity blockEntity, float tickDelta, MatrixStack matrices, VertexConsumerProvider vertexConsumers, int light, int overlay, Camera camera) {
         if (BariumConfig.C.ENABLE_BLOCK_ENTITY_CULLING && !ChunkOptimizer.shouldRenderBlockEntity(blockEntity, camera)) {
             return;
         }
