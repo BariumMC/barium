@@ -80,4 +80,5 @@ public static boolean isBlockEntityOccluded(BlockEntity blockEntity, Camera came
     }
 
     return true;
+   }
 }
