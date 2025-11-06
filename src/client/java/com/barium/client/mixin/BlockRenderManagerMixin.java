@@ -5,7 +5,6 @@ import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
 import net.minecraft.client.render.VertexConsumer;
 import net.minecraft.client.render.block.BlockRenderManager;
-import net.minecraft.client.render.model.BlockModelPart; // Embora o Mixin use List, o tipo Java pode ser específico
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.BlockRenderView;
@@ -14,7 +13,7 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-import java.util.List; // Import necessário
+import java.util.List;
 
 @Mixin(BlockRenderManager.class)
 public class BlockRenderManagerMixin {
@@ -26,12 +25,10 @@ public class BlockRenderManagerMixin {
      */
     @Inject(
         // Usando o seletor exato que você forneceu.
-        method = "renderBlock(Lnet/minecraft/block/BlockState;Lnet/minecraft/util/math/BlockPos;Lnet/minecraft/world/BlockRenderView;Lnet/minecraft/client/util/math/MatrixStack;Lnet/minecraft/client/render/VertexConsumer;ZLjava/util/List;)V",
+        method = "renderBlock(Lnet/minecraft/block/BlockState;Lnet/minecraft/util/math/BlockPos;Lnet/minecraft/world/BlockRenderView;Lnet/minecraft/client/util/math/MatrixStack;Lnet/minecraft/client/render/VertexConsumer;ZLjava/util/Random;J)V",
         at = @At("HEAD"),
         cancellable = true
     )
-    // O método Java deve corresponder à assinatura do Mixin.
-    // Usamos List<?> para máxima compatibilidade, mas List<BlockModelPart> também funciona se a classe for visível.
     private void barium$cullDenseFoliage(BlockState state, BlockPos pos, BlockRenderView world, MatrixStack matrices, VertexConsumer vertexConsumer, boolean cull, List<?> parts, CallbackInfo ci) {
         int level = BariumConfig.C.DENSE_FOLIAGE_CULLING_LEVEL;
         if (!BariumConfig.C.ENABLE_DENSE_FOLIAGE_CULLING || level <= 0) {
