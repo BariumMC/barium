@@ -30,8 +30,8 @@ public class EntityOptimizer {
         }
 
         // Verificação 1: Otimização por Distância
-        // Calcula a distância ao quadrado (mais rápido que a raiz quadrada).
-        double distanceSq = entity.getPos().squaredDistanceTo(cameraX, cameraY, cameraZ);
+        // CORREÇÃO: Substituído o método getPos() por um cálculo de distância direto.
+        double distanceSq = entity.squaredDistanceTo(cameraX, cameraY, cameraZ);
         if (distanceSq > BariumConfig.C.MAX_ENTITY_RENDER_DISTANCE_SQ) {
             return false; // Entidade está muito longe. Não renderizar.
         }

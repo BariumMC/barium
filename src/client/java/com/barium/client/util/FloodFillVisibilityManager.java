@@ -23,7 +23,8 @@ public class FloodFillVisibilityManager {
     private static final long UPDATE_INTERVAL_MS = 250; // Menos frequente que por frame, economiza CPU
 
     public void update(MinecraftClient client) {
-        if (client.world == null || client.cameraEntity == null) return;
+        // CORREÇÃO: Usando getCameraEntity() para verificar se a câmera existe.
+        if (client.world == null || client.getCameraEntity() == null) return;
         
         long currentTime = System.currentTimeMillis();
         if ((currentTime - lastUpdateTime) < UPDATE_INTERVAL_MS) return;
@@ -32,7 +33,8 @@ public class FloodFillVisibilityManager {
         
         lastUpdateTime = currentTime;
         // Delega a tarefa pesada para a thread de renderização do Barium
-        visibilityTask = BariumClient.RENDER_THREAD_POOL.submit(() -> runFloodFill(client.world, client.cameraEntity.getBlockPos()));
+        // CORREÇÃO: Usando getCameraEntity() para obter a posição inicial.
+        visibilityTask = BariumClient.RENDER_THREAD_POOL.submit(() -> runFloodFill(client.world, client.getCameraEntity().getBlockPos()));
     }
     
     private void runFloodFill(World world, BlockPos startPos) {

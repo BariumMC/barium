@@ -40,9 +40,10 @@ public class ChunkVisibilityManager {
     }
 
     private void rebuildVisibilityMap(MinecraftClient client) {
-        if (client.player == null || client.world == null || client.cameraEntity == null) return;
+        // CORREÇÃO: Usando getCameraEntity() para obter a entidade da câmera.
+        if (client.player == null || client.world == null || client.getCameraEntity() == null) return;
 
-        final Vec3d cameraPos = client.cameraEntity.getEyePos();
+        final Vec3d cameraPos = client.getCameraEntity().getEyePos();
         final LongSet directlyHitChunks = new LongOpenHashSet();
         final LongSet hitSections = new LongOpenHashSet();
 
@@ -50,7 +51,8 @@ public class ChunkVisibilityManager {
             Vec3d direction = getFibonacciSphereVector(i, RAYS_TO_CAST);
             Vec3d targetPos = cameraPos.add(direction.multiply(MAX_RAY_DISTANCE));
             
-            RaycastContext context = new RaycastContext(cameraPos, targetPos, RaycastContext.ShapeType.COLLIDER, RaycastContext.FluidHandling.NONE, client.cameraEntity);
+            // CORREÇÃO: Passando a entidade correta para o contexto do raycast.
+            RaycastContext context = new RaycastContext(cameraPos, targetPos, RaycastContext.ShapeType.COLLIDER, RaycastContext.FluidHandling.NONE, client.getCameraEntity());
             BlockHitResult hitResult = client.world.raycast(context);
 
             if (hitResult.getType() != HitResult.Type.MISS) {

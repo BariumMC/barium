@@ -4,8 +4,8 @@
 	"compatibilityLevel": "JAVA_21",
 	"plugin": "com.barium.BariumMixinPlugin",
 	"client": [
-		"BlockEntityRenderDispatcherMixin",
 		"BlockRenderManagerMixin",
+		"BlockEntityRenderManagerMixin",
 		"ChunkBuilderMixin",
 		"ChunkRenderMixin",
 		"ClientWorldMixin",
@@ -16,6 +16,7 @@
 		"ParticleAccessor",
 		"ParticleManagerMixin",
 		"ParticleMixin",
+		"SectionBuilderMixin",
 		"SpriteLoaderMixin",
 		"TextureAtlasMixin",
 		"WorldRendererAccessor",
