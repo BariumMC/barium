@@ -1,9 +1,10 @@
-// CRIE ESTE NOVO ARQUIVO em: src/client/java/com/barium/client/mixin/SectionBuilderMixin.java
+// CONTEÚDO CORRIGIDO: src/client/java/com/barium/client/mixin/SectionBuilderMixin.java
 package com.barium.client.mixin;
 
 import com.barium.client.optimization.ChunkRebuildOptimizer;
 import net.minecraft.client.render.chunk.ChunkRendererRegion;
 import net.minecraft.client.render.chunk.SectionBuilder;
+import net.minecraft.util.math.ChunkSectionPos; // Import adicionado para clareza
 import net.minecraft.world.chunk.ChunkSection;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
@@ -25,24 +26,20 @@ public class SectionBuilderMixin {
         cancellable = true
     )
     private void barium$cullEmptySections(
-            net.minecraft.util.math.ChunkSectionPos sectionPos,
+            ChunkSectionPos sectionPos,
             ChunkRendererRegion renderRegion,
             com.mojang.blaze3d.systems.VertexSorter vertexSorter,
             net.minecraft.client.render.chunk.BlockBufferAllocatorStorage allocatorStorage,
             CallbackInfoReturnable<SectionBuilder.RenderData> cir) {
 
-        // Se a renderRegion for nula (pode acontecer em alguns casos), não fazemos nada.
         if (renderRegion == null) {
             return;
         }
 
-        // Obtemos a ChunkSection correspondente a esta operação de build.
-        ChunkSection section = renderRegion.getChunkSection(sectionPos.toBlockPos());
+        // CORREÇÃO: O método toBlockPos() foi substituído por getMinPos().
+        ChunkSection section = renderRegion.getChunkSection(sectionPos.getMinPos());
 
-        // Usamos nossa lógica de otimização já existente para verificar se a seção deve ser pulada.
         if (ChunkRebuildOptimizer.shouldSkipSection(section)) {
-            // Se sim, cancelamos o método original e retornamos um objeto de dados de renderização vazio.
-            // Isso evita todo o trabalho de iterar sobre 4096 blocos.
             cir.setReturnValue(new SectionBuilder.RenderData());
         }
     }
