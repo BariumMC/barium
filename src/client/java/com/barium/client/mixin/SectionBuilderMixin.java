@@ -1,12 +1,14 @@
 // CONTEÚDO CORRIGIDO: src/client/java/com/barium/client/mixin/SectionBuilderMixin.java
 package com.barium.client.mixin;
 
-import com.barium.client.optimization.ChunkRebuildOptimizer;
+import com.barium.config.BariumConfig;
+import net.minecraft.block.BlockState;
 import net.minecraft.client.render.chunk.ChunkRendererRegion;
 import net.minecraft.client.render.chunk.SectionBuilder;
-import net.minecraft.util.math.ChunkSectionPos; // Import adicionado para clareza
-import net.minecraft.world.chunk.ChunkSection;
+import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.ChunkSectionPos;
 import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
@@ -15,10 +17,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 public class SectionBuilderMixin {
 
     /**
-     * Injeta no início do método `build` da nova classe SectionBuilder.
-     * Esta é a localização correta para a otimização de "culling de seções vazias" no Minecraft 1.21.9+.
-     * Se a seção do chunk for vazia, cancelamos o método e retornamos um RenderData vazio,
-     * economizando todo o trabalho de processamento de blocos.
+     * Injeta no início do método `build` para pular a renderização de seções de chunk que contêm apenas ar.
      */
     @Inject(
         method = "build(Lnet/minecraft/util/math/ChunkSectionPos;Lnet/minecraft/client/render/chunk/ChunkRendererRegion;Lcom/mojang/blaze3d/systems/VertexSorter;Lnet/minecraft/client/render/chunk/BlockBufferAllocatorStorage;)Lnet/minecraft/client/render/chunk/SectionBuilder$RenderData;",
@@ -32,15 +31,52 @@ public class SectionBuilderMixin {
             net.minecraft.client.render.chunk.BlockBufferAllocatorStorage allocatorStorage,
             CallbackInfoReturnable<SectionBuilder.RenderData> cir) {
 
+        // Se a otimização estiver desligada, não fazemos nada.
+        if (!BariumConfig.C.ENABLE_EMPTY_CHUNK_SECTION_CULLING) {
+            return;
+        }
+
+        // Se a região de renderização for nula, saímos para evitar erros.
         if (renderRegion == null) {
             return;
         }
 
-        // CORREÇÃO: O método toBlockPos() foi substituído por getMinPos().
-        ChunkSection section = renderRegion.getChunkSection(sectionPos.getMinPos());
-
-        if (ChunkRebuildOptimizer.shouldSkipSection(section)) {
+        // CORREÇÃO: Usamos um método auxiliar que inspeciona a ChunkRendererRegion diretamente.
+        if (isSectionEmpty(renderRegion, sectionPos)) {
+            // Se a seção estiver vazia, cancelamos o método original e retornamos dados de renderização vazios.
             cir.setReturnValue(new SectionBuilder.RenderData());
         }
+    }
+
+    /**
+     * Verifica de forma otimizada se uma seção dentro de uma ChunkRendererRegion contém apenas blocos de ar.
+     * Esta é a abordagem correta, pois ChunkRendererRegion não expõe a ChunkSection diretamente.
+     * @param region A região de renderização fornecida para a construção do chunk.
+     * @param sectionPos A posição da seção que estamos verificando.
+     * @return true se todos os blocos na seção forem ar, false caso contrário.
+     */
+    @Unique
+    private boolean isSectionEmpty(ChunkRendererRegion region, ChunkSectionPos sectionPos) {
+        BlockPos.Mutable mutablePos = new BlockPos.Mutable();
+        int startX = sectionPos.getMinX();
+        int startY = sectionPos.getMinY();
+        int startZ = sectionPos.getMinZ();
+
+        // Itera sobre todos os 4096 blocos da seção (16x16x16).
+        for (int y = 0; y < 16; y++) {
+            for (int z = 0; z < 16; z++) {
+                for (int x = 0; x < 16; x++) {
+                    mutablePos.set(startX + x, startY + y, startZ + z);
+                    BlockState state = region.getBlockState(mutablePos);
+                    // Se encontrarmos qualquer bloco que não seja ar, a seção não está vazia.
+                    if (!state.isAir()) {
+                        return false;
+                    }
+                }
+            }
+        }
+
+        // Se o loop terminar, a seção está completamente vazia.
+        return true;
     }
 }
