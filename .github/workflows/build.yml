@@ -1,4 +1,3 @@
-# Nome mais descritivo para o seu workflow
 name: Build Barium Mod
 
 on: [pull_request, push]
@@ -10,10 +9,12 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # A ação oficial do Gradle cuida da validação, caching, setup do Java e permissões.
-      # Substitui 3 dos seus passos antigos por 1.
-      - name: Setup Gradle
+      # Ação oficial do Gradle que cuida do caching, validação E setup do Java.
+      - name: Setup Gradle and Java
         uses: gradle/actions/setup-gradle@v3
+        with:
+          java-version: '21'
+          distribution: 'microsoft'
 
       - name: Build with Gradle
         run: ./gradlew build
@@ -21,6 +22,5 @@ jobs:
       - name: Capture build artifacts
         uses: actions/upload-artifact@v4
         with:
-          # Nome mais descritivo para os artefatos
-          name: barium-fabric
+          name: Mod-JARs
           path: build/libs/
