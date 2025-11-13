@@ -18,14 +18,18 @@ base {
 }
 
 loom {
-	splitEnvironmentSourceSets()
+    splitEnvironmentSourceSets()
 
-	mods {
-		"barium" {
-			sourceSet sourceSets.main
-			sourceSet sourceSets.client
-		}
-	}
+    mixin {
+        defaultRefmapName = "barium.refmap.json"
+    }
+
+    mods {
+        "barium" {
+            sourceSet sourceSets.main
+            sourceSet sourceSets.client
+        }
+    }
 }
 
 repositories {
