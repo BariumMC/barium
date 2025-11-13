@@ -1,7 +1,5 @@
-// build.gradle (FINAL CORRECTED VERSION)
-
 plugins {
-	id 'fabric-loom' version "${loom_version}"
+	id 'fabric-loom' version "1.13.3"
 	id 'maven-publish'
 }
 
