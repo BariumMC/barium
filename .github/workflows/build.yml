@@ -1,25 +1,26 @@
-name: build
+# Nome mais descritivo para o seu workflow
+name: Build Barium Mod
+
 on: [pull_request, push]
 
 jobs:
   build:
     runs-on: ubuntu-24.04
     steps:
-      - name: checkout repository
+      - name: Checkout repository
         uses: actions/checkout@v4
-      - name: validate gradle wrapper
-        uses: gradle/actions/wrapper-validation@v4
-      - name: setup jdk
-        uses: actions/setup-java@v4
-        with:
-          java-version: '21'
-          distribution: 'microsoft'
-      - name: make gradle wrapper executable
-        run: chmod +x ./gradlew
-      - name: build
+
+      # A ação oficial do Gradle cuida da validação, caching, setup do Java e permissões.
+      # Substitui 3 dos seus passos antigos por 1.
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v3
+
+      - name: Build with Gradle
         run: ./gradlew build
-      - name: capture build artifacts
+
+      - name: Capture build artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: Artifacts
+          # Nome mais descritivo para os artefatos
+          name: barium-fabric
           path: build/libs/
