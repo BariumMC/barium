@@ -72,13 +72,6 @@ processResources {
 tasks.withType(JavaCompile).configureEach {
     options.encoding = 'UTF-8'
     options.release = 21
-
-    // força o compilador a gerar o refmap
-    options.compilerArgs += [
-        "-processor", "org.spongepowered.tools.obfuscation.MixinObfuscationProcessor",
-        "-AoutRefMap=client-barium-refmap.json",
-        "-AdefaultObfuscationEnv=named:intermediary"
-    ]
 }
 
 java {
