@@ -21,7 +21,7 @@ loom {
     splitEnvironmentSourceSets()
 
     mixin {
-        defaultRefmapName = "barium.refmap.json"
+        defaultRefmapName = "barium.client.refmap.json"
     }
 
     mods {
