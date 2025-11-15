@@ -14,7 +14,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 @Mixin(SpriteAtlasTexture.class)
 public class TextureAtlasMixin {
 
-    @Inject(method = "tick", at = @At("HEAD"), cancellable = true)
+    @Inject(method = "tick()V", at = @At("HEAD"), cancellable = true)
     private void barium$freezeAllAnimatedTextures(CallbackInfo ci) {
         if (BariumConfig.C.DISABLE_TEXTURE_ANIMATIONS) {
             ci.cancel();

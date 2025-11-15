@@ -17,7 +17,7 @@ public abstract class ClientWorldMixin {
      * Otimização de Tick de Entidade.
      * Alvo: ClientWorld.tickEntity(Entity)
      */
-    @Inject(method = "tickEntity", at = @At("HEAD"), cancellable = true)
+    @Inject(method = "tickEntity(Lnet/minecraft/entity/Entity;)V", at = @At("HEAD"), cancellable = true)
     private void barium$cullDistantEntityTicks(Entity entity, CallbackInfo ci) {
         if (!BariumConfig.C.ENABLE_ENTITY_TICK_CULLING) return;
         if (entity.isPlayer() || entity.hasPassengers() || entity.getVehicle() != null) return;
@@ -38,7 +38,7 @@ public abstract class ClientWorldMixin {
      * Otimização de Partículas de Ambiente.
      * Alvo: ClientWorld.doRandomBlockDisplayTicks(int, int, int)
      */
-    @Inject(method = "doRandomBlockDisplayTicks", at = @At("HEAD"), cancellable = true)
+    @Inject(method = "doRandomBlockDisplayTicks(III)V", at = @At("HEAD"), cancellable = true)
     private void barium$reduceAmbientParticles(int centerX, int centerY, int centerZ, CallbackInfo ci) {
         if (!BariumConfig.C.REDUCE_AMBIENT_PARTICLES) return;
 

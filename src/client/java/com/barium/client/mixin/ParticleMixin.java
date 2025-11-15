@@ -14,8 +14,8 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 @Mixin(Particle.class)
 public abstract class ParticleMixin {
 
-    @Inject(method = "tick", at = @At("HEAD"), cancellable = true)
-    private void barium$skipDistantTick(CallbackInfo ci) {
+    @Inject(method = "tick()V", at = @At("HEAD"), cancellable = true)
+    private void barium$onParticleTick(CallbackInfo ci) {
         if (!BariumConfig.C.ENABLE_PARTICLE_OPTIMIZATION) return;
 
         Camera camera = MinecraftClient.getInstance().gameRenderer.getCamera();

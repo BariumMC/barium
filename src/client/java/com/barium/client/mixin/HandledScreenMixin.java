@@ -30,12 +30,12 @@ public abstract class HandledScreenMixin<T extends ScreenHandler> {
     @Unique
     private long barium_screenOpenedAt = 0;
 
-    @Inject(method = "init", at = @At("TAIL"))
+    @Inject(method = "init()V", at = @At("TAIL"))
     private void barium$markOpenTime(CallbackInfo ci) {
         barium_screenOpenedAt = System.currentTimeMillis();
     }
 
-    @Inject(method = "render", at = @At("HEAD"), cancellable = true)
+    @Inject(method = "render(Lnet/minecraft/client/gui/DrawContext;IIF)V", at = @At("HEAD"), cancellable = true)
     private void barium$skipFirstRenderFrame(DrawContext context, int mouseX, int mouseY, float delta, CallbackInfo ci) {
         long now = System.currentTimeMillis();
         if (now - barium_screenOpenedAt < 50) {
