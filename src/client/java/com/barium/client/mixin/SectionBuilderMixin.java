@@ -106,8 +106,8 @@ public class SectionBuilderMixin {
                     mutablePos.set(startX + x, startY + y, startZ + z);
                     net.minecraft.block.BlockState state = region.getBlockState(mutablePos);
                     sampleCount++;
-                    // Usa a tag LEAVES para cobrir todos os tipos de folhas.
-                    if (state.isIn(net.minecraft.tag.BlockTags.LEAVES)) {
+                    // Usa uma verificação direta por blocos de folha (evita dependência em tags que podem mudar).
+                    if (isLeafBlock(state)) {
                         leafCount++;
                     }
                 }
@@ -118,5 +118,19 @@ public class SectionBuilderMixin {
 
         double ratio = (double) leafCount / (double) sampleCount;
         return ratio >= com.barium.config.BariumConfig.C.FOREST_SECTION_LEAF_THRESHOLD;
+    }
+
+    @org.spongepowered.asm.mixin.Unique
+    private boolean isLeafBlock(net.minecraft.block.BlockState state) {
+        net.minecraft.block.Block block = state.getBlock();
+        return block == net.minecraft.block.Blocks.OAK_LEAVES
+                || block == net.minecraft.block.Blocks.SPRUCE_LEAVES
+                || block == net.minecraft.block.Blocks.BIRCH_LEAVES
+                || block == net.minecraft.block.Blocks.JUNGLE_LEAVES
+                || block == net.minecraft.block.Blocks.ACACIA_LEAVES
+                || block == net.minecraft.block.Blocks.DARK_OAK_LEAVES
+                || block == net.minecraft.block.Blocks.MANGROVE_LEAVES
+                || block == net.minecraft.block.Blocks.AZALEA_LEAVES
+                || block == net.minecraft.block.Blocks.FLOWERING_AZALEA_LEAVES;
     }
 }
