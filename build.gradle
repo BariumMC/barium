@@ -16,6 +16,11 @@ base {
 
 loom {
     splitEnvironmentSourceSets()
+    
+    mixin {
+        useLegacyMixinGroup = false
+        defaultRefmapName = "client-barium.refmap.json"
+    }
 
     mods {
         "barium" {
@@ -66,6 +71,10 @@ dependencies {
 
 processResources {
     filesMatching("fabric.mod.json") {
+        expand("version": modVersionForExpansion)
+    }
+    
+    filesMatching("*.mixins.json") {
         expand("version": modVersionForExpansion)
     }
 }
