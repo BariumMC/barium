@@ -1,9 +1,13 @@
+// build.gradle (FINAL CORRECTED VERSION)
+
 plugins {
-    id 'fabric-loom' version '1.13.3'
-    id 'maven-publish'
+	id 'fabric-loom' version '1.13-SNAPSHOT'
+	id 'maven-publish'
 }
 
 // --- CONFIGURATION CACHE-SAFE VARIABLES ---
+// Read all values needed by tasks from the project object here.
+// These final variables are safe to use in task actions below.
 final String modVersionForExpansion = project.version
 final String archivesBaseName = project.archives_base_name
 
@@ -11,33 +15,26 @@ version = project.mod_version
 group = project.maven_group
 
 base {
-    archivesName = archivesBaseName
+	// The value is set here using the safe variable.
+	archivesName = archivesBaseName
 }
 
 loom {
-    splitEnvironmentSourceSets()
+	splitEnvironmentSourceSets()
 
-    mods {
-        "barium" {
-            sourceSet sourceSets.main
-            sourceSet sourceSets.client
-        }
-    }
+	mods {
+		"barium" {
+			sourceSet sourceSets.main
+			sourceSet sourceSets.client
+		}
+	}
 }
 
-// 🔹 Repositórios
 repositories {
-    // Fabric maven (contém o Mixin interno)
-    maven {
-        name = 'FabricMC'
-        url = 'https://maven.fabricmc.net/'
-    }
-
     maven {
         name = 'ClothConfig'
         url = 'https://maven.shedaniel.me/'
     }
-
     maven {
         name = 'ModMenu'
         url = 'https://maven.terraformersmc.com/releases/'
@@ -49,57 +46,56 @@ dependencies {
     mappings "net.fabricmc:yarn:${project.yarn_mappings}:v2"
     modImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
 
-    annotationProcessor "net.fabricmc:fabric-loom:${project.loom_version}"
-	
-    // Fabric API
+    //Fabric api
     modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
 
-    // Mod Menu
+    //Mod Menu
     modImplementation "com.terraformersmc:modmenu:${project.modmenu_version}"
 
-    // Cloth Config
+    //Cloth Config
     modImplementation "me.shedaniel.cloth:cloth-config-fabric:${project.cloth_config_version}"
-
-    // 🔹 Mixin Annotation Processor (do Fabric)
-    annotationProcessor "net.fabricmc:sponge-mixin:0.13.4+mixin.0.8.5"
 }
 
 processResources {
-    filesMatching("fabric.mod.json") {
-        expand("version": modVersionForExpansion)
-    }
-    
+	filesMatching("fabric.mod.json") {
+		expand("version": modVersionForExpansion)
+	}
+
     filesMatching("*.mixins.json") {
         expand("version": modVersionForExpansion)
     }
 }
 
-// 🔹 Compilação Java e geração de refmap
 tasks.withType(JavaCompile).configureEach {
-    options.encoding = 'UTF-8'
-    options.release = 21
+	it.options.encoding = 'UTF-8'
+	it.options.release = 21
 }
 
 java {
-    withSourcesJar()
-    sourceCompatibility = JavaVersion.VERSION_21
-    targetCompatibility = JavaVersion.VERSION_21
+	withSourcesJar()
+	sourceCompatibility = JavaVersion.VERSION_21
+	targetCompatibility = JavaVersion.VERSION_21
 }
 
+// THIS 'jar' TASK IS NOW CORRECT AND SAFE
 jar {
-    from("LICENSE") {
-        rename { "${it}_${archivesBaseName}" }
-    }
+	from("LICENSE") {
+		// Use the safe final variable for the rename operation.
+		rename { "${it}_${archivesBaseName}" }
+	}
 }
 
+// THIS 'publishing' BLOCK IS NOW CORRECT AND SAFE
 publishing {
-    publications {
-        create("mavenJava", MavenPublication) {
-            artifactId = archivesBaseName
-            from components.java
-        }
-    }
-    repositories {
-        // Adicione repositórios de publicação aqui se quiser
-    }
+	publications {
+		create("mavenJava", MavenPublication) {
+			// Use the safe final variable for the artifactId.
+			artifactId = archivesBaseName
+			from components.java
+		}
+	}
+
+	repositories {
+		// Repositórios para publicação viriam aqui
+	}
 }
