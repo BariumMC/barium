@@ -10,6 +10,11 @@ base {
 	archivesName = project.archives_base_name
 }
 
+// Capture values at configuration time to avoid referencing `project` inside
+// execution-time closures (fixes configuration-cache errors).
+final String modVersionForExpansion = project.version
+final String archivesBaseName = project.archives_base_name
+
 repositories {
 	// Add repositories to retrieve artifacts from in here.
 	// You should only use this when depending on other mods because
@@ -56,8 +61,9 @@ dependencies {
 }
 
 processResources {
+	inputs.property("version", modVersionForExpansion)
 	filesMatching("fabric.mod.json") {
-		expand("version": project.mod_version)
+		expand("version": modVersionForExpansion)
 	}
 }
 
@@ -76,10 +82,10 @@ java {
 }
 
 jar {
-	inputs.property "archivesName", project.base.archivesName
+	inputs.property "archivesName", archivesBaseName
 
 	from("LICENSE") {
-		rename { "${it}_${inputs.properties.archivesName}"}
+		rename { "${it}_${archivesBaseName}" }
 	}
 }
 
