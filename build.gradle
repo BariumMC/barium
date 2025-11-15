@@ -32,7 +32,7 @@ loom {
 	splitEnvironmentSourceSets()
 
 	mods {
-		"modid" {
+		"barium" {
 			sourceSet sourceSets.main
 			sourceSet sourceSets.client
 		}
