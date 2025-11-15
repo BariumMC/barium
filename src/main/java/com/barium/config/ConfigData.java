@@ -13,6 +13,12 @@ public class ConfigData {
     public boolean ENABLE_ADVANCED_SECTION_CULLING = false;
     public boolean ENABLE_ENCLOSED_SECTION_CULLING = false;
     public boolean ENABLE_EMPTY_CHUNK_SECTION_CULLING = true;
+    // ================== Forest / Tree Optimizations ================== //
+    // Quando ativado, se uma seção de chunk contiver principalmente folhas,
+    // ela será ignorada na construção para reduzir o custo de renderização em florestas densas.
+    public boolean ENABLE_FOREST_SECTION_CULLING = true;
+    // Percentual (0.0 - 1.0) da amostra que precisa ser folhas para considerar a seção "floresta".
+    public double FOREST_SECTION_LEAF_THRESHOLD = 0.85;
     public boolean ENABLE_CHUNK_UPDATE_THROTTLING = true;
     public boolean ENABLE_DIRECTIONAL_CHUNK_LOADING = true;
     public int MAX_CHUNK_UPLOADS_PER_FRAME = 4;

@@ -45,6 +45,14 @@ public class SectionBuilderMixin {
         if (isSectionEmpty(renderRegion, sectionPos)) {
             // Se a seção estiver vazia, cancelamos o método original e retornamos dados de renderização vazios.
             cir.setReturnValue(new SectionBuilder.RenderData());
+            return;
+        }
+
+        // Se ativado, detecta se a seção contém majoritariamente folhas (árvores/florestas)
+        // e cancela a construção para reduzir o custo de renderização em biomas densos.
+        if (com.barium.config.BariumConfig.C.ENABLE_FOREST_SECTION_CULLING && isSectionMostlyLeaves(renderRegion, sectionPos)) {
+            cir.setReturnValue(new SectionBuilder.RenderData());
+            return;
         }
     }
 
@@ -78,5 +86,37 @@ public class SectionBuilderMixin {
 
         // Se o loop terminar, a seção está completamente vazia.
         return true;
+    }
+
+    @org.spongepowered.asm.mixin.Unique
+    private boolean isSectionMostlyLeaves(ChunkRendererRegion region, ChunkSectionPos sectionPos) {
+        // Para desempenho, amostramos os blocos a cada passo (não verificamos todos os 4096).
+        final int step = 2; // amostra 1/8 do total aproximadamente
+        int leafCount = 0;
+        int sampleCount = 0;
+
+        BlockPos.Mutable mutablePos = new BlockPos.Mutable();
+        int startX = sectionPos.getMinX();
+        int startY = sectionPos.getMinY();
+        int startZ = sectionPos.getMinZ();
+
+        for (int y = 0; y < 16; y += step) {
+            for (int z = 0; z < 16; z += step) {
+                for (int x = 0; x < 16; x += step) {
+                    mutablePos.set(startX + x, startY + y, startZ + z);
+                    net.minecraft.block.BlockState state = region.getBlockState(mutablePos);
+                    sampleCount++;
+                    // Usa a tag LEAVES para cobrir todos os tipos de folhas.
+                    if (state.isIn(net.minecraft.tag.BlockTags.LEAVES)) {
+                        leafCount++;
+                    }
+                }
+            }
+        }
+
+        if (sampleCount == 0) return false;
+
+        double ratio = (double) leafCount / (double) sampleCount;
+        return ratio >= com.barium.config.BariumConfig.C.FOREST_SECTION_LEAF_THRESHOLD;
     }
 }
