@@ -59,7 +59,7 @@ processResources {
 	inputs.property "version", project.version
 
 	filesMatching("fabric.mod.json") {
-		expand("version": modVersionForExpansion)
+		expand("version": project.version)
 	}
 }
 
