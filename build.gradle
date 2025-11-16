@@ -1,0 +1,91 @@
+plugins {
+    id 'fabric-loom' version "${project.loom_version}"
+    id 'maven-publish'
+}
+
+version = project.mod_version
+group = project.maven_group
+
+base {
+    archivesName = project.archives_base_name
+}
+
+repositories {
+    maven { url = "https://maven.shedaniel.me/" }
+    maven { url = "https://maven.terraformersmc.com/releases/" }
+}
+
+// Função para pegar o hash do Git, igual ao Voxy
+def gitCommitHash = { ->
+    try {
+        def stdout = new ByteArrayOutputStream()
+        exec {
+            commandLine 'git', 'rev-parse', '--short', 'HEAD'
+            standardOutput = stdout
+            ignoreExitValue = true
+        }
+        def result = stdout.toString().trim()
+        return result.isEmpty() ? "<UnknownCommit>" : result
+    } catch (Exception e) {
+        return "<UnknownCommit>"
+    }
+}()
+
+// Função para pegar o tempo de build
+def buildtime = { System.currentTimeSeconds() }()
+
+// Processa o fabric.mod.json para injetar as informações de build
+processResources {
+    inputs.property "version", project.version
+    inputs.property "commit", gitCommitHash
+    inputs.property "buildtime", buildtime
+
+    filesMatching("fabric.mod.json") {
+        expand "version": project.version, "commit": gitCommitHash, "buildtime": buildtime
+    }
+}
+
+loom {
+    // Se você tiver um arquivo access widener, descomente a linha abaixo
+    // accessWidenerPath = file("src/main/resources/barium.accesswidener")
+
+    splitEnvironmentSourceSets()
+
+    mods {
+        "barium" {
+            sourceSet sourceSets.main
+            sourceSet sourceSets.client
+        }
+    }
+}
+
+dependencies {
+    minecraft "com.mojang:minecraft:${project.minecraft_version}"
+    mappings loom.officialMojangMappings()
+
+    modImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
+    modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
+
+    modImplementation "com.terraformersmc:modmenu:${project.modmenu_version}"
+    modImplementation "me.shedaniel.cloth:cloth-config-fabric:${project.cloth_config_version}"
+}
+
+def targetJavaVersion = 21
+tasks.withType(JavaCompile).configureEach {
+    it.options.encoding = "UTF-8"
+    it.options.release = targetJavaVersion
+}
+
+java {
+    def javaVersion = JavaVersion.toVersion(targetJavaVersion)
+    if (JavaVersion.current() < javaVersion) {
+        toolchain.languageVersion = JavaLanguageVersion.of(targetJavaVersion)
+    }
+    withSourcesJar()
+}
+
+jar {
+    from("LICENSE") {
+        rename { "${it}_${project.archives_base_name}" }
+    }
+}
