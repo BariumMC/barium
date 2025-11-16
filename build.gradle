@@ -54,7 +54,6 @@ loom {
     mods {
         "barium" {
             sourceSet sourceSets.main
-            sourceSet sourceSets.client
         }
     }
 }
