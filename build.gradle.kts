@@ -13,7 +13,7 @@ val cloth_config_version: String by project
 val loom_version: String by project
 
 plugins {
-    id("fabric-loom") version loom_version
+    id("fabric-loom")
     `maven-publish`
 }
 
