@@ -1,10 +1,3 @@
-import java.util.Properties
-
-// Lê o arquivo gradle.properties para obter a versão do Loom
-val properties = Properties()
-file("gradle.properties").inputStream().use { properties.load(it) }
-val loomVersion = properties.getProperty("loom_version")
-
 pluginManagement {
     repositories {
         maven {
@@ -14,8 +7,14 @@ pluginManagement {
         mavenCentral()
         gradlePluginPortal()
     }
-    // Define a versão do plugin aqui, para que o build.gradle.kts a encontre
+    
     plugins {
+        // A lógica de leitura do arquivo de propriedades foi movida para DENTRO deste bloco.
+        val properties = java.util.Properties()
+        file("gradle.properties").inputStream().use { properties.load(it) }
+        val loomVersion = properties.getProperty("loom_version")
+
+        // Agora, 'loomVersion' está no escopo correto e será encontrado.
         id("fabric-loom") version loomVersion
     }
 }
