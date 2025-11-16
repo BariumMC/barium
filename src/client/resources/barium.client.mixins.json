@@ -1,7 +1,6 @@
 {
 	"required": true,
 	"package": "com.barium.client.mixin",
-	"refmap": "barium.client.refmap.json",
 	"compatibilityLevel": "JAVA_21",
 	"plugin": "com.barium.BariumMixinPlugin",
 	"client": [
