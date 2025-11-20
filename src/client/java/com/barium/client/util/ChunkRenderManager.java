@@ -4,7 +4,6 @@ import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.render.Frustum;
 import net.minecraft.util.math.Box;
 import net.minecraft.util.math.ChunkPos;
-import net.minecraft.world.Heightmap;
 
 import java.util.BitSet;
 import java.util.concurrent.atomic.AtomicReference;
@@ -22,28 +21,38 @@ public class ChunkRenderManager {
     public void calculateChunksToRender(MinecraftClient client, Frustum frustum) {
         if (client.player == null || client.world == null || frustum == null) return;
 
+        // Pega valores locais para evitar acessos repetidos
         final int renderDistance = client.options.getViewDistance().getValue();
-        final ChunkPos playerChunkPos = client.player.getChunkPos();
+        final ChunkPos playerPos = client.player.getChunkPos();
+        final int pX = playerPos.x;
+        final int pZ = playerPos.z;
+        
+        final int bottomY = client.world.getBottomY();
+        final int topY = client.world.getDimension().height() + bottomY;
 
-        this.minRenderChunkX = playerChunkPos.x - renderDistance;
-        this.minRenderChunkZ = playerChunkPos.z - renderDistance;
+        this.minRenderChunkX = pX - renderDistance;
+        this.minRenderChunkZ = pZ - renderDistance;
         this.renderGridSize = renderDistance * 2 + 1;
 
         BitSet newChunksToRender = new BitSet(this.renderGridSize * this.renderGridSize);
 
-        for (int z = 0; z < this.renderGridSize; z++) {
-            for (int x = 0; x < this.renderGridSize; x++) {
-                final int chunkX = this.minRenderChunkX + x;
-                final int chunkZ = this.minRenderChunkZ + z;
+        // Otimização: Reutiliza uma única Box mutável se possível, ou calcula AABB
+        // Como Frustum precisa de Box, criamos a menor quantidade possível de lógica auxiliar
+        
+        for (int x = 0; x < this.renderGridSize; x++) {
+            for (int z = 0; z < this.renderGridSize; z++) {
+                int absChunkX = this.minRenderChunkX + x;
+                int absChunkZ = this.minRenderChunkZ + z;
 
-                // CORREÇÃO: A caixa do chunk agora usa a altura da dimensão, o que é correto e funciona.
-                // Isso cobre o chunk inteiro, da base (geralmente Y=-64) ao topo do mundo.
-                final Box chunkBox = new Box(
-                        chunkX * 16, client.world.getBottomY(), chunkZ * 16,
-                        chunkX * 16 + 16, client.world.getDimension().height() + client.world.getBottomY(), chunkZ * 16 + 16
-                );
+                // Criação da Box otimizada
+                double minX = absChunkX * 16.0;
+                double minZ = absChunkZ * 16.0;
+                double maxX = minX + 16.0;
+                double maxZ = minZ + 16.0;
 
-                if (frustum.isVisible(chunkBox)) {
+                // Verifica intersecção com o Frustum (AABB check rápido)
+                // AAPI do Frustum do Minecraft aceita AABB.
+                if (frustum.isVisible(new Box(minX, bottomY, minZ, maxX, topY, maxZ))) {
                     newChunksToRender.set(x + z * this.renderGridSize);
                 }
             }
@@ -52,17 +61,16 @@ public class ChunkRenderManager {
     }
 
     public boolean isChunkInFrustum(int chunkX, int chunkZ) {
-        BitSet visibleSet = this.chunksInFrustum.get();
-        if (visibleSet == null || this.renderGridSize == 0) return true; // Segurança
-
-        final int localX = chunkX - this.minRenderChunkX;
-        final int localZ = chunkZ - this.minRenderChunkZ;
+        // Check rápido de limites antes de acessar o BitSet
+        int localX = chunkX - this.minRenderChunkX;
+        int localZ = chunkZ - this.minRenderChunkZ;
 
         if (localX < 0 || localX >= this.renderGridSize || localZ < 0 || localZ >= this.renderGridSize) {
             return false;
         }
 
-        return visibleSet.get(localX + localZ * this.renderGridSize);
+        BitSet visibleSet = this.chunksInFrustum.get();
+        return visibleSet != null && visibleSet.get(localX + localZ * this.renderGridSize);
     }
 
     public void clear() {

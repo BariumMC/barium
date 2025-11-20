@@ -19,45 +19,40 @@ public abstract class ChunkRenderMixin {
 
     @Inject(method = "shouldBuild()Z", at = @At("HEAD"), cancellable = true)
     private void barium$onShouldBuild(CallbackInfoReturnable<Boolean> cir) {
-        BlockPos origin = this.getOrigin();
+        // Se não houver player, deixa o padrão do jogo
         MinecraftClient client = MinecraftClient.getInstance();
         if (client.player == null) return;
-
-        // Verificação 1: Otimização de Frustum (a mais barata e rápida)
-        // Se o chunk inteiro não está no campo de visão da câmera, pulamos a reconstrução.
-        if (BariumConfig.C.ENABLE_FRUSTUM_CHUNK_CULLING) {
-            final int chunkX = origin.getX() >> 4;
-            final int chunkZ = origin.getZ() >> 4;
-            if (!ChunkRenderManager.getInstance().isChunkInFrustum(chunkX, chunkZ)) {
-                cir.setReturnValue(false);
-                return;
-            }
-        }
         
-        // Verificação 2: Otimização de Flood-Fill (verificação rápida com dados assíncronos)
-        // Usa dados pré-calculados para determinar a visibilidade. A verificação em si é muito rápida.
+        BlockPos origin = this.getOrigin();
+        int chunkX = origin.getX() >> 4;
+        int chunkZ = origin.getZ() >> 4;
+
+        // 1. Flood Fill (Graph Culling) - O MAIS IMPORTANTE
+        // Se o algoritmo de grafo diz que o chunk está ocluído (ex: caverna),
+        // cancelamos imediatamente. Isso evita o frustum check e o build.
         if (BariumConfig.C.ENABLE_FLOOD_FILL_CULLING) {
-            int sectionX = origin.getX() >> 4;
             int sectionY = origin.getY() >> 4;
-            int sectionZ = origin.getZ() >> 4;
-
-            // A "bolha de segurança" impede que a otimização remova chunks muito próximos,
-            // evitando "buracos" visuais ao se virar rapidamente. O raio foi aumentado para mais estabilidade.
-            int playerChunkX = client.player.getChunkPos().x;
-            int playerChunkZ = client.player.getChunkPos().z;
-            int safetyRadius = 2; // Raio de segurança aumentado para uma área de 5x5 chunks.
-
-            // A otimização só é aplicada se o chunk estiver FORA da bolha de segurança.
-            if (Math.abs(playerChunkX - sectionX) > safetyRadius || Math.abs(playerChunkZ - sectionZ) > safetyRadius) {
-                 if (!FloodFillVisibilityManager.getInstance().isSectionVisible(sectionX, sectionY, sectionZ)) {
+            
+            // Bolha de segurança (3 chunks) ao redor do player para evitar glitches
+            int pX = client.player.getChunkPos().x;
+            int pZ = client.player.getChunkPos().z;
+            
+            if (Math.abs(pX - chunkX) > 1 || Math.abs(pZ - chunkZ) > 1) {
+                // Verifica a visibilidade da seção específica (16x16x16)
+                if (!FloodFillVisibilityManager.getInstance().isSectionVisible(chunkX, sectionY, chunkZ)) {
                     cir.setReturnValue(false);
                     return;
                 }
             }
         }
 
-        // A verificação síncrona de oclusão total (`isSectionTotallyOccluded`) foi REMOVIDA deste método.
-        // A sua execução aqui era muito cara e causava a lentidão no carregamento de chunks.
-        // A otimização Flood-Fill já lida com a maioria dos casos de oclusão de forma muito mais eficiente.
+        // 2. Frustum Culling (Visual)
+        // Se passou pelo grafo (ou seja, existe caminho visual), verifica se está na câmera.
+        if (BariumConfig.C.ENABLE_FRUSTUM_CHUNK_CULLING) {
+            if (!ChunkRenderManager.getInstance().isChunkInFrustum(chunkX, chunkZ)) {
+                cir.setReturnValue(false);
+                return;
+            }
+        }
     }
 }

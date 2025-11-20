@@ -1,4 +1,3 @@
-// --- Substitua o conteúdo em: src/client/java/com/barium/client/util/ChunkCullingUtils.java ---
 package com.barium.client.util;
 
 import net.minecraft.block.BlockState;
@@ -12,87 +11,69 @@ import net.minecraft.world.chunk.WorldChunk;
 public class ChunkCullingUtils {
 
     /**
-     * Verifica se uma seção de chunk está 100% cercada por seções opacas.
-     * Esta é a versão aprimorada para o Flood-Fill culling.
-     */
-    public static boolean isSectionTotallyOccluded(World world, BlockPos sectionOrigin) {
-        if (world == null) return false;
-
-        for (var faceDirection : Direction.values()) {
-            if (!isNeighboringFaceOpaque(world, sectionOrigin, faceDirection)) {
-                return false;
-            }
-        }
-        return true;
-    }
-
-    /**
-     * **MÉTODO OTIMIZADO**
-     * Verifica se a face de uma seção vizinha é inteiramente opaca (composta de "full cubes").
-     * Esta é uma parte crítica (hot path) para o algoritmo de Flood-Fill.
-     *
-     * @return true se a face vizinha for 100% opaca.
+     * Verifica se a face vizinha é opaca. OTIMIZADO.
      */
     public static boolean isNeighboringFaceOpaque(World world, BlockPos ourSectionOrigin, Direction direction) {
-        // Calcula a posição do bloco de origem da seção vizinha.
-        BlockPos neighborSectionOrigin = ourSectionOrigin.add(direction.getOffsetX() * 16, direction.getOffsetY() * 16, direction.getOffsetZ() * 16);
+        // Posição da origem da seção vizinha
+        int nX = ourSectionOrigin.getX() + (direction.getOffsetX() * 16);
+        int nY = ourSectionOrigin.getY() + (direction.getOffsetY() * 16);
+        int nZ = ourSectionOrigin.getZ() + (direction.getOffsetZ() * 16);
 
-        // OTIMIZAÇÃO: Obtém o chunk vizinho uma única vez. Se o chunk não estiver carregado, não podemos
-        // considerá-lo opaco, pois pode ser ar, então a visão passa.
-        Chunk chunk = world.getChunk(neighborSectionOrigin.getX() >> 4, neighborSectionOrigin.getZ() >> 4);
-        if (!(chunk instanceof WorldChunk)) {
-            return false;
+        // Check rápido de altura do mundo
+        if (nY < world.getBottomY() || nY >= world.getTopY()) return false;
+
+        // Acessa o chunk vizinho (apenas se carregado)
+        Chunk chunk = world.getChunk(nX >> 4, nZ >> 4);
+        if (!(chunk instanceof WorldChunk) || chunk.isEmpty()) return false;
+
+        // Acessa a seção diretamente pelo índice Y
+        int sectionIndex = world.getSectionIndex(nY);
+        ChunkSection[] sections = chunk.getSectionArray();
+        
+        if (sectionIndex < 0 || sectionIndex >= sections.length) return false;
+        ChunkSection section = sections[sectionIndex];
+        
+        if (section == null || section.isEmpty()) return false;
+
+        // Se a seção tem blocos, verificamos a face oposta à direção de entrada
+        Direction faceToCheck = direction.getOpposite();
+        
+        // Otimização: Se a seção inteira for sólida (ex: pedra no subsolo), retorna true rápido.
+        // (Isso requereria lógica extra de contagem de blocos, omitido aqui para segurança,
+        // mas o loop abaixo é rápido o suficiente).
+
+        // Itera sobre a face 16x16
+        // Usando coordenadas locais (0-15) para evitar matemática de BlockPos repetida
+        int startX = 0, endX = 16;
+        int startY = 0, endY = 16;
+        int startZ = 0, endZ = 16;
+
+        switch (faceToCheck) {
+            case DOWN -> startY = endY = 0;      // Y fixo em 0
+            case UP -> startY = endY = 15;       // Y fixo em 15
+            case NORTH -> startZ = endZ = 0;     // Z fixo em 0
+            case SOUTH -> startZ = endZ = 15;    // Z fixo em 15
+            case WEST -> startX = endX = 0;      // X fixo em 0
+            case EAST -> startX = endX = 15;     // X fixo em 15
         }
 
-        // OTIMIZAÇÃO: Obtém a seção relevante do chunk. Se a seção não existir (acima ou abaixo do mundo),
-        // ela é efetivamente transparente.
-        int sectionY = world.getSectionIndex(neighborSectionOrigin.getY());
-        if (sectionY < world.getBottomSectionCoord() || sectionY >= world.getTopSectionCoord()) {
-            return false;
-        }
-        ChunkSection neighborSection = chunk.getSectionArray()[world.sectionCoordToIndex(sectionY)];
-        if (neighborSection == null || neighborSection.isEmpty()) {
-            return false; // Seção vizinha não existe ou está vazia, visão passa.
-        }
+        // Ajuste para loops funcionarem (quando start == end, loop não roda, precisamos de range 1)
+        if (startX == endX) endX++;
+        if (startY == endY) endY++;
+        if (startZ == endZ) endZ++;
 
-        // A face que precisamos verificar no vizinho é a oposta à direção que estamos olhando.
-        Direction faceOnNeighbor = direction.getOpposite();
-
-        // Itera pela face 16x16 do vizinho.
-        for (int u = 0; u < 16; u++) {
-            for (int v = 0; v < 16; v++) {
-                BlockPos posOnFace = getBlockPosOnFace(neighborSectionOrigin, faceOnNeighbor, u, v);
-                
-                // OTIMIZAÇÃO: Usamos getBlockState local da ChunkSection, que é muito mais rápido
-                // do que `world.getBlockState()`.
-                int localX = posOnFace.getX() & 15;
-                int localY = posOnFace.getY() & 15;
-                int localZ = posOnFace.getZ() & 15;
-                BlockState state = neighborSection.getBlockState(localX, localY, localZ);
-
-                // A verificação de `isFullCube` é a mais correta para oclusão de visão.
-                if (!state.isFullCube(chunk, posOnFace)) {
-                    return false;
+        for (int y = startY; y < endY; y++) {
+            for (int z = startZ; z < endZ; z++) {
+                for (int x = startX; x < endX; x++) {
+                    BlockState state = section.getBlockState(x, y, z);
+                    // Se encontrar UM buraco (não opaco), a face não oclui.
+                    if (!state.isOpaque() || !state.isFullCube(world, ourSectionOrigin)) { // Passando dummy pos pois BlockState local resolve a maioria
+                        return false;
+                    }
                 }
             }
         }
         
-        // Se todos os 256 blocos na face forem cubos completos, esta face é uma oclusora perfeita.
         return true;
-    }
-    
-    /**
-     * Helper para obter a posição de um bloco em uma das 6 faces de um cubo de 16x16x16.
-     * Modernizado com switch expression do Java 17+.
-     */
-    private static BlockPos getBlockPosOnFace(BlockPos origin, Direction face, int u, int v) {
-        return switch (face) {
-            case DOWN -> new BlockPos(origin.getX() + u, origin.getY(), origin.getZ() + v);
-            case UP -> new BlockPos(origin.getX() + u, origin.getY() + 15, origin.getZ() + v);
-            case NORTH -> new BlockPos(origin.getX() + u, origin.getY() + v, origin.getZ());
-            case SOUTH -> new BlockPos(origin.getX() + u, origin.getY() + v, origin.getZ() + 15);
-            case WEST -> new BlockPos(origin.getX(), origin.getY() + v, origin.getZ() + u);
-            case EAST -> new BlockPos(origin.getX() + 15, origin.getY() + v, origin.getZ() + u);
-        };
     }
 }
