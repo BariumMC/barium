@@ -77,4 +77,5 @@ public static boolean isNeighboringFaceOpaque(World world, BlockPos ourSectionOr
     }
     
     return true;
+   }
 }
