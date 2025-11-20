@@ -6,6 +6,7 @@ import com.barium.config.BariumConfig;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.render.chunk.ChunkBuilder;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.ChunkPos;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
@@ -19,7 +20,6 @@ public abstract class ChunkRenderMixin {
 
     @Inject(method = "shouldBuild()Z", at = @At("HEAD"), cancellable = true)
     private void barium$onShouldBuild(CallbackInfoReturnable<Boolean> cir) {
-        // Se não houver player, deixa o padrão do jogo
         MinecraftClient client = MinecraftClient.getInstance();
         if (client.player == null) return;
         
@@ -27,27 +27,29 @@ public abstract class ChunkRenderMixin {
         int chunkX = origin.getX() >> 4;
         int chunkZ = origin.getZ() >> 4;
 
-        // 1. Flood Fill (Graph Culling) - O MAIS IMPORTANTE
-        // Se o algoritmo de grafo diz que o chunk está ocluído (ex: caverna),
-        // cancelamos imediatamente. Isso evita o frustum check e o build.
+        ChunkPos playerChunkPos = client.player.getChunkPos();
+        int pX = playerChunkPos.x;
+        int pZ = playerChunkPos.z;
+
+        // --- CORREÇÃO CRÍTICA PARA TELA DE LOADING INFINITA ---
+        // Se o chunk estiver muito perto do jogador (Raio de 2 chunks / 32 blocos),
+        // NUNCA aplique culling. O Minecraft precisa desses chunks para sair da tela de loading.
+        if (Math.abs(pX - chunkX) <= 2 && Math.abs(pZ - chunkZ) <= 2) {
+            return; // Deixa o método original rodar (retorna true)
+        }
+        // -------------------------------------------------------
+
+        // 1. Flood Fill (Graph Culling)
         if (BariumConfig.C.ENABLE_FLOOD_FILL_CULLING) {
             int sectionY = origin.getY() >> 4;
-            
-            // Bolha de segurança (3 chunks) ao redor do player para evitar glitches
-            int pX = client.player.getChunkPos().x;
-            int pZ = client.player.getChunkPos().z;
-            
-            if (Math.abs(pX - chunkX) > 1 || Math.abs(pZ - chunkZ) > 1) {
-                // Verifica a visibilidade da seção específica (16x16x16)
-                if (!FloodFillVisibilityManager.getInstance().isSectionVisible(chunkX, sectionY, chunkZ)) {
-                    cir.setReturnValue(false);
-                    return;
-                }
+            // Verifica se a seção está marcada como visível no grafo
+            if (!FloodFillVisibilityManager.getInstance().isSectionVisible(chunkX, sectionY, chunkZ)) {
+                cir.setReturnValue(false);
+                return;
             }
         }
 
-        // 2. Frustum Culling (Visual)
-        // Se passou pelo grafo (ou seja, existe caminho visual), verifica se está na câmera.
+        // 2. Frustum Culling (Campo de Visão)
         if (BariumConfig.C.ENABLE_FRUSTUM_CHUNK_CULLING) {
             if (!ChunkRenderManager.getInstance().isChunkInFrustum(chunkX, chunkZ)) {
                 cir.setReturnValue(false);

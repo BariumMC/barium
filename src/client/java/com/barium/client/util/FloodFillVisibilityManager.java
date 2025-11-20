@@ -1,7 +1,6 @@
 package com.barium.client.util;
 
 import com.barium.client.BariumClient;
-import com.barium.config.BariumConfig;
 import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
 import it.unimi.dsi.fastutil.longs.LongSet;
 import net.minecraft.client.MinecraftClient;
@@ -20,10 +19,10 @@ public class FloodFillVisibilityManager {
     private final AtomicReference<LongSet> visibleSectionKeys = new AtomicReference<>(new LongOpenHashSet());
     private Future<?> visibilityTask = null;
     private long lastUpdateTime = 0;
-    private static final long UPDATE_INTERVAL_MS = 250; // Menos frequente que por frame, economiza CPU
+    // Intervalo reduzido para resposta mais rápida ao mover a câmera
+    private static final long UPDATE_INTERVAL_MS = 100; 
 
     public void update(MinecraftClient client) {
-        // CORREÇÃO: Usando getCameraEntity() para verificar se a câmera existe.
         if (client.world == null || client.getCameraEntity() == null) return;
         
         long currentTime = System.currentTimeMillis();
@@ -32,47 +31,69 @@ public class FloodFillVisibilityManager {
         if (visibilityTask != null && !visibilityTask.isDone()) return;
         
         lastUpdateTime = currentTime;
-        // Delega a tarefa pesada para a thread de renderização do Barium
-        // CORREÇÃO: Usando getCameraEntity() para obter a posição inicial.
-        visibilityTask = BariumClient.RENDER_THREAD_POOL.submit(() -> runFloodFill(client.world, client.getCameraEntity().getBlockPos()));
+        // Captura a posição e o mundo na thread principal para segurança
+        BlockPos cameraBlockPos = client.getCameraEntity().getBlockPos();
+        World world = client.world;
+
+        visibilityTask = BariumClient.RENDER_THREAD_POOL.submit(() -> runFloodFill(world, cameraBlockPos));
     }
     
     private void runFloodFill(World world, BlockPos startPos) {
-        LongSet sectionsToRender = new LongOpenHashSet();
-        Queue<BlockPos> queue = new ArrayDeque<>();
+        try {
+            LongSet sectionsToRender = new LongOpenHashSet();
+            Queue<BlockPos> queue = new ArrayDeque<>();
 
-        BlockPos startSectionPos = new BlockPos(
-            startPos.getX() >> 4,
-            startPos.getY() >> 4,
-            startPos.getZ() >> 4
-        );
+            // Começa da seção onde o jogador está
+            BlockPos startSectionPos = new BlockPos(
+                startPos.getX() >> 4,
+                startPos.getY() >> 4,
+                startPos.getZ() >> 4
+            );
 
-        sectionsToRender.add(startSectionPos.asLong());
-        queue.add(startSectionPos);
-
-        while(!queue.isEmpty()){
-            BlockPos currentSectionPos = queue.poll();
+            sectionsToRender.add(startSectionPos.asLong());
+            queue.add(startSectionPos);
             
-            for(Direction direction : Direction.values()){
-                BlockPos neighborSectionPos = currentSectionPos.add(direction.getVector());
+            // Limite de iterações para evitar travamento da thread em mundos muito abertos
+            int iterations = 0;
+            int maxIterations = 2000; 
 
-                // Não verifica seções já visitadas
-                if (!sectionsToRender.contains(neighborSectionPos.asLong())) {
-                    // A "porta" está aberta se a face NÃO for opaca.
-                    // Verificamos a face da nossa seção atual que leva ao vizinho.
-                    BlockPos ourSectionOrigin = new BlockPos(currentSectionPos.getX() * 16, currentSectionPos.getY() * 16, currentSectionPos.getZ() * 16);
-                    if (!ChunkCullingUtils.isNeighboringFaceOpaque(world, ourSectionOrigin, direction)) {
-                        sectionsToRender.add(neighborSectionPos.asLong());
-                        queue.add(neighborSectionPos);
+            while(!queue.isEmpty() && iterations < maxIterations) {
+                BlockPos currentSectionPos = queue.poll();
+                iterations++;
+                
+                for(Direction direction : Direction.values()){
+                    BlockPos neighborSectionPos = currentSectionPos.add(direction.getVector());
+
+                    if (!sectionsToRender.contains(neighborSectionPos.asLong())) {
+                        // Transforma posição de seção em posição de bloco real (origem da seção)
+                        BlockPos ourSectionOrigin = new BlockPos(currentSectionPos.getX() * 16, currentSectionPos.getY() * 16, currentSectionPos.getZ() * 16);
+                        
+                        // Se a face que leva ao vizinho NÃO é opaca, podemos ver através dela
+                        if (!ChunkCullingUtils.isNeighboringFaceOpaque(world, ourSectionOrigin, direction)) {
+                            long key = neighborSectionPos.asLong();
+                            sectionsToRender.add(key);
+                            
+                            // Limita a propagação para não carregar o mundo inteiro (distância de render ~32 chunks)
+                            if (Math.abs(neighborSectionPos.getX() - startSectionPos.getX()) <= 32 &&
+                                Math.abs(neighborSectionPos.getZ() - startSectionPos.getZ()) <= 32) {
+                                queue.add(neighborSectionPos);
+                            }
+                        }
                     }
                 }
             }
+            visibleSectionKeys.set(sectionsToRender);
+        } catch (Exception e) {
+            // Em caso de erro (concurrent modification, etc), não crasha, apenas ignora
+            // O próximo tick tentará novamente
         }
-        visibleSectionKeys.set(sectionsToRender);
     }
     
     public boolean isSectionVisible(int sectionX, int sectionY, int sectionZ) {
-        return visibleSectionKeys.get().contains(BlockPos.asLong(sectionX, sectionY, sectionZ));
+        LongSet visible = visibleSectionKeys.get();
+        // Se o conjunto estiver vazio (início do jogo), retorne TRUE para evitar tela infinita
+        if (visible == null || visible.isEmpty()) return true;
+        return visible.contains(BlockPos.asLong(sectionX, sectionY, sectionZ));
     }
 
     public void clear() {
