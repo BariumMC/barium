@@ -36,6 +36,8 @@ public class BariumClient implements ClientModInitializer {
     public void onInitializeClient() {
         instance = this;
         BariumMod.LOGGER.info("Initializing Barium Client...");
+        // Registra o detector que aplica presets quando o renderer for llvmpipe (software)
+        com.barium.client.util.RendererDetector.register();
 
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
             if (client.world == null) {

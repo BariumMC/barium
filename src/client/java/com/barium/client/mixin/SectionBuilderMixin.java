@@ -91,9 +91,17 @@ public class SectionBuilderMixin {
     @org.spongepowered.asm.mixin.Unique
     private boolean isSectionMostlyLeaves(ChunkRendererRegion region, ChunkSectionPos sectionPos) {
         // Para desempenho, amostramos os blocos a cada passo (não verificamos todos os 4096).
-        final int step = 2; // amostra 1/8 do total aproximadamente
+        int step = 2; // amostra 1/8 do total aproximadamente
         int leafCount = 0;
         int sampleCount = 0;
+        double threshold = com.barium.config.BariumConfig.C.FOREST_SECTION_LEAF_THRESHOLD;
+
+        // Em modo LLVMpipe (software renderer), tornamos a amostragem mais grosseira e mais agressiva
+        // para reduzir o custo da verificação em CPUs lentos.
+        if (com.barium.config.BariumConfig.C.ENABLE_LLVMPIPE_MODE) {
+            step = 4; // amostra menos pontos
+            threshold = Math.max(0.55, threshold - 0.20);
+        }
 
         BlockPos.Mutable mutablePos = new BlockPos.Mutable();
         int startX = sectionPos.getMinX();
@@ -117,7 +125,7 @@ public class SectionBuilderMixin {
         if (sampleCount == 0) return false;
 
         double ratio = (double) leafCount / (double) sampleCount;
-        return ratio >= com.barium.config.BariumConfig.C.FOREST_SECTION_LEAF_THRESHOLD;
+        return ratio >= threshold;
     }
 
     @org.spongepowered.asm.mixin.Unique

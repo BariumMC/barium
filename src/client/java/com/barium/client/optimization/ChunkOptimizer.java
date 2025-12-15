@@ -68,7 +68,13 @@ public class ChunkOptimizer {
         // Usamos a posição do bloco como base para a bounding box.
         Box boundingBox = new Box(blockEntityBlockPos);
 
-        for (Vec3d testPoint : OCCLUSION_TEST_POINTS) {
+        // Em modo LLVMpipe, reduzimos os pontos de teste para economizar CPU (um único ponto central).
+        Vec3d[] testPoints = OCCLUSION_TEST_POINTS;
+        if (BariumConfig.C.ENABLE_LLVMPIPE_MODE) {
+            testPoints = new Vec3d[]{ new Vec3d(0.5, 0.5, 0.5) };
+        }
+
+        for (Vec3d testPoint : testPoints) {
             Vec3d targetPos = new Vec3d(
                 boundingBox.minX + (boundingBox.maxX - boundingBox.minX) * testPoint.x,
                 boundingBox.minY + (boundingBox.maxY - boundingBox.minY) * testPoint.y,

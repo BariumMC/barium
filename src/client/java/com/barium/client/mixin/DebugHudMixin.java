@@ -54,6 +54,7 @@ public abstract class DebugHudMixin {
         originalList.add(formatOption("Entity Culling", BariumConfig.C.ENABLE_ENTITY_CULLING));
         originalList.add(formatOption("Block Entity Culling", BariumConfig.C.ENABLE_BLOCK_ENTITY_OCCLUSION_CULLING));
         originalList.add(formatOption("Particle Culling", BariumConfig.C.ENABLE_PARTICLE_OPTIMIZATION));
+        originalList.add(formatOption("LLVMpipe Mode", BariumConfig.C.ENABLE_LLVMPIPE_MODE));
 
         // ETAPA 2: ATUALIZAR O CACHE COM A LISTA JÁ MODIFICADA
         if (BariumConfig.C.CACHE_DEBUG_HUD) {

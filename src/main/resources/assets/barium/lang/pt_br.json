@@ -77,6 +77,8 @@
   
   "option.barium.disable_texture_animations": "Desativar Animações de Textura",
   "tooltip.barium.disable_texture_animations": "Congela texturas animadas (água, lava, portais) para economizar uma pequena quantidade de CPU.",
+  "option.barium.enable_llvmpipe_mode": "Modo LLVMpipe",
+  "tooltip.barium.enable_llvmpipe_mode": "Aplica presets conservadores otimizados para renderizadores de software (ex.: llvmpipe). Detectado automaticamente na inicialização, mas pode ser ajustado manualmente.",
   "option.barium.mipmap_level_override": "Forçar Nível de Mipmap (0-4)",
   "tooltip.barium.mipmap_level_override": "Força uma resolução de textura menor. Valores maiores reduzem o uso de VRAM e podem melhorar o FPS com pacotes de textura, mas deixam as texturas borradas.\nRequer reinicialização. 0=Desligado.",
   

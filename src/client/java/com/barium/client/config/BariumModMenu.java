@@ -82,6 +82,8 @@ public class BariumModMenu implements ModMenuApi {
 
             mainCategory.addEntry(entryBuilder.startBooleanToggle(Text.translatable("option.barium.disable_texture_animations"), BariumConfig.C.DISABLE_TEXTURE_ANIMATIONS)
                     .setDefaultValue(defaults.DISABLE_TEXTURE_ANIMATIONS).setTooltip(Text.translatable("tooltip.barium.disable_texture_animations")).setSaveConsumer(v -> BariumConfig.C.DISABLE_TEXTURE_ANIMATIONS = v).build());
+            mainCategory.addEntry(entryBuilder.startBooleanToggle(Text.translatable("option.barium.enable_llvmpipe_mode"), BariumConfig.C.ENABLE_LLVMPIPE_MODE)
+                    .setDefaultValue(defaults.ENABLE_LLVMPIPE_MODE).setTooltip(Text.translatable("tooltip.barium.enable_llvmpipe_mode")).setSaveConsumer(v -> BariumConfig.C.ENABLE_LLVMPIPE_MODE = v).build());
             mainCategory.addEntry(entryBuilder.startIntSlider(Text.translatable("option.barium.mipmap_level_override"), BariumConfig.C.MIPMAP_LEVEL_OVERRIDE, 0, 4)
                     .setDefaultValue(defaults.MIPMAP_LEVEL_OVERRIDE).setTooltip(Text.translatable("tooltip.barium.mipmap_level_override")).setSaveConsumer(v -> BariumConfig.C.MIPMAP_LEVEL_OVERRIDE = v).build());
             mainCategory.addEntry(entryBuilder.startBooleanToggle(Text.translatable("option.barium.cache_debug_hud"), BariumConfig.C.CACHE_DEBUG_HUD)
