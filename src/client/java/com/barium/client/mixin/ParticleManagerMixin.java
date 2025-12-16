@@ -1,5 +1,6 @@
 package com.barium.client.mixin;
 
+import com.barium.client.optimization.ParticleOptimizer;
 import com.barium.config.BariumConfig;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.particle.Particle;
@@ -27,21 +28,6 @@ public class ParticleManagerMixin {
             }
             ParticleOptimizer.incrementParticleCount();
         }
-
-        // Reduz particles de explosão
-        if (BariumConfig.C.ENABLE_EXPLOSION_PARTICLE_REDUCTION) {
-            if (isExplosionParticle(particle)) {
-                // Cancela 50% das particles de explosão
-                if ((particle.hashCode() % 2) == 0) {
-                    ci.cancel();
-                }
-            }
-        }
-
-    private boolean isExplosionParticle(Particle particle) {
-        // Verifica se a particle é de explosão baseada no tipo
-        String className = particle.getClass().getSimpleName();
-        return className.contains("Explosion") || className.contains("Smoke") || className.contains("LargeExplosion");
     }
     /**
      * CORREÇÃO: O método `renderParticles` foi removido. A nova renderização de partículas
