@@ -97,3 +97,7 @@ public class ChunkOptimizer {
             }
         }
 
+        // Se todos os pontos de teste foram bloqueados por outros blocos, a entidade está ocluída.
+        return true;
+    }
+}
