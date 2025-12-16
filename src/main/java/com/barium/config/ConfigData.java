@@ -43,7 +43,6 @@ public class ConfigData {
     public boolean ENABLE_EXPLOSION_PARTICLE_REDUCTION = true;
     public boolean ENABLE_GLOBAL_PARTICLE_LIMIT = true;
     public int MAX_GLOBAL_PARTICLES = 4096;
-    public boolean ENABLE_FULLSCREEN_OPTIMIZATIONS = true;
 
     // ================== Visual Effects & HUD ================== //
     public boolean CACHE_DEBUG_HUD = true;

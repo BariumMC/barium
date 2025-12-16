@@ -46,10 +46,6 @@ public class EntityOptimizer {
         return true;
     }
 
-    /**
-     * Método legado para compatibilidade.
-     */
-    public static boolean shouldRenderByDistance(Entity entity, double cameraX, double cameraY, double cameraZ) {
-        return shouldRender(entity, cameraX, cameraY, cameraZ, null);
+    public static void setEntityRenderDistanceSq(double dist) {
     }
 }

@@ -69,17 +69,6 @@ public class BariumClient implements ClientModInitializer {
             currentFps = frameCount;
             frameCount = 0;
             lastFpsUpdate = now;
-            
-            // Otimizações adaptativas baseadas em fullscreen
-            if (BariumConfig.C.ENABLE_FULLSCREEN_OPTIMIZATIONS) {
-                boolean isFullscreen = MinecraftClient.getInstance().getWindow().isFullscreen();
-                if (isFullscreen && currentFps < 50) {
-                    // Em fullscreen e baixo FPS, reduzir max particles para ganhar performance
-                    com.barium.client.optimization.ParticleOptimizer.setMaxParticles(2048);
-                } else {
-                    com.barium.client.optimization.ParticleOptimizer.setMaxParticles(BariumConfig.C.MAX_GLOBAL_PARTICLES);
-                }
-            }
         }
     }
 }
