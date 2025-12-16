@@ -34,11 +34,12 @@ public class FloodFillVisibilityManager {
         // Captura a posição e o mundo na thread principal para segurança
         BlockPos cameraBlockPos = client.getCameraEntity().getBlockPos();
         World world = client.world;
+        int renderDistance = client.options.getViewDistance().getValue();
 
-        visibilityTask = BariumClient.RENDER_THREAD_POOL.submit(() -> runFloodFill(world, cameraBlockPos));
+        visibilityTask = BariumClient.RENDER_THREAD_POOL.submit(() -> runFloodFill(world, cameraBlockPos, renderDistance));
     }
     
-    private void runFloodFill(World world, BlockPos startPos) {
+    private void runFloodFill(World world, BlockPos startPos, int renderDistance) {
         try {
             LongSet sectionsToRender = new LongOpenHashSet();
             Queue<BlockPos> queue = new ArrayDeque<>();
@@ -55,7 +56,7 @@ public class FloodFillVisibilityManager {
             
             // Limite de iterações para evitar travamento da thread em mundos muito abertos
             int iterations = 0;
-            int maxIterations = 2000; 
+            int maxIterations = Math.max(2000, renderDistance * renderDistance * 4); 
 
             while(!queue.isEmpty() && iterations < maxIterations) {
                 BlockPos currentSectionPos = queue.poll();
@@ -73,9 +74,9 @@ public class FloodFillVisibilityManager {
                             long key = neighborSectionPos.asLong();
                             sectionsToRender.add(key);
                             
-                            // Limita a propagação para não carregar o mundo inteiro (distância de render ~32 chunks)
-                            if (Math.abs(neighborSectionPos.getX() - startSectionPos.getX()) <= 32 &&
-                                Math.abs(neighborSectionPos.getZ() - startSectionPos.getZ()) <= 32) {
+                            // Limita a propagação para não carregar o mundo inteiro (distância de render ~renderDistance chunks)
+                            if (Math.abs(neighborSectionPos.getX() - startSectionPos.getX()) <= renderDistance &&
+                                Math.abs(neighborSectionPos.getZ() - startSectionPos.getZ()) <= renderDistance) {
                                 queue.add(neighborSectionPos);
                             }
                         }

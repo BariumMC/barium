@@ -26,6 +26,7 @@ public class ConfigData {
     // ================== Culling & Level of Detail (LOD) ================== //
     public boolean ENABLE_ENTITY_CULLING = true;
     public double MAX_ENTITY_RENDER_DISTANCE_SQ = 72 * 72;
+    public boolean ENABLE_ENTITY_FRUSTUM_CULLING = true;
     public boolean ENABLE_BLOCK_ENTITY_CULLING = true;
     public double MAX_BLOCK_ENTITY_RENDER_DISTANCE_SQ = 72 * 72;
     public boolean ENABLE_BLOCK_ENTITY_OCCLUSION_CULLING = true;

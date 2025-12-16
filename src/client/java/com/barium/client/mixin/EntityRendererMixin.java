@@ -25,10 +25,8 @@ public abstract class EntityRendererMixin<T extends Entity> {
             return;
         }
 
-        // Delega a lógica de culling APENAS por distância para nossa classe.
-        // Se a entidade estiver muito longe, cancelamos a renderização.
-        // Se estiver perto, deixamos o Minecraft continuar e fazer seu próprio frustum culling.
-        if (!EntityOptimizer.shouldRenderByDistance(entity, cameraX, cameraY, cameraZ)) {
+        // Delega a lógica de culling por distância e frustum para nossa classe.
+        if (!EntityOptimizer.shouldRender(entity, cameraX, cameraY, cameraZ, frustum)) {
             cir.setReturnValue(false);
         }
     }

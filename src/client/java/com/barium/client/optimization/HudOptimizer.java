@@ -16,8 +16,8 @@ public class HudOptimizer {
     // Guarda o timestamp da última atualização para cada lado do HUD.
     private static final Map<String, Long> DEBUG_HUD_TIMESTAMPS = new ConcurrentHashMap<>();
     
-    // Intervalo de atualização em milissegundos. 200ms = 5 updates por segundo.
-    private static final long DEBUG_UPDATE_INTERVAL_MS = 200;
+    // Intervalo de atualização em milissegundos. 50ms = 20 updates por segundo.
+    private static final long DEBUG_UPDATE_INTERVAL_MS = 50;
 
     public static void init() {
         BariumMod.LOGGER.info("Inicializando HudOptimizer");
