@@ -49,7 +49,6 @@ public class ConfigData {
     public boolean ENABLE_TOOLTIP_CACHING = true;
     public boolean DISABLE_TOASTS = true;
     public boolean DISABLE_VIGNETTE = true;
-    public boolean DISABLE_FOG = true;
     public boolean DISABLE_ENTITY_OUTLINES = false;
     public boolean ENABLE_HALF_RESOLUTION_ENTITY_OUTLINES = true;
     public boolean ENABLE_ADAPTIVE_FOG = true;

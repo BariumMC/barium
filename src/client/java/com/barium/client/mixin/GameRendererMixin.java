@@ -1,10 +1,14 @@
 // --- Substitua o conteúdo em: src/client/java/com/barium/client/mixin/GameRendererMixin.java ---
 package com.barium.client.mixin;
 
-import net.minecraft.client.render.BackgroundRenderer;
-import net.minecraft.client.render.Camera;
-import net.minecraft.entity.Entity;
-import org.spongepowered.asm.mixin.injection.Redirect;
+import com.barium.config.BariumConfig;
+import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.gl.Framebuffer;
+import net.minecraft.client.render.GameRenderer;
+import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.injection.At;
+import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 @Mixin(GameRenderer.class)
 public class GameRendererMixin {
@@ -28,16 +32,6 @@ public class GameRendererMixin {
                 // pois o método resize agora só aceita a largura e a altura.
                 entityOutlinesFramebuffer.resize(width / 2, height / 2);
             }
-        }
-    }
-
-    @Redirect(
-        method = "renderWorld(Lnet/minecraft/client/render/RenderTickCounter;Lnet/minecraft/client/render/Camera;)V",
-        at = @At(value = "INVOKE", target = "Lnet/minecraft/client/render/BackgroundRenderer;applyFog(Lnet/minecraft/client/render/Camera;Lnet/minecraft/client/render/BackgroundRenderer$FogType;Lnet/minecraft/entity/Entity;FZF)V")
-    )
-    private void barium$disableFog(Camera camera, BackgroundRenderer.FogType fogType, Entity entity, float viewDistance, boolean thickFog, float tickProgress) {
-        if (!BariumConfig.C.DISABLE_FOG) {
-            BackgroundRenderer.applyFog(camera, fogType, entity, viewDistance, thickFog, tickProgress);
         }
     }
 }
