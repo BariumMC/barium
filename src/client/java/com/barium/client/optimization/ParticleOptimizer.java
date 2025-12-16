@@ -28,8 +28,4 @@ public class ParticleOptimizer {
     public static void incrementParticleCount() {
         particleCount.incrementAndGet();
     }
-    
-    public static void setMaxParticles(int max) {
-        maxParticles = max;
-    }
 }
