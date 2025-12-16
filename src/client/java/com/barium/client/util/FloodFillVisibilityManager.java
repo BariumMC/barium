@@ -56,7 +56,7 @@ public class FloodFillVisibilityManager {
             
             // Limite de iterações para evitar travamento da thread em mundos muito abertos
             int iterations = 0;
-            int maxIterations = Math.max(2000, renderDistance * renderDistance * 4); 
+            int maxIterations = Math.min(5000, renderDistance * renderDistance * 2); 
 
             while(!queue.isEmpty() && iterations < maxIterations) {
                 BlockPos currentSectionPos = queue.poll();

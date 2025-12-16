@@ -21,11 +21,28 @@ public class ParticleManagerMixin {
     @Inject(method = "addParticle(Lnet/minecraft/client/particle/Particle;)V", at = @At("HEAD"), cancellable = true)
     private void barium$applyGlobalParticleLimit(Particle particle, CallbackInfo ci) {
         if (BariumConfig.C.ENABLE_GLOBAL_PARTICLE_LIMIT) {
-            // A lógica original está correta. Apenas para referência.
-            // O código real é mais complexo, mas a injeção está no lugar certo.
+            if (ParticleOptimizer.shouldCullNewParticle()) {
+                ci.cancel();
+                return;
+            }
+            ParticleOptimizer.incrementParticleCount();
         }
-    }
 
+        // Reduz particles de explosão
+        if (BariumConfig.C.ENABLE_EXPLOSION_PARTICLE_REDUCTION) {
+            if (isExplosionParticle(particle)) {
+                // Cancela 50% das particles de explosão
+                if ((particle.hashCode() % 2) == 0) {
+                    ci.cancel();
+                }
+            }
+        }
+
+    private boolean isExplosionParticle(Particle particle) {
+        // Verifica se a particle é de explosão baseada no tipo
+        String className = particle.getClass().getSimpleName();
+        return className.contains("Explosion") || className.contains("Smoke") || className.contains("LargeExplosion");
+    }
     /**
      * CORREÇÃO: O método `renderParticles` foi removido. A nova renderização de partículas
      * acontece em `addToBatch`. Esta injeção intercepta a chamada no início.

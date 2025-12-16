@@ -18,9 +18,9 @@ public class ChunkVisibilityManager {
     private static final ChunkVisibilityManager INSTANCE = new ChunkVisibilityManager();
     public static ChunkVisibilityManager getInstance() { return INSTANCE; }
 
-    private static final int RAYS_TO_CAST = 128;
+    private static final int RAYS_TO_CAST = 256;
     private static final double MAX_RAY_DISTANCE = 256.0;
-    private static final long UPDATE_INTERVAL_MS = 200;
+    private static final long UPDATE_INTERVAL_MS = 100;
 
     private final AtomicReference<LongSet> visibleChunkKeys = new AtomicReference<>(new LongOpenHashSet());
     private final AtomicReference<LongSet> visibleSectionKeys = new AtomicReference<>(new LongOpenHashSet());

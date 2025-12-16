@@ -9,7 +9,7 @@ public class ConfigData {
     public boolean ENABLE_FRUSTUM_CHUNK_CULLING = true;
     public boolean ENABLE_FLOOD_FILL_CULLING = true;
     public boolean ENABLE_OCCLUSION_CULLING = true;
-    public boolean ENABLE_VISIBILITY_GRAPH_CULLING = false;
+    public boolean ENABLE_VISIBILITY_GRAPH_CULLING = true;
     public boolean ENABLE_ADVANCED_SECTION_CULLING = false;
     public boolean ENABLE_ENCLOSED_SECTION_CULLING = false;
     public boolean ENABLE_EMPTY_CHUNK_SECTION_CULLING = true;
@@ -49,6 +49,7 @@ public class ConfigData {
     public boolean ENABLE_TOOLTIP_CACHING = true;
     public boolean DISABLE_TOASTS = true;
     public boolean DISABLE_VIGNETTE = true;
+    public boolean DISABLE_FOG = true;
     public boolean DISABLE_ENTITY_OUTLINES = false;
     public boolean ENABLE_HALF_RESOLUTION_ENTITY_OUTLINES = true;
     public boolean ENABLE_ADAPTIVE_FOG = true;
