@@ -38,7 +38,7 @@ public abstract class HandledScreenMixin<T extends ScreenHandler> {
     @Inject(method = "render(Lnet/minecraft/client/gui/DrawContext;IIF)V", at = @At("HEAD"), cancellable = true)
     private void barium$skipFirstRenderFrame(DrawContext context, int mouseX, int mouseY, float delta, CallbackInfo ci) {
         long now = System.currentTimeMillis();
-        if (now - barium_screenOpenedAt < 50) {
+        if (now - barium_screenOpenedAt < 16) { // Reduzido para 16ms para evitar shutter
             ci.cancel(); // Pula o primeiro frame de renderização pesada
         }
     }
