@@ -97,6 +97,3 @@ public class ChunkOptimizer {
             }
         }
 
-    public static void setBlockEntityRenderDistanceSq(double dist) {
-        blockEntityRenderDistanceSq = dist;
-    }
