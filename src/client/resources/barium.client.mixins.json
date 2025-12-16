@@ -20,9 +20,7 @@
 		"SpriteLoaderMixin",
 		"TextureAtlasMixin",
 		"WorldRendererAccessor",
-		"WorldRendererMixin",
-		"FastModelPartMixin",
-		"FastDirectionMixin"
+		"WorldRendererMixin"
 	],
 	"injectors": {
 		"defaultRequire": 1
