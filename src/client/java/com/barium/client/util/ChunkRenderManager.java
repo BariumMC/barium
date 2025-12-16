@@ -1,8 +1,7 @@
 package com.barium.client.util;
 
 import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.render.Frustum;
-import net.minecraft.util.math.Box;
+import net.minecraft.client.render.Frustum;import net.minecraft.util.math.Box;import net.minecraft.util.math.Box;
 import net.minecraft.util.math.ChunkPos;
 
 import java.util.BitSet;
@@ -52,7 +51,8 @@ public class ChunkRenderManager {
 
                 // Verifica intersecção com o Frustum (AABB check rápido)
                 // AAPI do Frustum do Minecraft aceita AABB.
-                if (frustum.isVisible(new Box(minX, bottomY, minZ, maxX, topY, maxZ))) {
+                Box chunkBox = new Box(minX - 16, bottomY, minZ - 16, maxX + 16, topY, maxZ + 16); // Margin de 16 blocos
+                if (frustum.isVisible(chunkBox)) {
                     newChunksToRender.set(x + z * this.renderGridSize);
                 }
             }

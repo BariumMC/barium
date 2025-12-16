@@ -50,12 +50,36 @@ public class BariumClient implements ClientModInitializer {
         BariumMod.LOGGER.info("Barium Client Initialized.");
     }
 
-    public static BariumClient getInstance() {
-        return instance;
+    private static int currentFps = 60; // default
+    private static long lastFpsUpdate = 0;
+    private static int frameCount = 0;
+
+    public static int getCurrentFps() {
+        return currentFps;
     }
 
-    // CORREÇÃO: O método getter foi adicionado de volta para que os mixins possam usá-lo
-    public ChunkRenderManager getChunkRenderManager() {
-        return chunkRenderManager;
+    public static void setCurrentFps(int fps) {
+        currentFps = fps;
+    }
+
+    public static void updateFps() {
+        frameCount++;
+        long now = System.currentTimeMillis();
+        if (now - lastFpsUpdate >= 1000) { // update every second
+            currentFps = frameCount;
+            frameCount = 0;
+            lastFpsUpdate = now;
+            
+            // Otimizações adaptativas baseadas em fullscreen
+            if (BariumConfig.C.ENABLE_FULLSCREEN_OPTIMIZATIONS) {
+                boolean isFullscreen = MinecraftClient.getInstance().getWindow().isFullscreen();
+                if (isFullscreen && currentFps < 50) {
+                    // Em fullscreen e baixo FPS, reduzir max particles para ganhar performance
+                    com.barium.client.optimization.ParticleOptimizer.setMaxParticles(2048);
+                } else {
+                    com.barium.client.optimization.ParticleOptimizer.setMaxParticles(BariumConfig.C.MAX_GLOBAL_PARTICLES);
+                }
+            }
+        }
     }
 }

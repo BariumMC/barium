@@ -10,6 +10,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class ParticleOptimizer {
 
     private static final AtomicInteger particleCount = new AtomicInteger(0);
+    private static int maxParticles = 4096;
 
     public static boolean shouldSkipParticleTick(Particle particle, Vec3d cameraPos) {
         if (!BariumConfig.C.ENABLE_PARTICLE_OPTIMIZATION) return false;
@@ -22,14 +23,14 @@ public class ParticleOptimizer {
     }
     
     public static boolean shouldCullNewParticle() {
-        return particleCount.get() >= BariumConfig.C.MAX_GLOBAL_PARTICLES;
+        return particleCount.get() >= maxParticles;
     }
 
     public static void incrementParticleCount() {
         particleCount.incrementAndGet();
     }
     
-    public static void resetParticleCount() {
-        particleCount.set(0);
+    public static void setMaxParticles(int max) {
+        maxParticles = max;
     }
 }
