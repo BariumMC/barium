@@ -1,7 +1,8 @@
 package com.barium.client.util;
 
 import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.render.Frustum;import net.minecraft.util.math.Box;import net.minecraft.util.math.Box;
+import net.minecraft.client.render.Frustum;
+import net.minecraft.util.math.Box;
 import net.minecraft.util.math.ChunkPos;
 
 import java.util.BitSet;
