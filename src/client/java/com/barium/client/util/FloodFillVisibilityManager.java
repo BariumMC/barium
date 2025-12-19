@@ -16,7 +16,7 @@ public class FloodFillVisibilityManager {
     private static final FloodFillVisibilityManager INSTANCE = new FloodFillVisibilityManager();
     public static FloodFillVisibilityManager getInstance() { return INSTANCE; }
 
-    private final AtomicReference<LongSet> visibleSectionKeys = new AtomicReference<>(new LongOpenHashSet());
+    private final AtomicReference<LongSet> visibleChunkKeys = new AtomicReference<>(new LongOpenHashSet());
     private Future<?> visibilityTask = null;
     private long lastUpdateTime = 0;
     // Intervalo reduzido para resposta mais rápida ao mover a câmera
