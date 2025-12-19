@@ -2,6 +2,7 @@ package com.barium.client.util;
 
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.render.Frustum;
+import net.minecraft.util.math.Box;
 import net.minecraft.util.math.ChunkPos;
 import java.util.BitSet;
 import java.util.concurrent.atomic.AtomicReference;
@@ -24,7 +25,7 @@ public class ChunkRenderManager {
         this.gridSize = renderDistance * 2 + 1;
         
         float minY = (float)client.world.getBottomY();
-        float maxY = (float)client.world.getTopY();
+        float maxY = (float)client.world.getHeight();
 
         BitSet newSet = new BitSet(gridSize * gridSize);
 
@@ -34,7 +35,8 @@ public class ChunkRenderManager {
                 double cZ = (minZ + z) << 4;
                 
                 // PERFORMANCE: Usamos isVisible com coordenadas puras em vez de criar um objeto Box
-                if (frustum.isVisible((double)cX, (double)minY, (double)cZ, (double)cX + 16, (double)maxY, (double)cZ + 16)) {
+                Box box = new Box(cX, minY, cZ, cX + 16, maxY, cZ + 16);
+                if (frustum.isVisible(box)) {
                     newSet.set(x + z * gridSize);
                 }
             }

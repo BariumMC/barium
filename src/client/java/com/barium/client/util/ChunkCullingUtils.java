@@ -14,7 +14,7 @@ public class ChunkCullingUtils {
         int nY = ourSectionOrigin.getY() + (direction.getOffsetY() * 16);
         int nZ = ourSectionOrigin.getZ() + (direction.getOffsetZ() * 16);
 
-        if (nY < world.getBottomY() || nY >= world.getTopY()) return false;
+        if (nY < world.getBottomY() || nY >= world.getHeight()) return false;
 
         Chunk chunk = world.getChunk(nX >> 4, nZ >> 4);
         if (!(chunk instanceof WorldChunk worldChunk)) return false;
