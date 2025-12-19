@@ -88,10 +88,6 @@ public class FloodFillVisibilityManager {
     }
 
     public void clear() {
-        this.visibleChunkKeys.set(new LongOpenHashSet());
-        this.lastUpdateTime = 0;
-    }
-}
         this.visibleSectionKeys.set(new LongOpenHashSet());
         this.lastUpdateTime = 0;
     }
