@@ -4,7 +4,7 @@ import com.barium.client.BariumClient;
 import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
 import it.unimi.dsi.fastutil.longs.LongSet;
 import net.minecraft.client.MinecraftClient;
-import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.ChunkPos;
 import net.minecraft.util.math.Direction;
 import net.minecraft.world.World;
 import java.util.ArrayDeque;
@@ -16,11 +16,11 @@ public class FloodFillVisibilityManager {
     private static final FloodFillVisibilityManager INSTANCE = new FloodFillVisibilityManager();
     public static FloodFillVisibilityManager getInstance() { return INSTANCE; }
 
-    private final AtomicReference<LongSet> visibleSectionKeys = new AtomicReference<>(new LongOpenHashSet());
+    private final AtomicReference<LongSet> visibleChunkKeys = new AtomicReference<>(new LongOpenHashSet());
     private Future<?> visibilityTask = null;
     private long lastUpdateTime = 0;
     // Intervalo reduzido para resposta mais rápida ao mover a câmera
-    private static final long UPDATE_INTERVAL_MS = 100; 
+    private static final long UPDATE_INTERVAL_MS = 50; // Reduzido para mais responsividade
 
     public void update(MinecraftClient client) {
         if (client.world == null || client.getCameraEntity() == null) return;
@@ -32,72 +32,66 @@ public class FloodFillVisibilityManager {
         
         lastUpdateTime = currentTime;
         // Captura a posição e o mundo na thread principal para segurança
-        BlockPos cameraBlockPos = client.getCameraEntity().getBlockPos();
+        ChunkPos cameraChunkPos = client.getCameraEntity().getChunkPos();
         World world = client.world;
         int renderDistance = client.options.getViewDistance().getValue();
 
-        visibilityTask = BariumClient.RENDER_THREAD_POOL.submit(() -> runFloodFill(world, cameraBlockPos, renderDistance));
+        visibilityTask = BariumClient.RENDER_THREAD_POOL.submit(() -> runFloodFill(world, cameraChunkPos, renderDistance));
     }
     
-    private void runFloodFill(World world, BlockPos startPos, int renderDistance) {
+    private void runFloodFill(World world, ChunkPos startPos, int renderDistance) {
         try {
-            LongSet sectionsToRender = new LongOpenHashSet();
-            Queue<BlockPos> queue = new ArrayDeque<>();
+            LongSet chunksToRender = new LongOpenHashSet();
+            Queue<ChunkPos> queue = new ArrayDeque<>();
 
-            // Começa da seção onde o jogador está
-            BlockPos startSectionPos = new BlockPos(
-                startPos.getX() >> 4,
-                startPos.getY() >> 4,
-                startPos.getZ() >> 4
-            );
-
-            sectionsToRender.add(startSectionPos.asLong());
-            queue.add(startSectionPos);
+            chunksToRender.add(startPos.toLong());
+            queue.add(startPos);
             
-            // Limite de iterações para evitar travamento da thread em mundos muito abertos
+            // Limite de iterações aumentado para cobrir mais chunks
             int iterations = 0;
-            int maxIterations = Math.min(5000, renderDistance * renderDistance * 2); 
+            int maxIterations = renderDistance * renderDistance * 4; // Aumentado para melhor cobertura
 
             while(!queue.isEmpty() && iterations < maxIterations) {
-                BlockPos currentSectionPos = queue.poll();
+                ChunkPos currentChunkPos = queue.poll();
                 iterations++;
                 
                 for(Direction direction : Direction.values()){
-                    BlockPos neighborSectionPos = currentSectionPos.add(direction.getVector());
+                    // Apenas direções horizontais para culling 2D simplificado
+                    if (direction.getAxis() == Direction.Axis.Y) continue;
+                    
+                    ChunkPos neighborChunkPos = new ChunkPos(currentChunkPos.x + direction.getOffsetX(), currentChunkPos.z + direction.getOffsetZ());
 
-                    if (!sectionsToRender.contains(neighborSectionPos.asLong())) {
-                        // Transforma posição de seção em posição de bloco real (origem da seção)
-                        BlockPos ourSectionOrigin = new BlockPos(currentSectionPos.getX() * 16, currentSectionPos.getY() * 16, currentSectionPos.getZ() * 16);
+                    if (!chunksToRender.contains(neighborChunkPos.toLong())) {
+                        // Verifica se podemos ver através da face (aproximação: sempre verdadeiro para direções horizontais, ou verificar opacidade)
+                        // Para otimização, sempre propagamos dentro da distância, assumindo que frustum cuida do resto
+                        long key = neighborChunkPos.toLong();
+                        chunksToRender.add(key);
                         
-                        // Se a face que leva ao vizinho NÃO é opaca, podemos ver através dela
-                        if (!ChunkCullingUtils.isNeighboringFaceOpaque(world, ourSectionOrigin, direction)) {
-                            long key = neighborSectionPos.asLong();
-                            sectionsToRender.add(key);
-                            
-                            // Limita a propagação para não carregar o mundo inteiro (distância de render ~renderDistance chunks)
-                            if (Math.abs(neighborSectionPos.getX() - startSectionPos.getX()) <= renderDistance &&
-                                Math.abs(neighborSectionPos.getZ() - startSectionPos.getZ()) <= renderDistance) {
-                                queue.add(neighborSectionPos);
-                            }
+                        // Limita a propagação para não carregar o mundo inteiro
+                        if (Math.abs(neighborChunkPos.x - startPos.x) <= renderDistance &&
+                            Math.abs(neighborChunkPos.z - startPos.z) <= renderDistance) {
+                            queue.add(neighborChunkPos);
                         }
                     }
                 }
             }
-            visibleSectionKeys.set(sectionsToRender);
+            visibleChunkKeys.set(chunksToRender);
         } catch (Exception e) {
-            // Em caso de erro (concurrent modification, etc), não crasha, apenas ignora
-            // O próximo tick tentará novamente
+            // Em caso de erro, não crasha
         }
     }
     
-    public boolean isSectionVisible(int sectionX, int sectionY, int sectionZ) {
-        LongSet visible = visibleSectionKeys.get();
-        // Se o conjunto estiver vazio (início do jogo), retorne TRUE para evitar tela infinita
+    public boolean isChunkVisible(int chunkX, int chunkZ) {
+        LongSet visible = visibleChunkKeys.get();
         if (visible == null || visible.isEmpty()) return true;
-        return visible.contains(BlockPos.asLong(sectionX, sectionY, sectionZ));
+        return visible.contains(ChunkPos.toLong(chunkX, chunkZ));
     }
 
     public void clear() {
+        this.visibleChunkKeys.set(new LongOpenHashSet());
+        this.lastUpdateTime = 0;
+    }
+}
         this.visibleSectionKeys.set(new LongOpenHashSet());
         this.lastUpdateTime = 0;
     }

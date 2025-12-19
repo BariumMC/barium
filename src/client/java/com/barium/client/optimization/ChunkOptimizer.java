@@ -2,6 +2,7 @@ package com.barium.client.optimization;
 
 import com.barium.config.BariumConfig;
 import net.minecraft.block.entity.BlockEntity;
+import net.minecraft.block.entity.ChestBlockEntity;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.render.Camera;
 import net.minecraft.util.hit.BlockHitResult;
@@ -22,6 +23,9 @@ public class ChunkOptimizer {
 
     public static boolean isBlockEntityOccluded(BlockEntity blockEntity, Camera camera) {
         if (!BariumConfig.C.ENABLE_BLOCK_ENTITY_OCCLUSION_CULLING) return false;
+
+        // Não aplicar oclusão em baús para evitar bugs de invisibilidade
+        if (blockEntity instanceof ChestBlockEntity) return false;
 
         World world = blockEntity.getWorld();
         if (world == null) return false;

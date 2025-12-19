@@ -39,11 +39,10 @@ public abstract class ChunkRenderMixin {
         }
         // -------------------------------------------------------
 
-        // 1. Flood Fill (Graph Culling)
+        // 1. Flood Fill (Graph Culling) - Melhorado para evitar bugs de carregamento lento
         if (BariumConfig.C.ENABLE_FLOOD_FILL_CULLING) {
-            int sectionY = origin.getY() >> 4;
-            // Verifica se a seção está marcada como visível no grafo
-            if (!FloodFillVisibilityManager.getInstance().isSectionVisible(chunkX, sectionY, chunkZ)) {
+            // Verifica se o chunk está marcado como visível no grafo
+            if (!FloodFillVisibilityManager.getInstance().isChunkVisible(chunkX, chunkZ)) {
                 cir.setReturnValue(false);
                 return;
             }
