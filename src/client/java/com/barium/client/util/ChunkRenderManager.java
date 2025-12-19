@@ -2,80 +2,55 @@ package com.barium.client.util;
 
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.render.Frustum;
-import net.minecraft.util.math.Box;
 import net.minecraft.util.math.ChunkPos;
-
 import java.util.BitSet;
 import java.util.concurrent.atomic.AtomicReference;
 
 public class ChunkRenderManager {
-
     private static final ChunkRenderManager INSTANCE = new ChunkRenderManager();
     public static ChunkRenderManager getInstance() { return INSTANCE; }
 
     private final AtomicReference<BitSet> chunksInFrustum = new AtomicReference<>(new BitSet());
-    private int minRenderChunkX = 0;
-    private int minRenderChunkZ = 0;
-    private int renderGridSize = 0;
+    private int minX, minZ, gridSize;
 
     public void calculateChunksToRender(MinecraftClient client, Frustum frustum) {
-        if (client.player == null || client.world == null || frustum == null) return;
+        if (client.player == null || client.world == null) return;
 
-        // Pega valores locais para evitar acessos repetidos
-        final int renderDistance = client.options.getViewDistance().getValue();
-        final ChunkPos playerPos = client.player.getChunkPos();
-        final int pX = playerPos.x;
-        final int pZ = playerPos.z;
+        int renderDistance = client.options.getViewDistance().getValue();
+        ChunkPos pPos = client.player.getChunkPos();
         
-        final int bottomY = client.world.getBottomY();
-        final int topY = client.world.getDimension().height() + bottomY;
-
-        this.minRenderChunkX = pX - renderDistance;
-        this.minRenderChunkZ = pZ - renderDistance;
-        this.renderGridSize = renderDistance * 2 + 1;
-
-        BitSet newChunksToRender = new BitSet(this.renderGridSize * this.renderGridSize);
-
-        // Otimização: Reutiliza uma única Box mutável se possível, ou calcula AABB
-        // Como Frustum precisa de Box, criamos a menor quantidade possível de lógica auxiliar
+        this.minX = pPos.x - renderDistance;
+        this.minZ = pPos.z - renderDistance;
+        this.gridSize = renderDistance * 2 + 1;
         
-        for (int x = 0; x < this.renderGridSize; x++) {
-            for (int z = 0; z < this.renderGridSize; z++) {
-                int absChunkX = this.minRenderChunkX + x;
-                int absChunkZ = this.minRenderChunkZ + z;
+        float minY = (float)client.world.getBottomY();
+        float maxY = (float)client.world.getTopY();
 
-                // Criação da Box otimizada
-                double minX = absChunkX * 16.0;
-                double minZ = absChunkZ * 16.0;
-                double maxX = minX + 16.0;
-                double maxZ = minZ + 16.0;
+        BitSet newSet = new BitSet(gridSize * gridSize);
 
-                // Verifica intersecção com o Frustum (AABB check rápido)
-                // AAPI do Frustum do Minecraft aceita AABB.
-                Box chunkBox = new Box(minX - 16, bottomY, minZ - 16, maxX + 16, topY, maxZ + 16); // Margin de 16 blocos
-                if (frustum.isVisible(chunkBox)) {
-                    newChunksToRender.set(x + z * this.renderGridSize);
+        for (int x = 0; x < gridSize; x++) {
+            double cX = (minX + x) << 4;
+            for (int z = 0; z < gridSize; z++) {
+                double cZ = (minZ + z) << 4;
+                
+                // PERFORMANCE: Usamos isVisible com coordenadas puras em vez de criar um objeto Box
+                if (frustum.isVisible((double)cX, (double)minY, (double)cZ, (double)cX + 16, (double)maxY, (double)cZ + 16)) {
+                    newSet.set(x + z * gridSize);
                 }
             }
         }
-        this.chunksInFrustum.set(newChunksToRender);
+        chunksInFrustum.set(newSet);
     }
 
     public boolean isChunkInFrustum(int chunkX, int chunkZ) {
-        // Check rápido de limites antes de acessar o BitSet
-        int localX = chunkX - this.minRenderChunkX;
-        int localZ = chunkZ - this.minRenderChunkZ;
-
-        if (localX < 0 || localX >= this.renderGridSize || localZ < 0 || localZ >= this.renderGridSize) {
-            return false;
-        }
-
-        BitSet visibleSet = this.chunksInFrustum.get();
-        return visibleSet != null && visibleSet.get(localX + localZ * this.renderGridSize);
+        int lx = chunkX - minX;
+        int lz = chunkZ - minZ;
+        if (lx < 0 || lx >= gridSize || lz < 0 || lz >= gridSize) return false;
+        return chunksInFrustum.get().get(lx + lz * gridSize);
     }
 
     public void clear() {
-        this.chunksInFrustum.set(new BitSet());
-        this.renderGridSize = 0;
+        chunksInFrustum.set(new BitSet());
+        gridSize = 0;
     }
 }
