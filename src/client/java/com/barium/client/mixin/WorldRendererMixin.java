@@ -11,7 +11,7 @@ import net.minecraft.client.render.Camera;
 import net.minecraft.client.render.Frustum;
 import net.minecraft.client.render.WorldRenderer;
 import net.minecraft.client.render.chunk.ChunkBuilder;
-import net.minecraft.client.render.state.WorldRenderState;
+import net.minecraft.client.render.entity.state.EntityRenderState;
 import net.minecraft.entity.Entity;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
@@ -48,9 +48,9 @@ public abstract class WorldRendererMixin {
         method = "fillEntityOutlineRenderStates",
         at = @At(
             value = "INVOKE",
-            target = "Lnet/minecraft/client/render/entity/state/EntityRenderState;hasOutline()Z",
-            require = 0
-        )
+            target = "Lnet/minecraft/client/render/entity/state/EntityRenderState;hasOutline()Z"
+        ),
+        require = 0
     )
     private boolean barium$detectGlowingEntities(EntityRenderState state) {
         boolean hasOutline = state.hasOutline();
