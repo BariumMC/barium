@@ -90,6 +90,10 @@ public class BariumModMenu implements ModMenuApi {
                     .setDefaultValue(defaults.CACHE_DEBUG_HUD).setTooltip(Text.translatable("tooltip.barium.cache_debug_hud")).setSaveConsumer(v -> BariumConfig.C.CACHE_DEBUG_HUD = v).build());
             mainCategory.addEntry(entryBuilder.startBooleanToggle(Text.translatable("option.barium.enable_tooltip_caching"), BariumConfig.C.ENABLE_TOOLTIP_CACHING)
                     .setDefaultValue(defaults.ENABLE_TOOLTIP_CACHING).setTooltip(Text.translatable("tooltip.barium.enable_tooltip_caching")).setSaveConsumer(v -> BariumConfig.C.ENABLE_TOOLTIP_CACHING = v).build());
+            mainCategory.addEntry(entryBuilder.startBooleanToggle(Text.translatable("option.barium.disable_entity_outlines"), BariumConfig.C.DISABLE_ENTITY_OUTLINES)
+                    .setDefaultValue(defaults.DISABLE_ENTITY_OUTLINES).setTooltip(Text.translatable("tooltip.barium.disable_entity_outlines")).setSaveConsumer(v -> BariumConfig.C.DISABLE_ENTITY_OUTLINES = v).build());
+            mainCategory.addEntry(entryBuilder.startBooleanToggle(Text.translatable("option.barium.enable_half_res_outlines"), BariumConfig.C.ENABLE_HALF_RESOLUTION_ENTITY_OUTLINES)
+                    .setDefaultValue(defaults.ENABLE_HALF_RESOLUTION_ENTITY_OUTLINES).setTooltip(Text.translatable("tooltip.barium.enable_half_res_outlines")).setSaveConsumer(v -> BariumConfig.C.ENABLE_HALF_RESOLUTION_ENTITY_OUTLINES = v).build());
             mainCategory.addEntry(entryBuilder.startBooleanToggle(Text.translatable("option.barium.enable_entity_tick_culling"), BariumConfig.C.ENABLE_ENTITY_TICK_CULLING)
                     .setDefaultValue(defaults.ENABLE_ENTITY_TICK_CULLING).setTooltip(Text.translatable("tooltip.barium.enable_entity_tick_culling")).setSaveConsumer(v -> BariumConfig.C.ENABLE_ENTITY_TICK_CULLING = v).build());
             mainCategory.addEntry(entryBuilder.startBooleanToggle(Text.translatable("option.barium.reduce_ambient_particles"), BariumConfig.C.REDUCE_AMBIENT_PARTICLES)

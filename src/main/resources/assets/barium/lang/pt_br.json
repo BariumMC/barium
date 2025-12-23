@@ -89,5 +89,10 @@
   "tooltip.barium.reduce_ambient_particles": "Reduz a frequência de efeitos de partículas do ambiente (fumaça de tocha, gotas d'água).",
 
   "option.barium.enable_hopper_culling": "Otimização de Funis",
-  "tooltip.barium.enable_hopper_culling": "Reduz a frequência de atualização de funis distantes. Grande economia de CPU para farms."
+  "tooltip.barium.enable_hopper_culling": "Reduz a frequência de atualização de funis distantes. Grande economia de CPU para farms.",
+
+  "option.barium.disable_entity_outlines": "Desativar Efeito de Brilho",
+  "tooltip.barium.disable_entity_outlines": "Desativa completamente o efeito de contorno brilhante.",
+  "option.barium.enable_half_res_outlines": "Efeito de Brilho em Meia Resolução",
+  "tooltip.barium.enable_half_res_outlines": "Renderiza o efeito de brilho em meia resolução para melhor desempenho."
 }

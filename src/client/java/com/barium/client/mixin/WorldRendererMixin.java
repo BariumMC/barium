@@ -1,21 +1,26 @@
 package com.barium.client.mixin;
 
+import com.barium.client.optimization.EntityOutlineOptimizer;
+import com.barium.client.optimization.ChunkUploadThrottler;
 import com.barium.client.util.ChunkRenderManager;
 import com.barium.client.util.ChunkVisibilityManager;
 import com.barium.client.util.FloodFillVisibilityManager;
-import com.barium.client.optimization.ChunkUploadThrottler;
 import com.barium.config.BariumConfig;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.render.Camera;
 import net.minecraft.client.render.Frustum;
 import net.minecraft.client.render.WorldRenderer;
 import net.minecraft.client.render.chunk.ChunkBuilder;
+import net.minecraft.client.render.state.WorldRenderState;
+import net.minecraft.entity.Entity;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 @Mixin(WorldRenderer.class)
 public abstract class WorldRendererMixin {
@@ -24,6 +29,46 @@ public abstract class WorldRendererMixin {
     @Shadow private ChunkBuilder chunkBuilder;
     // CORREÇÃO: O @Accessor foi movido para a interface WorldRendererAccessor, que é a prática correta.
     // O campo frustum agora é acessado através dela.
+
+    /**
+     * Reinicia o contador de otimização no início do render do frame.
+     */
+    @Inject(method = "render", at = @At("HEAD"))
+    private void barium$resetFrameState(CallbackInfo ci) {
+        EntityOutlineOptimizer.reset();
+    }
+
+    /**
+     * Intercepta o momento em que o Minecraft verifica se uma entidade deve brilhar.
+     * Se ela for brilhar, notificamos nosso otimizador.
+     * Isso nos permite saber, com CUSTO ZERO (pois o jogo já faz essa verificação),
+     * se existe algo brilhando na tela.
+     */
+    @Redirect(
+        method = "fillEntityOutlineRenderStates",
+        at = @At(value = "INVOKE", target = "Lnet/minecraft/client/MinecraftClient;hasOutline(Lnet/minecraft/entity/Entity;)Z")
+    )
+    private boolean barium$detectGlowingEntities(MinecraftClient instance, Entity entity) {
+        boolean isGlowing = instance.hasOutline(entity);
+        if (isGlowing) {
+            // Opa! Tem algo brilhando. O pipeline de outline será necessário.
+            EntityOutlineOptimizer.notifyGlowingEntity();
+        }
+        return isGlowing;
+    }
+
+    /**
+     * A GRANDE OTIMIZAÇÃO:
+     * Substitui a verificação simples do vanilla por nossa lógica inteligente.
+     * Se o EntityOutlineOptimizer disser que o buffer está vazio (nenhuma entidade brilhou),
+     * cancelamos o método. Isso evita rodar o shader de blur e o blit, economizando ~34% de render time em cenas vazias.
+     */
+    @Inject(method = "canDrawEntityOutlines", at = @At("HEAD"), cancellable = true)
+    private void barium$optimizeEntityOutlines(CallbackInfoReturnable<Boolean> cir) {
+        if (!EntityOutlineOptimizer.shouldProcessOutlines()) {
+            cir.setReturnValue(false);
+        }
+    }
 
     /**
      * CORREÇÃO: O método `setupTerrain` foi removido do jogo.

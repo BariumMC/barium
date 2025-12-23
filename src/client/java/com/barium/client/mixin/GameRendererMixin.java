@@ -1,7 +1,6 @@
-// --- Substitua o conteúdo em: src/client/java/com/barium/client/mixin/GameRendererMixin.java ---
 package com.barium.client.mixin;
 
-import com.barium.config.BariumConfig;
+import com.barium.client.optimization.EntityOutlineOptimizer;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gl.Framebuffer;
 import net.minecraft.client.render.GameRenderer;
@@ -14,23 +13,20 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 public class GameRendererMixin {
 
     /**
-     * Injeta no final do método onResized.
-     * Depois que o Minecraft redimensiona todos os seus framebuffers, nós interceptamos
-     * e forçamos o framebuffer do contorno da entidade para metade da resolução,
-     * se a opção estiver ativada.
+     * Aplica o Downsampling Inteligente (estilo DLSS/FSR simples).
+     * Redimensiona o buffer de outline para metade da resolução da tela.
+     * Como o efeito é um "Blur", a perda visual é quase zero, mas o custo
+     * de preenchimento de pixels (Fill Rate) cai em 75%.
      */
-    @Inject(
-        method = "onResized(II)V",
-        at = @At("RETURN")
-    )
+    @Inject(method = "onResized(II)V", at = @At("RETURN"))
     private void barium$forceResizeEntityOutlineFramebuffer(int width, int height, CallbackInfo ci) {
-        if (BariumConfig.C.ENABLE_HALF_RESOLUTION_ENTITY_OUTLINES) {
-            Framebuffer entityOutlinesFramebuffer = MinecraftClient.getInstance().worldRenderer.getEntityOutlinesFramebuffer();
-            
-            if (entityOutlinesFramebuffer != null) {
-                // CORREÇÃO: Removemos o terceiro argumento (MinecraftClient.IS_SYSTEM_MAC),
-                // pois o método resize agora só aceita a largura e a altura.
-                entityOutlinesFramebuffer.resize(width / 2, height / 2);
+        Framebuffer entityOutlinesFramebuffer = MinecraftClient.getInstance().worldRenderer.getEntityOutlinesFramebuffer();
+        
+        if (entityOutlinesFramebuffer != null) {
+            int divisor = EntityOutlineOptimizer.getResolutionDivisor();
+            if (divisor > 1) {
+                // Ex: Se a tela é 1920x1080, o buffer de brilho será 960x540.
+                entityOutlinesFramebuffer.resize(width / divisor, height / divisor);
             }
         }
     }
