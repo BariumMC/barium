@@ -44,19 +44,18 @@ public abstract class WorldRendererMixin {
      * Isso nos permite saber, com CUSTO ZERO (pois o jogo já faz essa verificação),
      * se existe algo brilhando na tela.
      */
-    // TODO: Refmap não está carregando, desativado temporariamente.
-    // @Redirect(
-    //     method = "fillEntityOutlineRenderStates",
-    //     at = @At(value = "INVOKE", target = "Lnet/minecraft/client/MinecraftClient;hasOutline(Lnet/minecraft/entity/Entity;)Z")
-    // )
-    // private boolean barium$detectGlowingEntities(MinecraftClient instance, Entity entity) {
-    //     boolean isGlowing = instance.hasOutline(entity);
-    //     if (isGlowing) {
-    //         // Opa! Tem algo brilhando. O pipeline de outline será necessário.
-    //         EntityOutlineOptimizer.notifyGlowingEntity();
-    //     }
-    //     return isGlowing;
-    // }
+    @Redirect(
+        method = "fillEntityOutlineRenderStates",
+        at = @At(value = "INVOKE", target = "Lnet/minecraft/entity/Entity;isGlowing()Z")
+    )
+    private boolean barium$detectGlowingEntities(Entity entity) {
+        boolean isGlowing = entity.isGlowing();
+        if (isGlowing) {
+            // Opa! Tem algo brilhando. O pipeline de outline será necessário.
+            EntityOutlineOptimizer.notifyGlowingEntity();
+        }
+        return isGlowing;
+    }
 
     /**
      * A GRANDE OTIMIZAÇÃO:
