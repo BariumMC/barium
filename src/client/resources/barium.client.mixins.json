@@ -25,5 +25,5 @@
 	"injectors": {
 		"defaultRequire": 1
 	},
-	"refmap": "client-barium-refmap.json"
+	"refmap": "client.barium-refmap.json"
 }
