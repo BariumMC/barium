@@ -46,15 +46,19 @@ public abstract class WorldRendererMixin {
      */
     @Redirect(
         method = "fillEntityOutlineRenderStates",
-        at = @At(value = "INVOKE", target = "Lnet/minecraft/entity/Entity;isGlowing()Z")
+        at = @At(
+            value = "INVOKE",
+            target = "Lnet/minecraft/client/render/entity/state/EntityRenderState;hasOutline()Z",
+            require = 0
+        )
     )
-    private boolean barium$detectGlowingEntities(Entity entity) {
-        boolean isGlowing = entity.isGlowing();
-        if (isGlowing) {
+    private boolean barium$detectGlowingEntities(EntityRenderState state) {
+        boolean hasOutline = state.hasOutline();
+        if (hasOutline) {
             // Opa! Tem algo brilhando. O pipeline de outline será necessário.
             EntityOutlineOptimizer.notifyGlowingEntity();
         }
-        return isGlowing;
+        return hasOutline;
     }
 
     /**
