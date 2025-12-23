@@ -11,48 +11,42 @@ public class ChunkRenderManager {
     private static final ChunkRenderManager INSTANCE = new ChunkRenderManager();
     public static ChunkRenderManager getInstance() { return INSTANCE; }
 
-    private final AtomicReference<BitSet> chunksInFrustum = new AtomicReference<>(new BitSet());
-    private int minX, minZ, gridSize;
+    private Frustum frustum;
 
-    public void calculateChunksToRender(MinecraftClient client, Frustum frustum) {
-        if (client.player == null || client.world == null) return;
-
-        int renderDistance = client.options.getViewDistance().getValue();
-        ChunkPos pPos = client.player.getChunkPos();
-        
-        this.minX = pPos.x - renderDistance;
-        this.minZ = pPos.z - renderDistance;
-        this.gridSize = renderDistance * 2 + 1;
-        
-        float minY = (float)client.world.getBottomY();
-        float maxY = (float)client.world.getHeight();
-
-        BitSet newSet = new BitSet(gridSize * gridSize);
-
-        for (int x = 0; x < gridSize; x++) {
-            double cX = (minX + x) << 4;
-            for (int z = 0; z < gridSize; z++) {
-                double cZ = (minZ + z) << 4;
-                
-                // PERFORMANCE: Usamos isVisible com coordenadas puras em vez de criar um objeto Box
-                Box box = new Box(cX, minY, cZ, cX + 16, maxY, cZ + 16);
-                if (frustum.isVisible(box)) {
-                    newSet.set(x + z * gridSize);
-                }
-            }
-        }
-        chunksInFrustum.set(newSet);
+    /**
+    Atualiza o frustum atual. Chamado a cada frame pelo WorldRendererMixin.
+    */
+    public void setFrustum(Frustum frustum) {
+        this.frustum = frustum;
     }
 
+    /**
+    Verifica se um chunk está dentro do Frustum (campo de visão) da câmera.
+    Esta implementação usa verificação direta de AABB (Box), que é extremamente rápida
+    e não depende de grades pré-calculadas que podem bugar com a render distance.
+    */
     public boolean isChunkInFrustum(int chunkX, int chunkZ) {
-        int lx = chunkX - minX;
-        int lz = chunkZ - minZ;
-        if (lx < 0 || lx >= gridSize || lz < 0 || lz >= gridSize) return false;
-        return chunksInFrustum.get().get(lx + lz * gridSize);
+        // Se o frustum ainda não foi definido (ex: login), renderiza tudo por segurança.
+        if (this.frustum == null) return true;
+        MinecraftClient client = MinecraftClient.getInstance();
+        if (client.world == null) return true;
+        // Calcula as coordenadas do mundo real para o chunk
+        double minX = chunkX * 16.0;
+        double minZ = chunkZ * 16.0;
+        double maxX = minX + 16.0;
+        double maxZ = minZ + 16.0;
+        // Obtém a altura do mundo para criar a caixa de colisão correta.
+        // Usar a altura total evita que chunks sumam ao olhar muito para cima ou para baixo.
+        double minY = client.world.getBottomY();
+        double maxY = client.world.getHeight();
+        // Verifica se a caixa (Box) do chunk intercepta o Frustum da câmera.
+        return frustum.isVisible(new Box(minX, minY, minZ, maxX, maxY, maxZ));
     }
-
+    // Método mantido para compatibilidade, mas agora apenas reseta o frustum.
+    public void calculateChunksToRender(MinecraftClient client, Frustum frustum) {
+        this.setFrustum(frustum);
+    }
     public void clear() {
-        chunksInFrustum.set(new BitSet());
-        gridSize = 0;
+        this.frustum = null;
     }
-}
+} 

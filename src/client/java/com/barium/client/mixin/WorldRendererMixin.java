@@ -74,39 +74,29 @@ public abstract class WorldRendererMixin {
         }
     }
 
-    /**
-     * CORREÇÃO: O método `setupTerrain` foi removido do jogo.
-     * A injeção foi movida para `tick()`, que é chamado a cada frame e é o local ideal
-     * para atualizar os managers de otimização.
-     */
-    @Inject(method = "tick(Lnet/minecraft/client/render/Camera;)V", at = @At("HEAD"))
-    private void barium$updateAllChunkManagers(Camera camera, CallbackInfo ci) {
-        Frustum frustum = ((WorldRendererAccessor) this).getFrustum();
-        if (client.world == null || client.player == null || frustum == null) {
-            FloodFillVisibilityManager.getInstance().clear();
-            ChunkVisibilityManager.getInstance().clear();
-            ChunkRenderManager.getInstance().clear();
-            return;
-        }
-
-        if (BariumConfig.C.ENABLE_FRUSTUM_CHUNK_CULLING) {
-            ChunkRenderManager.getInstance().calculateChunksToRender(this.client, frustum);
-        }
-
-        if (BariumConfig.C.ENABLE_FLOOD_FILL_CULLING) {
-            FloodFillVisibilityManager.getInstance().update(this.client);
-        }
-
-        if (BariumConfig.C.ENABLE_VISIBILITY_GRAPH_CULLING) {
-            ChunkVisibilityManager.getInstance().update(this.client);
-        }
-    }
 
     /**
      * Reseta contadores e prepara o chunk builder antes da fase de atualização de chunks.
      */
     @Inject(method = "updateChunks(Lnet/minecraft/client/render/Camera;)V", at = @At("HEAD"))
     private void barium$beforeUpdateChunks(Camera camera, CallbackInfo ci) {
+        // 1. Atualiza o Frustum Culling
+        if (BariumConfig.C.ENABLE_FRUSTUM_CHUNK_CULLING) {
+            Frustum frustum = ((WorldRendererAccessor) this).getFrustum();
+            ChunkRenderManager.getInstance().setFrustum(frustum);
+        }
+
+        // 2. Atualiza o Flood Fill (se ativado)
+        if (BariumConfig.C.ENABLE_FLOOD_FILL_CULLING) {
+            FloodFillVisibilityManager.getInstance().update(this.client);
+        }
+
+        // 3. Atualiza o Grafo de Visibilidade (se ativado)
+        if (BariumConfig.C.ENABLE_VISIBILITY_GRAPH_CULLING) {
+            ChunkVisibilityManager.getInstance().update(this.client);
+        }
+
+        // 4. Configurações padrão do ChunkBuilder e Throttling
         if (this.chunkBuilder != null) {
             this.chunkBuilder.setCameraPosition(camera.getPos());
         }
