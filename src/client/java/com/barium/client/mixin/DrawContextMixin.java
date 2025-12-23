@@ -3,7 +3,7 @@ package com.barium.client.mixin;
 import com.barium.config.BariumConfig;
 import net.minecraft.client.font.TextRenderer;
 import net.minecraft.client.gui.DrawContext;
-import net.minecraft.client.render.RenderPipeline;
+import com.mojang.blaze3d.pipeline.RenderPipeline;
 import net.minecraft.text.OrderedText;
 import net.minecraft.text.StringVisitable;
 import net.minecraft.text.Text;
@@ -20,7 +20,7 @@ public class DrawContextMixin {
      * Otimização: Evita desenhar retângulos (fill) que são invisíveis (alpha 0) ou sem tamanho.
      * Isso reduz drasticamente chamadas de desenho inúteis em GUIs complexas.
      */
-    @Inject(method = "fill(Lnet/minecraft/client/render/RenderPipeline;IIIII)V", at = @At("HEAD"), cancellable = true)
+    @Inject(method = "fill(Lcom/mojang/blaze3d/pipeline/RenderPipeline;IIIII)V", at = @At("HEAD"), cancellable = true)
     private void barium$cullInvisibleFills(RenderPipeline pipeline, int x1, int y1, int x2, int y2, int color, CallbackInfo ci) {
         if (!BariumConfig.C.ENABLE_GUI_OPTIMIZATION) return;
 
