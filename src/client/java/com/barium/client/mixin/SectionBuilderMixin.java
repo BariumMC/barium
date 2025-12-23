@@ -96,13 +96,6 @@ public class SectionBuilderMixin {
         int sampleCount = 0;
         double threshold = com.barium.config.BariumConfig.C.FOREST_SECTION_LEAF_THRESHOLD;
 
-        // Em modo LLVMpipe (software renderer), tornamos a amostragem mais grosseira e mais agressiva
-        // para reduzir o custo da verificação em CPUs lentos.
-        if (com.barium.config.BariumConfig.C.ENABLE_LLVMPIPE_MODE) {
-            step = 4; // amostra menos pontos
-            threshold = Math.max(0.55, threshold - 0.20);
-        }
-
         BlockPos.Mutable mutablePos = new BlockPos.Mutable();
         int startX = sectionPos.getMinX();
         int startY = sectionPos.getMinY();

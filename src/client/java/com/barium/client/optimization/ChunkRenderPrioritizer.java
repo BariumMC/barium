@@ -44,11 +44,6 @@ public class ChunkRenderPrioritizer {
         // Score final: Distância ponderada pelo ângulo.
         // Chunks na mira carregam primeiro, depois os periféricos, depois os de trás.
         double distanceMultiplier = 1.0;
-        if (com.barium.config.BariumConfig.C.ENABLE_LLVMPIPE_MODE) {
-            // Em software renderer, penalizamos mais chunks distantes para manter o foco
-            // em uploads locais e preservar FPS quando MAX_CHUNK_UPLOADS_PER_FRAME é alto.
-            distanceMultiplier = 1.0 + Math.min(2.0, (double)com.barium.config.BariumConfig.C.MAX_CHUNK_UPLOADS_PER_FRAME / 8.0);
-        }
 
         return distSq * priorityBias * distanceMultiplier;
     }

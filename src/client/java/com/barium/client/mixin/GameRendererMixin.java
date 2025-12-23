@@ -1,6 +1,9 @@
 package com.barium.client.mixin;
 
+import com.barium.BariumMod;
 import com.barium.client.optimization.EntityOutlineOptimizer;
+import com.barium.client.optimization.GuiRendererOptimizer;
+import com.barium.config.BariumConfig;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gl.Framebuffer;
 import net.minecraft.client.render.GameRenderer;
@@ -11,6 +14,28 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 @Mixin(GameRenderer.class)
 public class GameRendererMixin {
+
+    /**
+     * Otimização agressiva: Pré-render para GameRenderer.
+     * Pode forçar skip de certos elementos se necessário.
+     */
+    @Inject(method = "render", at = @At("HEAD"))
+    private void barium$preRenderOptimize(CallbackInfo ci) {
+        if (BariumConfig.C.ENABLE_AGGRESSIVE_OPTIMIZATION) {
+            // Força render de GUI no próximo frame se necessário
+            GuiRendererOptimizer.forceNextRender();
+        }
+    }
+
+    /**
+     * Otimização agressiva: Pós-render com métricas.
+     */
+    @Inject(method = "render", at = @At("TAIL"))
+    private void barium$postRenderOptimize(CallbackInfo ci) {
+        if (BariumConfig.C.ENABLE_AGGRESSIVE_OPTIMIZATION && BariumMod.LOGGER.isDebugEnabled()) {
+            // Log adicional se necessário
+        }
+    }
 
     /**
      * Aplica o Downsampling Inteligente (estilo DLSS/FSR simples).

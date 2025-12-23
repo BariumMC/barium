@@ -1,6 +1,9 @@
 {
   "title.barium.config": "Configurações do Barium",
 
+  "option.barium.enable_aggressive_optimization": "Otimização Agressiva",
+  "tooltip.barium.enable_aggressive_optimization": "Habilita otimizações muito agressivas que podem pular renderização de GUI quando inalterada. Use com cuidado pois pode causar glitches visuais.",
+
   "category.barium.main": "Otimizações",
   "category.barium.chunk_performance": "Desempenho de Chunks",
   "category.barium.culling_lod": "Otimização de Renderização (Culling & LOD)",
@@ -77,8 +80,8 @@
   
   "option.barium.disable_texture_animations": "Desativar Animações de Textura",
   "tooltip.barium.disable_texture_animations": "Congela texturas animadas (água, lava, portais) para economizar uma pequena quantidade de CPU.",
-  "option.barium.enable_llvmpipe_mode": "Modo LLVMpipe",
-  "tooltip.barium.enable_llvmpipe_mode": "Aplica presets conservadores otimizados para renderizadores de software (ex.: llvmpipe). Detectado automaticamente na inicialização, mas pode ser ajustado manualmente.",
+  "option.barium.enable_gui_optimization": "Otimização de GUI",
+  "tooltip.barium.enable_gui_optimization": "Otimiza o desempenho de renderização da GUI, similar às otimizações do Sodium. Reduz overhead ao renderizar elementos da interface.",
   "option.barium.mipmap_level_override": "Forçar Nível de Mipmap (0-4)",
   "tooltip.barium.mipmap_level_override": "Força uma resolução de textura menor. Valores maiores reduzem o uso de VRAM e podem melhorar o FPS com pacotes de textura, mas deixam as texturas borradas.\nRequer reinicialização. 0=Desligado.",
   

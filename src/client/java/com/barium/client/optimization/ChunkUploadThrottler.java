@@ -32,9 +32,6 @@ public class ChunkUploadThrottler {
 
         // Calcula limite de uploads baseado na configuração e no modo de render (llvmpipe reduz agressivamente)
         int allowedUploads = BariumConfig.C.MAX_CHUNK_UPLOADS_PER_FRAME;
-        if (BariumConfig.C.ENABLE_LLVMPIPE_MODE) {
-            allowedUploads = Math.max(1, allowedUploads / 4);
-        }
 
         // Aplica penalidade temporária se ultrapassamos o orçamento recentemente
         if (penaltyFrames > 0) {

@@ -1,6 +1,9 @@
 {
   "title.barium.config": "Barium Settings",
 
+  "option.barium.enable_aggressive_optimization": "Enable Aggressive Optimization",
+  "tooltip.barium.enable_aggressive_optimization": "Enables very aggressive optimizations that may skip GUI rendering when unchanged. Use with caution as it may cause visual glitches.",
+
   "category.barium.chunk_performance": "Chunk Performance",
   "category.barium.culling_lod": "Culling & LOD",
   "category.barium.particles": "Particles",
@@ -89,8 +92,8 @@
   "tooltip.barium.disable_translucent_rendering": "Disables rendering of all translucent blocks like glass and water.\nProvides a significant FPS boost at the cost of visuals.",
   "option.barium.disable_texture_animations": "Disable Texture Animations",
   "tooltip.barium.disable_texture_animations": "Freezes animated textures (water, lava, portals) to save a small amount of CPU.",
-  "option.barium.enable_llvmpipe_mode": "Enable LLVMpipe Mode",
-  "tooltip.barium.enable_llvmpipe_mode": "Applies conservative presets optimized for software renderers (like llvmpipe). Auto-detected on startup but can be toggled manually.",
+  "option.barium.enable_gui_optimization": "Enable GUI Optimization",
+  "tooltip.barium.enable_gui_optimization": "Optimizes GUI rendering performance, similar to Sodium's optimizations. Reduces overhead when rendering interface elements.",
   "option.barium.mipmap_level_override": "Mipmap Level Override (0-4)",
   "tooltip.barium.mipmap_level_override": "Forces a lower texture resolution. Higher values reduce VRAM usage and can improve FPS with resource packs, but make textures blurrier.\nRequires a game restart. 0=Off.",
 

@@ -49,7 +49,6 @@ public class EntityOutlineOptimizer {
      * 2 = Metade (Rápido e visualmente idêntico para blur)
      */
     public static int getResolutionDivisor() {
-        if (BariumConfig.C.ENABLE_LLVMPIPE_MODE) return 2;
         return BariumConfig.C.ENABLE_HALF_RESOLUTION_ENTITY_OUTLINES ? 2 : 1;
     }
 }

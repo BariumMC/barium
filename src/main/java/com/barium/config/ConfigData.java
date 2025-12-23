@@ -2,8 +2,8 @@ package com.barium.config;
 
 public class ConfigData {
 
-    // ================== Modo Específico de CPU ================== //
-    public boolean ENABLE_LLVMPIPE_MODE = false;
+    // ================== Modo Agressivo ================== //
+    public boolean ENABLE_AGGRESSIVE_OPTIMIZATION = false;
 
     // ================== Chunk Performance ================== //
     public boolean ENABLE_FRUSTUM_CHUNK_CULLING = true;
@@ -55,6 +55,7 @@ public class ConfigData {
     public int ADAPTIVE_FOG_TARGET_FPS = 58;
     public boolean DISABLE_TRANSLUCENT_RENDERING = false;
     public boolean DISABLE_TEXTURE_ANIMATIONS = false;
+    public boolean ENABLE_GUI_OPTIMIZATION = true;
     public int MIPMAP_LEVEL_OVERRIDE = 0;
 
     // ================== Game Logic & Tick Optimizations ================== //

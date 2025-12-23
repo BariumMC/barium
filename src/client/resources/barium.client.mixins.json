@@ -12,6 +12,7 @@
 		"DebugHudMixin",
 		"EntityRendererMixin",
 		"GameRendererMixin",
+		"GuiRendererMixin",
 		"HandledScreenMixin",
 		"ParticleAccessor",
 		"ParticleManagerMixin",
