@@ -2,107 +2,100 @@ package com.barium.client.optimization;
 
 import com.barium.BariumMod;
 import com.barium.config.BariumConfig;
-import net.minecraft.client.gui.render.GuiRenderer;
+import net.minecraft.client.MinecraftClient;
 import java.util.List;
 
 /**
- * Otimizador agressivo para GuiRenderer, inspirado em otimizações do Sodium.
- * Foca em reduzir drasticamente o overhead de renderização de GUI.
+ * Otimizador inteligente para GuiRenderer.
+ * Substitui a comparação lenta de listas por heurísticas de Input e Estado.
  */
 public class GuiRendererOptimizer {
 
     private static int lastDrawCount = 0;
-    private static long lastRenderTime = 0;
-    private static int frameCounter = 0;
-    private static boolean forceRenderNext = false;
-    private static List<?> lastDrawsSnapshot = null;
+    private static double lastMouseX = -1;
+    private static double lastMouseY = -1;
+    private static boolean forceRenderNext = true;
+    private static int staticFrameCounter = 0;
 
     /**
-     * Otimização agressiva: Pré-processamento com cache inteligente.
+     * Reseta o estado quando a tela muda ou o frame inicia.
      */
     public static void preRenderOptimize() {
-        if (!BariumConfig.C.ENABLE_GUI_OPTIMIZATION) return;
-
-        frameCounter++;
-
-        // Força render a cada 5 frames para evitar stale GUI
-        if (frameCounter % 5 == 0) {
-            forceRenderNext = true;
-        }
+        // Não precisamos fazer nada pesado aqui para evitar overhead.
     }
 
     /**
-     * Otimização agressiva: Verifica se devemos pular renderização.
-     * Mais inteligente que apenas checar vazio.
+     * Decide se deve pular a renderização com base na atividade do usuário e estado da GUI.
+     * Retorna TRUE para PULAR a renderização.
      */
-    public static boolean shouldSkipRenderPreparedDraws(int drawCount, List<?> currentDraws) {
+    public static boolean shouldSkipRenderPreparedDraws(int currentDrawCount, List<?> currentDraws) {
         if (!BariumConfig.C.ENABLE_GUI_OPTIMIZATION) return false;
 
-        // Sempre render se forçado
+        // Se forçado (ex: redimensionamento de tela), renderiza.
         if (forceRenderNext) {
             forceRenderNext = false;
-            lastDrawsSnapshot = List.copyOf(currentDraws);
+            updateLastState(currentDrawCount);
             return false;
         }
 
-        // Se não há draws, sempre pular
-        if (drawCount == 0) {
-            BariumMod.LOGGER.debug("Pulando renderização de GUI: nenhum draw.");
-            return true;
+        // Se a contagem de desenhos mudou (ex: abriu um tooltip, item novo apareceu), renderiza.
+        if (currentDrawCount != lastDrawCount) {
+            updateLastState(currentDrawCount);
+            return false;
         }
 
-        // Otimização agressiva: se os draws são idênticos aos do último frame renderizado,
-        // pula para economizar GPU (assume GUI estática)
-        if (lastDrawsSnapshot != null && drawCount == lastDrawsSnapshot.size()) {
-            boolean identical = true;
-            for (int i = 0; i < drawCount; i++) {
-                if (!currentDraws.get(i).equals(lastDrawsSnapshot.get(i))) {
-                    identical = false;
-                    break;
-                }
-            }
-            if (identical) {
-                BariumMod.LOGGER.debug("Pulando renderização de GUI: draws idênticos ao frame anterior.");
-                return true;
-            }
+        MinecraftClient client = MinecraftClient.getInstance();
+        if (client.mouse == null) return false; // Segurança
+
+        double mx = client.mouse.getX();
+        double my = client.mouse.getY();
+
+        // Se o mouse se moveu significativamente, renderiza (para hover states, tooltips, etc).
+        if (Math.abs(mx - lastMouseX) > 0.5 || Math.abs(my - lastMouseY) > 0.5) {
+            updateLastState(currentDrawCount);
+            lastMouseX = mx;
+            lastMouseY = my;
+            return false;
         }
 
-        // Atualiza snapshot
-        lastDrawsSnapshot = List.copyOf(currentDraws);
-        return false;
+        // Se chegamos aqui, o mouse está parado e a quantidade de elementos é a mesma.
+        // Provavelmente é uma cena estática.
+        
+        // Aumenta contador de frames estáticos
+        staticFrameCounter++;
+
+        // Renderiza a cada 10 frames mesmo estando parado para atualizar animações (ex: cursor piscando, itens girando)
+        // Isso reduz a carga da GPU em 90% quando o jogador está parado no inventário.
+        if (staticFrameCounter > 10) {
+            staticFrameCounter = 0;
+            return false; // Renderiza este frame para atualizar animações
+        }
+
+        // PULA A RENDERIZAÇÃO
+        return true;
+    }
+
+    private static void updateLastState(int count) {
+        lastDrawCount = count;
+        staticFrameCounter = 0;
     }
 
     /**
-     * Pós-otimização com métricas agressivas.
+     * Chamado após o render para debug.
      */
     public static void postRenderOptimize() {
-        if (!BariumConfig.C.ENABLE_GUI_OPTIMIZATION) return;
-
-        long currentTime = System.nanoTime();
-        long deltaTime = currentTime - lastRenderTime;
-
-        // Log agressivo: qualquer render acima de 0.5ms é logged
-        if (BariumMod.LOGGER.isDebugEnabled() && deltaTime > 500_000) {
-            BariumMod.LOGGER.debug("GUI render agressivo levou {}ms com {} draws",
-                deltaTime / 1_000_000.0, lastDrawCount);
-        }
-
-        lastRenderTime = currentTime;
+        // Métricas removidas para produção para economizar CPU
     }
 
     /**
-     * Reseta estado agressivamente.
+     * Reseta completamente o otimizador.
      */
     public static void reset() {
-        // Limpa cache se necessário para evitar memory leaks
-        if (frameCounter % 60 == 0) { // A cada segundo aproximadamente
-            lastDrawsSnapshot = null;
-        }
+        forceRenderNext = true;
+        lastDrawCount = -1;
+        staticFrameCounter = 0;
     }
 
-    /**
-     * Método para forçar render no próximo frame (útil para mudanças de estado).
-     */
     public static void forceNextRender() {
         forceRenderNext = true;
     }

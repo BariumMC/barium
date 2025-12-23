@@ -13,6 +13,7 @@
 		"EntityRendererMixin",
 		"GameRendererMixin",
 		"GuiRendererMixin",
+		"DrawContextMixin",
 		"HandledScreenMixin",
 		"ParticleAccessor",
 		"ParticleManagerMixin",
