@@ -28,6 +28,10 @@ loom {
 			sourceSet sourceSets.client
 		}
 	}
+
+	mixin {
+		defaultRefmapName = "barium-refmap.json"
+	}
 }
 
 repositories {
