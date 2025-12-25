@@ -14,6 +14,14 @@
 
   "option.barium.enable_frustum_culling": "Enable Frustum Culling",
   "tooltip.barium.enable_frustum_culling": "Prevents the game from rebuilding chunks that are not inside the camera's view.\nReduces CPU load when turning around.",
+  "option.barium.effective_render_distance": "Effective Render Distance (0 = disabled)",
+  "tooltip.barium.effective_render_distance": "Forces the engine to behave as if the render distance was this value. 0 disables this behavior.",
+  "option.barium.sparse_chunk_factor": "Sparse Chunk Factor",
+  "tooltip.barium.sparse_chunk_factor": "When >1, only renders chunks on a coarser grid (e.g. 2 = every other chunk). Helps simulate lower render distance while keeping broader coverage.",
+  "option.barium.detailed_render_radius": "Detailed Render Radius",
+  "tooltip.barium.detailed_render_radius": "Chunks inside this radius are updated at full rate; those outside are updated less frequently to save CPU.",
+  "option.barium.chunk_update_skip_rate": "Chunk Update Skip Rate",
+  "tooltip.barium.chunk_update_skip_rate": "How many ticks to skip between updates for distant chunks (1 = update every tick). Higher values reduce CPU usage but increase visual staleness.",
 
   "option.barium.enable_chunk_update_throttling": "Enable Chunk Update Throttling",
   "tooltip.barium.enable_chunk_update_throttling": "Limits how many chunks are sent to the GPU per frame.\nReduces stutters when moving or turning quickly.",

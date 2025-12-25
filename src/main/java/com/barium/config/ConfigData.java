@@ -23,6 +23,21 @@ public class ConfigData {
     public boolean ENABLE_DIRECTIONAL_CHUNK_LOADING = true;
     public int MAX_CHUNK_UPLOADS_PER_FRAME = 4;
 
+    // Force an effective render distance. If > 0, the engine behaves as if the player's
+    // render distance is this value (useful to simulate lower render distances for performance).
+    // 0 = disabled
+    public int EFFECTIVE_RENDER_DISTANCE = 0;
+
+    // Sparse chunk rendering factor. 1 = normal; 2 = render every 2nd chunk; etc.
+    // Use this to make a higher render distance behave like fewer chunks visually.
+    public int SPARSE_CHUNK_FACTOR = 1;
+
+    // Number of chunks around the player which are kept at full update rate.
+    // Chunks outside this radius are updated less frequently according to CHUNK_UPDATE_SKIP_RATE.
+    public int DETAILED_RENDER_RADIUS = 2;
+    // Update only once every N ticks for chunks outside the detailed radius. 1 = every tick (no skipping)
+    public int CHUNK_UPDATE_SKIP_RATE = 3;
+
     // ================== Culling & Level of Detail (LOD) ================== //
     public boolean ENABLE_ENTITY_CULLING = true;
     public double MAX_ENTITY_RENDER_DISTANCE_SQ = 72 * 72;

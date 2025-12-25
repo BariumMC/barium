@@ -51,15 +51,28 @@ public class ChunkRenderManager {
         boolean visible = frustum.isVisible(new Box(minX, minY, minZ, maxX, maxY, maxZ));
         if (visible) return true;
 
-        // Fallback: assegura que chunks dentro da render distance não sejam erroneamente descartados
+        // Fallback: assegura que chunks dentro da (possivelmente) efetiva render distance não sejam descartados
         int renderDistance = client.options.getViewDistance().getValue();
+        int effective = com.barium.config.BariumConfig.C.EFFECTIVE_RENDER_DISTANCE > 0 ? com.barium.config.BariumConfig.C.EFFECTIVE_RENDER_DISTANCE : renderDistance;
         int playerChunkX = client.player.getChunkPos().x;
         int playerChunkZ = client.player.getChunkPos().z;
-        if (Math.abs(chunkX - playerChunkX) <= renderDistance && Math.abs(chunkZ - playerChunkZ) <= renderDistance) {
-            return true;
+        int dx = Math.abs(chunkX - playerChunkX);
+        int dz = Math.abs(chunkZ - playerChunkZ);
+
+        if (dx <= effective && dz <= effective) {
+            // Sempre mantém próximos ao jogador visíveis (raio 2)
+            if (dx <= 2 && dz <= 2) return true;
+
+            int sparse = Math.max(1, com.barium.config.BariumConfig.C.SPARSE_CHUNK_FACTOR);
+            if (sparse <= 1) return true;
+
+            // Renderiza apenas chunks alinhados à grade do fator esparso
+            if (Math.floorMod(chunkX - playerChunkX, sparse) == 0 && Math.floorMod(chunkZ - playerChunkZ, sparse) == 0) {
+                return true;
+            }
         }
 
-        return false;
+        return false; 
     }
     // Método mantido para compatibilidade, mas agora apenas reseta o frustum.
     public void calculateChunksToRender(MinecraftClient client, Frustum frustum) {

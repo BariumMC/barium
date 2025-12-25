@@ -38,6 +38,20 @@ public class BariumModMenu implements ModMenuApi {
             
             mainCategory.addEntry(entryBuilder.startBooleanToggle(Text.translatable("option.barium.enable_frustum_culling"), BariumConfig.C.ENABLE_FRUSTUM_CHUNK_CULLING)
                     .setDefaultValue(defaults.ENABLE_FRUSTUM_CHUNK_CULLING).setTooltip(Text.translatable("tooltip.barium.enable_frustum_culling")).setSaveConsumer(v -> BariumConfig.C.ENABLE_FRUSTUM_CHUNK_CULLING = v).build());
+
+            // New: force effective render distance (0=disabled)
+            mainCategory.addEntry(entryBuilder.startIntSlider(Text.translatable("option.barium.effective_render_distance"), BariumConfig.C.EFFECTIVE_RENDER_DISTANCE, 0, 32)
+                    .setDefaultValue(defaults.EFFECTIVE_RENDER_DISTANCE).setTooltip(Text.translatable("tooltip.barium.effective_render_distance")).setSaveConsumer(v -> BariumConfig.C.EFFECTIVE_RENDER_DISTANCE = v).build());
+
+            // New: sparse chunk rendering factor (1 = normal, 2 = every other chunk)
+            mainCategory.addEntry(entryBuilder.startIntSlider(Text.translatable("option.barium.sparse_chunk_factor"), BariumConfig.C.SPARSE_CHUNK_FACTOR, 1, 8)
+                    .setDefaultValue(defaults.SPARSE_CHUNK_FACTOR).setTooltip(Text.translatable("tooltip.barium.sparse_chunk_factor")).setSaveConsumer(v -> BariumConfig.C.SPARSE_CHUNK_FACTOR = v).build());
+
+            // New: detailed render radius and skip rate to present low-detail distant chunks
+            mainCategory.addEntry(entryBuilder.startIntSlider(Text.translatable("option.barium.detailed_render_radius"), BariumConfig.C.DETAILED_RENDER_RADIUS, 0, 16)
+                    .setDefaultValue(defaults.DETAILED_RENDER_RADIUS).setTooltip(Text.translatable("tooltip.barium.detailed_render_radius")).setSaveConsumer(v -> BariumConfig.C.DETAILED_RENDER_RADIUS = v).build());
+            mainCategory.addEntry(entryBuilder.startIntSlider(Text.translatable("option.barium.chunk_update_skip_rate"), BariumConfig.C.CHUNK_UPDATE_SKIP_RATE, 1, 20)
+                    .setDefaultValue(defaults.CHUNK_UPDATE_SKIP_RATE).setTooltip(Text.translatable("tooltip.barium.chunk_update_skip_rate")).setSaveConsumer(v -> BariumConfig.C.CHUNK_UPDATE_SKIP_RATE = v).build());
             mainCategory.addEntry(entryBuilder.startBooleanToggle(Text.translatable("option.barium.enable_flood_fill_culling"), BariumConfig.C.ENABLE_FLOOD_FILL_CULLING)
                     .setDefaultValue(defaults.ENABLE_FLOOD_FILL_CULLING).setTooltip(Text.translatable("tooltip.barium.enable_flood_fill_culling")).setSaveConsumer(v -> BariumConfig.C.ENABLE_FLOOD_FILL_CULLING = v).build());
             mainCategory.addEntry(entryBuilder.startBooleanToggle(Text.translatable("option.barium.enable_occlusion_culling"), BariumConfig.C.ENABLE_OCCLUSION_CULLING)

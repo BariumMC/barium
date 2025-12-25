@@ -43,6 +43,35 @@ public abstract class ChunkRenderMixin {
         if (BariumConfig.C.ENABLE_FLOOD_FILL_CULLING) {
             // Verifica se o chunk está marcado como visível no grafo
             if (!FloodFillVisibilityManager.getInstance().isChunkVisible(chunkX, chunkZ)) {
+                // Em vez de bloquear totalmente, usamos uma estratégia de atualização esparsa
+                int playerX = pX;
+                int playerZ = pZ;
+                int dx = Math.abs(playerX - chunkX);
+                int dz = Math.abs(playerZ - chunkZ);
+
+                int detailed = com.barium.config.BariumConfig.C.DETAILED_RENDER_RADIUS;
+                int skipRate = Math.max(1, com.barium.config.BariumConfig.C.CHUNK_UPDATE_SKIP_RATE);
+                int sparse = Math.max(1, com.barium.config.BariumConfig.C.SPARSE_CHUNK_FACTOR);
+
+                // Mantém chunks muito próximos (raio 2) sempre atualizados para evitar problemas de loading
+                if (dx <= 2 && dz <= 2) {
+                    return; // deixa o método original rodar (retorna true)
+                }
+
+                // Se estiver dentro do raio detalhado, permitimos atualização normal
+                if (dx <= detailed && dz <= detailed) {
+                    return;
+                }
+
+                // Para chunks fora do raio detalhado: permitimos builds ocasionais baseados no tempo
+                long worldTime = client.world.getTime();
+                boolean onSparseGrid = (Math.floorMod(chunkX - playerX, sparse) == 0 && Math.floorMod(chunkZ - playerZ, sparse) == 0);
+
+                if (onSparseGrid && (worldTime % skipRate == 0)) {
+                    return; // permite rebuild ocasional
+                }
+
+                // Caso contrário, bloqueamos a construção por agora (mantendo o último estado renderizado)
                 cir.setReturnValue(false);
                 return;
             }
@@ -51,6 +80,31 @@ public abstract class ChunkRenderMixin {
         // 2. Frustum Culling (Campo de Visão)
         if (BariumConfig.C.ENABLE_FRUSTUM_CHUNK_CULLING) {
             if (!ChunkRenderManager.getInstance().isChunkInFrustum(chunkX, chunkZ)) {
+                // Aplica lógica similar ao FloodFill: não bloqueia totalmente, apenas degrada atualização
+                int playerX = pX;
+                int playerZ = pZ;
+                int dx = Math.abs(playerX - chunkX);
+                int dz = Math.abs(playerZ - chunkZ);
+
+                int detailed = com.barium.config.BariumConfig.C.DETAILED_RENDER_RADIUS;
+                int skipRate = Math.max(1, com.barium.config.BariumConfig.C.CHUNK_UPDATE_SKIP_RATE);
+                int sparse = Math.max(1, com.barium.config.BariumConfig.C.SPARSE_CHUNK_FACTOR);
+
+                if (dx <= 2 && dz <= 2) {
+                    return;
+                }
+
+                if (dx <= detailed && dz <= detailed) {
+                    return;
+                }
+
+                long worldTime = client.world.getTime();
+                boolean onSparseGrid = (Math.floorMod(chunkX - playerX, sparse) == 0 && Math.floorMod(chunkZ - playerZ, sparse) == 0);
+
+                if (onSparseGrid && (worldTime % skipRate == 0)) {
+                    return;
+                }
+
                 cir.setReturnValue(false);
                 return;
             }

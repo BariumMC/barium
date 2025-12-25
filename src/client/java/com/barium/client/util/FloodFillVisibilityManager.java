@@ -44,12 +44,15 @@ public class FloodFillVisibilityManager {
             LongSet chunksToRender = new LongOpenHashSet();
             Queue<ChunkPos> queue = new ArrayDeque<>();
 
+            int effective = com.barium.config.BariumConfig.C.EFFECTIVE_RENDER_DISTANCE > 0 ? com.barium.config.BariumConfig.C.EFFECTIVE_RENDER_DISTANCE : renderDistance;
+            int sparse = Math.max(1, com.barium.config.BariumConfig.C.SPARSE_CHUNK_FACTOR);
+
             chunksToRender.add(startPos.toLong());
             queue.add(startPos);
             
-            // Limite de iterações aumentado para cobrir mais chunks
+            // Limite de iterações defensivo baseado na efetiva distância
             int iterations = 0;
-            int maxIterations = renderDistance * renderDistance * 4; // Aumentado para melhor cobertura
+            int maxIterations = (effective * effective) * 4;
 
             while(!queue.isEmpty() && iterations < maxIterations) {
                 ChunkPos currentChunkPos = queue.poll();
@@ -62,15 +65,18 @@ public class FloodFillVisibilityManager {
                     ChunkPos neighborChunkPos = new ChunkPos(currentChunkPos.x + direction.getOffsetX(), currentChunkPos.z + direction.getOffsetZ());
 
                     if (!chunksToRender.contains(neighborChunkPos.toLong())) {
-                        // Verifica se podemos ver através da face (aproximação: sempre verdadeiro para direções horizontais, ou verificar opacidade)
-                        // Para otimização, sempre propagamos dentro da distância, assumindo que frustum cuida do resto
                         long key = neighborChunkPos.toLong();
-                        chunksToRender.add(key);
-                        
-                        // Limita a propagação para não carregar o mundo inteiro
-                        if (Math.abs(neighborChunkPos.x - startPos.x) <= renderDistance &&
-                            Math.abs(neighborChunkPos.z - startPos.z) <= renderDistance) {
-                            queue.add(neighborChunkPos);
+
+                        int dx = Math.abs(neighborChunkPos.x - startPos.x);
+                        int dz = Math.abs(neighborChunkPos.z - startPos.z);
+
+                        // Limita a propagação para não carregar o mundo inteiro usando a efetiva distância
+                        if (dx <= effective && dz <= effective) {
+                            // Se houver fator esparso, só propagamos em uma grade espaçada para reduzir carga
+                            if (sparse <= 1 || (Math.floorMod(neighborChunkPos.x - startPos.x, sparse) == 0 && Math.floorMod(neighborChunkPos.z - startPos.z, sparse) == 0)) {
+                                chunksToRender.add(key);
+                                queue.add(neighborChunkPos);
+                            }
                         }
                     }
                 }

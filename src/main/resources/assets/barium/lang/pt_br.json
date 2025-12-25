@@ -15,6 +15,14 @@
 
   "option.barium.enable_frustum_culling": "Otimização por Frustum",
   "tooltip.barium.enable_frustum_culling": "Impede que o jogo reconstrua chunks que não estão no campo de visão da câmera. Reduz a carga na CPU ao virar a visão.",
+  "option.barium.effective_render_distance": "Distância de Renderização Efetiva (0 = desativado)",
+  "tooltip.barium.effective_render_distance": "Faz com que o motor se comporte como se a render distance fosse esse valor. 0 desativa.",
+  "option.barium.sparse_chunk_factor": "Fator de Chunk Esparso",
+  "tooltip.barium.sparse_chunk_factor": "Quando >1, renderiza apenas chunks em uma grade mais espaçada (ex: 2 = cada outro chunk). Ajuda a simular distância menor mantendo cobertura ampla.",
+  "option.barium.detailed_render_radius": "Raio de Renderização Detalhada",
+  "tooltip.barium.detailed_render_radius": "Chunks dentro desse raio são atualizados na taxa total; os de fora são atualizados com menos frequência para poupar CPU.",
+  "option.barium.chunk_update_skip_rate": "Taxa de Skip de Atualização de Chunks",
+  "tooltip.barium.chunk_update_skip_rate": "Quantos ticks pular entre atualizações de chunks distantes (1 = atualiza todo tick). Valores maiores reduzem CPU, mas aumentam 'stale' visual." 
 
   "option.barium.enable_visibility_graph_culling": "Otimização por Visibilidade (Experimental)",
   "tooltip.barium.enable_visibility_graph_culling": "Usa um sistema agressivo de raios para renderizar apenas chunks que são realmente visíveis.",
