@@ -20,10 +20,14 @@ public abstract class GuiRendererMixin {
         GuiRendererOptimizer.preRenderOptimize();
     }
 
+    /**
+     * Otimização Crítica: renderPreparedDraws consome muita CPU iterando listas.
+     * Se o otimizador detectar que a tela está estática, cancelamos totalmente.
+     */
     @Inject(method = "renderPreparedDraws", at = @At("HEAD"), cancellable = true)
     private void barium$optimizeRenderPreparedDraws(CallbackInfo ci) {
-        // Passa a lista e o tamanho para o otimizador inteligente
-        if (GuiRendererOptimizer.shouldSkipRenderPreparedDraws(draws.size(), draws)) {
+        // Passa apenas o tamanho (O(1)) para evitar verificações profundas na lista
+        if (GuiRendererOptimizer.shouldSkipRenderPreparedDraws(draws.size())) {
             ci.cancel();
         }
     }
@@ -31,10 +35,5 @@ public abstract class GuiRendererMixin {
     @Inject(method = "render", at = @At("TAIL"))
     private void barium$postRenderOptimize(CallbackInfo ci) {
         GuiRendererOptimizer.postRenderOptimize();
-    }
-
-    @Inject(method = "incrementFrame", at = @At("HEAD"))
-    private void barium$resetOptimizer(CallbackInfo ci) {
-        // Reseta estados baseados em frame se necessário (atualmente tratado internamente)
     }
 }

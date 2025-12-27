@@ -1,14 +1,9 @@
 package com.barium.client.optimization;
 
-import com.barium.BariumMod;
 import com.barium.config.BariumConfig;
 import net.minecraft.client.MinecraftClient;
 import java.util.List;
 
-/**
- * Otimizador inteligente para GuiRenderer.
- * Substitui a comparação lenta de listas por heurísticas de Input e Estado.
- */
 public class GuiRendererOptimizer {
 
     private static int lastDrawCount = 0;
@@ -16,41 +11,44 @@ public class GuiRendererOptimizer {
     private static double lastMouseY = -1;
     private static boolean forceRenderNext = true;
     private static int staticFrameCounter = 0;
+    
+    // Configurações de Throttling
+    // Se a GUI estiver estática, renderiza apenas 1 a cada X frames
+    private static final int STATIC_GUI_UPDATE_RATE = 3; 
 
-    /**
-     * Reseta o estado quando a tela muda ou o frame inicia.
-     */
     public static void preRenderOptimize() {
-        // Não precisamos fazer nada pesado aqui para evitar overhead.
+        // Nada pesado aqui
     }
 
     /**
-     * Decide se deve pular a renderização com base na atividade do usuário e estado da GUI.
-     * Retorna TRUE para PULAR a renderização.
+     * Decide se deve pular a renderização do frame de GUI atual.
+     * @param currentDrawCount O tamanho da lista de draws (O(1)).
+     * @return true se devemos pular (cancelar) a renderização.
      */
-    public static boolean shouldSkipRenderPreparedDraws(int currentDrawCount, List<?> currentDraws) {
+    public static boolean shouldSkipRenderPreparedDraws(int currentDrawCount) {
         if (!BariumConfig.C.ENABLE_GUI_OPTIMIZATION) return false;
 
-        // Se forçado (ex: redimensionamento de tela), renderiza.
+        // Sempre renderiza se forçado (ex: redimensionamento, abertura de tela)
         if (forceRenderNext) {
             forceRenderNext = false;
             updateLastState(currentDrawCount);
             return false;
         }
 
-        // Se a contagem de desenhos mudou (ex: abriu um tooltip, item novo apareceu), renderiza.
+        // Se a quantidade de elementos mudou, renderiza imediatamente.
         if (currentDrawCount != lastDrawCount) {
             updateLastState(currentDrawCount);
             return false;
         }
 
         MinecraftClient client = MinecraftClient.getInstance();
-        if (client.mouse == null) return false; // Segurança
+        if (client.mouse == null) return false;
 
         double mx = client.mouse.getX();
         double my = client.mouse.getY();
 
-        // Se o mouse se moveu significativamente, renderiza (para hover states, tooltips, etc).
+        // Se o mouse se moveu, renderiza (para tooltips, hovers, slots).
+        // Usamos uma tolerância pequena para evitar jitter de mouse de alta DPI.
         if (Math.abs(mx - lastMouseX) > 0.5 || Math.abs(my - lastMouseY) > 0.5) {
             updateLastState(currentDrawCount);
             lastMouseX = mx;
@@ -58,38 +56,34 @@ public class GuiRendererOptimizer {
             return false;
         }
 
+        // --- LÓGICA DE GUI ESTÁTICA ---
         // Se chegamos aqui, o mouse está parado e a quantidade de elementos é a mesma.
-        // Provavelmente é uma cena estática.
-        
-        // Aumenta contador de frames estáticos
+        // Provavelmente é um inventário aberto sem interação.
+
         staticFrameCounter++;
 
-        // Renderiza a cada 10 frames mesmo estando parado para atualizar animações (ex: cursor piscando, itens girando)
-        // Isso reduz a carga da GPU em 90% quando o jogador está parado no inventário.
-        if (staticFrameCounter > 10) {
-            staticFrameCounter = 0;
-            return false; // Renderiza este frame para atualizar animações
+        // No modo agressivo, pulamos mais frames quando estático
+        int rate = BariumConfig.C.ENABLE_AGGRESSIVE_OPTIMIZATION ? STATIC_GUI_UPDATE_RATE * 2 : STATIC_GUI_UPDATE_RATE;
+
+        // Se ainda não atingimos o limite de frames para pular, CANCELA a renderização.
+        if (staticFrameCounter < rate) {
+            return true; // PULA! Economiza CPU.
         }
 
-        // PULA A RENDERIZAÇÃO
-        return true;
+        // Hora de desenhar um frame para atualizar animações (glint, cursor piscando).
+        staticFrameCounter = 0;
+        return false;
     }
 
     private static void updateLastState(int count) {
         lastDrawCount = count;
+        // Reseta o contador para garantir fluidez imediata após uma interação
         staticFrameCounter = 0;
     }
 
-    /**
-     * Chamado após o render para debug.
-     */
     public static void postRenderOptimize() {
-        // Métricas removidas para produção para economizar CPU
     }
 
-    /**
-     * Reseta completamente o otimizador.
-     */
     public static void reset() {
         forceRenderNext = true;
         lastDrawCount = -1;
