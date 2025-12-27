@@ -13,30 +13,26 @@ public class ConfigData {
     public boolean ENABLE_ADVANCED_SECTION_CULLING = false;
     public boolean ENABLE_ENCLOSED_SECTION_CULLING = false;
     public boolean ENABLE_EMPTY_CHUNK_SECTION_CULLING = true;
+    
     // ================== Forest / Tree Optimizations ================== //
-    // Quando ativado, se uma seção de chunk contiver principalmente folhas,
-    // ela será ignorada na construção para reduzir o custo de renderização em florestas densas.
     public boolean ENABLE_FOREST_SECTION_CULLING = true;
-    // Percentual (0.0 - 1.0) da amostra que precisa ser folhas para considerar a seção "floresta".
     public double FOREST_SECTION_LEAF_THRESHOLD = 0.85;
     public boolean ENABLE_CHUNK_UPDATE_THROTTLING = true;
     public boolean ENABLE_DIRECTIONAL_CHUNK_LOADING = true;
     public int MAX_CHUNK_UPLOADS_PER_FRAME = 4;
 
-    // Force an effective render distance. If > 0, the engine behaves as if the player's
-    // render distance is this value (useful to simulate lower render distances for performance).
-    // 0 = disabled
+    // Force an effective render distance (0 = disabled)
     public int EFFECTIVE_RENDER_DISTANCE = 0;
-
-    // Sparse chunk rendering factor. 1 = normal; 2 = render every 2nd chunk; etc.
-    // Use this to make a higher render distance behave like fewer chunks visually.
     public int SPARSE_CHUNK_FACTOR = 1;
 
-    // Number of chunks around the player which are kept at full update rate.
-    // Chunks outside this radius are updated less frequently according to CHUNK_UPDATE_SKIP_RATE.
     public int DETAILED_RENDER_RADIUS = 2;
-    // Update only once every N ticks for chunks outside the detailed radius. 1 = every tick (no skipping)
     public int CHUNK_UPDATE_SKIP_RATE = 3;
+
+    // ================== GEOMETRY LOD (DRASTIC OPTIMIZATION) ================== //
+    // Adicionadas para corrigir o erro de compilação
+    public boolean ENABLE_DISTANT_GEOMETRY_CULLING = true;
+    public int DISTANT_GEOMETRY_CULL_DISTANCE = 32; 
+    public boolean DISABLE_DISTANT_TRANSLUCENCY_SORTING = true;
 
     // ================== Culling & Level of Detail (LOD) ================== //
     public boolean ENABLE_ENTITY_CULLING = true;
