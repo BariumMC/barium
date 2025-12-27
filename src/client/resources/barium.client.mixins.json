@@ -11,7 +11,6 @@
 		"ClientWorldMixin",
 		"DebugHudMixin",
 		"EntityRendererMixin",
-		"EntityRenderDispatcherMixin",
 		"GameRendererMixin",
 		"GuiRendererMixin",
 		"DrawContextMixin",
