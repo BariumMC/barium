@@ -21,15 +21,13 @@ public class ConfigData {
     public boolean ENABLE_DIRECTIONAL_CHUNK_LOADING = true;
     public int MAX_CHUNK_UPLOADS_PER_FRAME = 4;
 
-    // Force an effective render distance (0 = disabled)
+    // Render Distance
     public int EFFECTIVE_RENDER_DISTANCE = 0;
     public int SPARSE_CHUNK_FACTOR = 1;
-
     public int DETAILED_RENDER_RADIUS = 2;
     public int CHUNK_UPDATE_SKIP_RATE = 3;
 
-    // ================== GEOMETRY LOD (DRASTIC OPTIMIZATION) ================== //
-    // Adicionadas para corrigir o erro de compilação
+    // ================== GEOMETRY LOD (CRÍTICO PARA CORRIGIR ERROS) ================== //
     public boolean ENABLE_DISTANT_GEOMETRY_CULLING = true;
     public int DISTANT_GEOMETRY_CULL_DISTANCE = 32; 
     public boolean DISABLE_DISTANT_TRANSLUCENCY_SORTING = true;
