@@ -15,18 +15,15 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 @Mixin(GameRenderer.class)
 public class GameRendererMixin {
 
-    /**
-     * Otimização agressiva: Pré-render para GameRenderer.
-     * Pode forçar skip de certos elementos se necessário.
-     */
     @Inject(method = "render", at = @At("HEAD"))
     private void barium$preRenderOptimize(CallbackInfo ci) {
+        // ADIÇÃO: Atualiza o status da rotação no início do frame
+        CameraRotationTracker.update();
+
         if (BariumConfig.C.ENABLE_AGGRESSIVE_OPTIMIZATION) {
-            // Força render de GUI no próximo frame se necessário
             GuiRendererOptimizer.forceNextRender();
         }
     }
-
     /**
      * Otimização agressiva: Pós-render com métricas.
      */

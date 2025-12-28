@@ -18,6 +18,11 @@ public class ConfigData {
     public boolean ENABLE_FOREST_SECTION_CULLING = true;
     public double FOREST_SECTION_LEAF_THRESHOLD = 0.85;
     public boolean ENABLE_CHUNK_UPDATE_THROTTLING = true;
+    public boolean ENABLE_ROTATION_THROTTLING = true; // Ativa a otimização de câmera
+    public double ROTATION_THRESHOLD = 2.5; // Sensibilidade do movimento (graus por frame)
+    
+    public boolean ENABLE_DIRECTIONAL_CHUNK_LOADING = true;
+    public int MAX_CHUNK_UPLOADS_PER_FRAME = 4;
     public boolean ENABLE_DIRECTIONAL_CHUNK_LOADING = true;
     public int MAX_CHUNK_UPLOADS_PER_FRAME = 4;
 

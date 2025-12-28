@@ -79,6 +79,13 @@ public class BariumModMenu implements ModMenuApi {
 
             mainCategory.addEntry(entryBuilder.startTextDescription(Text.literal(" ")).build());
 
+            mainCategory.addEntry(entryBuilder.startBooleanToggle(Text.translatable("option.barium.enable_rotation_throttling"), BariumConfig.C.ENABLE_ROTATION_THROTTLING)
+                    .setDefaultValue(defaults.ENABLE_ROTATION_THROTTLING)
+                    .setTooltip(Text.translatable("tooltip.barium.enable_rotation_throttling"))
+                    .setSaveConsumer(v -> BariumConfig.C.ENABLE_ROTATION_THROTTLING = v).build());
+
+            mainCategory.addEntry(entryBuilder.startTextDescription(Text.literal(" ")).build());
+
             // --- Subtítulo: Partículas ---
             mainCategory.addEntry(entryBuilder.startTextDescription(Text.translatable("category.barium.particles").formatted(Formatting.YELLOW)).build());
             

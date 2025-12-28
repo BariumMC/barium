@@ -22,7 +22,7 @@
   "option.barium.detailed_render_radius": "Raio de Renderização Detalhada",
   "tooltip.barium.detailed_render_radius": "Chunks dentro desse raio são atualizados na taxa total; os de fora são atualizados com menos frequência para poupar CPU.",
   "option.barium.chunk_update_skip_rate": "Taxa de Skip de Atualização de Chunks",
-  "tooltip.barium.chunk_update_skip_rate": "Quantos ticks pular entre atualizações de chunks distantes (1 = atualiza todo tick). Valores maiores reduzem CPU, mas aumentam 'stale' visual." 
+  "tooltip.barium.chunk_update_skip_rate": "Quantos ticks pular entre atualizações de chunks distantes (1 = atualiza todo tick). Valores maiores reduzem CPU, mas aumentam 'stale' visual.",
 
   "option.barium.enable_visibility_graph_culling": "Otimização por Visibilidade (Experimental)",
   "tooltip.barium.enable_visibility_graph_culling": "Usa um sistema agressivo de raios para renderizar apenas chunks que são realmente visíveis.",
@@ -105,5 +105,11 @@
   "option.barium.disable_entity_outlines": "Desativar Efeito de Brilho",
   "tooltip.barium.disable_entity_outlines": "Desativa completamente o efeito de contorno brilhante.",
   "option.barium.enable_half_res_outlines": "Efeito de Brilho em Meia Resolução",
-  "tooltip.barium.enable_half_res_outlines": "Renderiza o efeito de brilho em meia resolução para melhor desempenho."
+  "tooltip.barium.enable_half_res_outlines": "Renderiza o efeito de brilho em meia resolução para melhor desempenho.",
+
+    "option.barium.enable_rotation_throttling": "Otimização de Rotação Dinâmica",
+  "tooltip.barium.enable_rotation_throttling": "Suspende o carregamento de novos chunks enquanto você gira a câmera rapidamente.\nElimina travamentos ao olhar ao redor.",
+
+  "option.barium.enable_fast_math": "Fast Math (Matemática Rápida)",
+  "tooltip.barium.enable_fast_math": "Usa tabelas pré-calculadas para seno e cosseno.\nMelhora levemente o FPS geral e a geração de terreno."
 }

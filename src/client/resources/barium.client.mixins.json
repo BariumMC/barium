@@ -5,6 +5,7 @@
 	"plugin": "com.barium.BariumMixinPlugin",
 	"client": [
 		"BlockRenderManagerMixin",
+		"MathHelperMixin",
 		"BlockEntityRenderManagerMixin",
 		"ChunkBuilderMixin",
 		"ChunkRenderMixin",
