@@ -80,3 +80,4 @@ public boolean ENABLE_HOPPER_TICK_CULLING = true;
 
 // ================== Fast Math (NOVO) ================== //
 public boolean ENABLE_FAST_MATH = true;
+}
