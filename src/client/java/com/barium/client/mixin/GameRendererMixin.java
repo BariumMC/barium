@@ -1,6 +1,7 @@
 package com.barium.client.mixin;
 
 import com.barium.BariumMod;
+import com.barium.client.optimization.CameraRotationTracker;
 import com.barium.client.optimization.EntityOutlineOptimizer;
 import com.barium.client.optimization.GuiRendererOptimizer;
 import com.barium.config.BariumConfig;
