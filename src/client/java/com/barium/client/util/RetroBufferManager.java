@@ -32,9 +32,9 @@ public class RetroBufferManager {
         if (retroBuffer == null || scaledW != lastWidth || scaledH != lastHeight || lastScale != BariumConfig.C.RENDER_SCALE_PERCENT) {
             if (retroBuffer != null) retroBuffer.delete();
             
-            retroBuffer = new SimpleFramebuffer(scaledW, scaledH, true, MinecraftClient.IS_SYSTEM_MAC);
+            // CORREÇÃO 1: Construtor agora usa apenas 3 argumentos (removemos o boolean do Mac)
+            retroBuffer = new SimpleFramebuffer(scaledW, scaledH, true);
             
-            // Aplica o filtro Pixelado (Nearest) ou Suave (Linear)
             FilterMode filter = BariumConfig.C.USE_RETRO_FILTER ? FilterMode.NEAREST : FilterMode.LINEAR;
             retroBuffer.setFilter(filter);
             
@@ -43,8 +43,11 @@ public class RetroBufferManager {
             lastScale = BariumConfig.C.RENDER_SCALE_PERCENT;
         }
 
-        // Limpa e prepara nosso buffer pequeno
-        retroBuffer.clear(MinecraftClient.IS_SYSTEM_MAC);
+        // CORREÇÃO 2: Usa IS_MACOS em vez de IS_SYSTEM_MAC, ou false por segurança
+        // (Geralmente 'true' no Mac evita erros de driver, mas false é o padrão seguro)
+        retroBuffer.clear(MinecraftClient.IS_MACOS);
+        
+        // Inicia a escrita no buffer pequeno
         retroBuffer.beginWrite(true);
     }
 
@@ -54,18 +57,12 @@ public class RetroBufferManager {
         // Volta para o Framebuffer principal (da Janela)
         client.getFramebuffer().beginWrite(true);
 
-        // Configura o sistema de renderização para desenhar a imagem esticada
-        RenderSystem.enableBlend();
-        RenderSystem.defaultBlendFunc();
-        RenderSystem.disableDepthTest();
-        
-        // Desenha o buffer pequeno esticado para cobrir a tela inteira
-        retroBuffer.draw(client.getWindow().getFramebufferWidth(), client.getWindow().getFramebufferHeight());
-        
-        RenderSystem.enableDepthTest();
+        // CORREÇÃO 3: Substituímos o código manual de desenho e RenderSystem
+        // pelo novo método "blitToScreen()" que o log de erro sugeriu existir na classe Framebuffer.
+        // Ele lida internamente com blend, depth e desenho na tela cheia.
+        retroBuffer.blitToScreen();
     }
     
-    // Chamado ao redimensionar a janela para forçar recriação
     public static void resize() {
         if (retroBuffer != null) {
             retroBuffer.delete();
