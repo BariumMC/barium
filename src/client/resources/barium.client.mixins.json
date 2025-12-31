@@ -23,7 +23,9 @@
 		"SpriteLoaderMixin",
 		"TextureAtlasMixin",
 		"WorldRendererAccessor",
-		"WorldRendererMixin"
+		"WorldRendererMixin",
+		"WindowMixin",
+		"FramebufferMixin"
 	],
 	"injectors": {
 		"defaultRequire": 1

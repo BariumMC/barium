@@ -8,6 +8,7 @@ import com.terraformersmc.modmenu.api.ModMenuApi;
 import me.shedaniel.clothconfig2.api.ConfigBuilder;
 import me.shedaniel.clothconfig2.api.ConfigCategory;
 import me.shedaniel.clothconfig2.api.ConfigEntryBuilder;
+import net.minecraft.client.MinecraftClient;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
 
@@ -26,10 +27,9 @@ public class BariumModMenu implements ModMenuApi {
             ConfigData defaults = new ConfigData();
             ConfigEntryBuilder entryBuilder = builder.entryBuilder();
             
-            // Categoria única para um layout mais limpo
+            // --- Categoria Principal ---
             ConfigCategory mainCategory = builder.getOrCreateCategory(Text.translatable("category.barium.main"));
 
-            // --- Modo Agressivo ---
             mainCategory.addEntry(entryBuilder.startBooleanToggle(Text.translatable("option.barium.enable_aggressive_optimization"), BariumConfig.C.ENABLE_AGGRESSIVE_OPTIMIZATION)
                     .setDefaultValue(defaults.ENABLE_AGGRESSIVE_OPTIMIZATION).setTooltip(Text.translatable("tooltip.barium.enable_aggressive_optimization")).setSaveConsumer(v -> BariumConfig.C.ENABLE_AGGRESSIVE_OPTIMIZATION = v).build());
 
@@ -39,15 +39,12 @@ public class BariumModMenu implements ModMenuApi {
             mainCategory.addEntry(entryBuilder.startBooleanToggle(Text.translatable("option.barium.enable_frustum_culling"), BariumConfig.C.ENABLE_FRUSTUM_CHUNK_CULLING)
                     .setDefaultValue(defaults.ENABLE_FRUSTUM_CHUNK_CULLING).setTooltip(Text.translatable("tooltip.barium.enable_frustum_culling")).setSaveConsumer(v -> BariumConfig.C.ENABLE_FRUSTUM_CHUNK_CULLING = v).build());
 
-            // New: force effective render distance (0=disabled)
             mainCategory.addEntry(entryBuilder.startIntSlider(Text.translatable("option.barium.effective_render_distance"), BariumConfig.C.EFFECTIVE_RENDER_DISTANCE, 0, 32)
                     .setDefaultValue(defaults.EFFECTIVE_RENDER_DISTANCE).setTooltip(Text.translatable("tooltip.barium.effective_render_distance")).setSaveConsumer(v -> BariumConfig.C.EFFECTIVE_RENDER_DISTANCE = v).build());
 
-            // New: sparse chunk rendering factor (1 = normal, 2 = every other chunk)
             mainCategory.addEntry(entryBuilder.startIntSlider(Text.translatable("option.barium.sparse_chunk_factor"), BariumConfig.C.SPARSE_CHUNK_FACTOR, 1, 8)
                     .setDefaultValue(defaults.SPARSE_CHUNK_FACTOR).setTooltip(Text.translatable("tooltip.barium.sparse_chunk_factor")).setSaveConsumer(v -> BariumConfig.C.SPARSE_CHUNK_FACTOR = v).build());
 
-            // New: detailed render radius and skip rate to present low-detail distant chunks
             mainCategory.addEntry(entryBuilder.startIntSlider(Text.translatable("option.barium.detailed_render_radius"), BariumConfig.C.DETAILED_RENDER_RADIUS, 0, 16)
                     .setDefaultValue(defaults.DETAILED_RENDER_RADIUS).setTooltip(Text.translatable("tooltip.barium.detailed_render_radius")).setSaveConsumer(v -> BariumConfig.C.DETAILED_RENDER_RADIUS = v).build());
             mainCategory.addEntry(entryBuilder.startIntSlider(Text.translatable("option.barium.chunk_update_skip_rate"), BariumConfig.C.CHUNK_UPDATE_SKIP_RATE, 1, 20)
@@ -64,8 +61,6 @@ public class BariumModMenu implements ModMenuApi {
                     .setDefaultValue(defaults.MAX_CHUNK_UPLOADS_PER_FRAME).setTooltip(Text.translatable("tooltip.barium.max_chunk_uploads")).setSaveConsumer(v -> BariumConfig.C.MAX_CHUNK_UPLOADS_PER_FRAME = v).build());
 
             mainCategory.addEntry(entryBuilder.startTextDescription(Text.literal(" ")).build());
-
-            // --- Subtítulo: Otimização e LOD ---
             mainCategory.addEntry(entryBuilder.startTextDescription(Text.translatable("category.barium.culling_lod").formatted(Formatting.YELLOW)).build());
 
             mainCategory.addEntry(entryBuilder.startBooleanToggle(Text.translatable("option.barium.enable_entity_culling"), BariumConfig.C.ENABLE_ENTITY_CULLING)
@@ -85,8 +80,6 @@ public class BariumModMenu implements ModMenuApi {
                     .setSaveConsumer(v -> BariumConfig.C.ENABLE_ROTATION_THROTTLING = v).build());
 
             mainCategory.addEntry(entryBuilder.startTextDescription(Text.literal(" ")).build());
-
-            // --- Subtítulo: Partículas ---
             mainCategory.addEntry(entryBuilder.startTextDescription(Text.translatable("category.barium.particles").formatted(Formatting.YELLOW)).build());
             
             mainCategory.addEntry(entryBuilder.startBooleanToggle(Text.translatable("option.barium.enable_particle_optimizations"), BariumConfig.C.ENABLE_PARTICLE_OPTIMIZATION)
@@ -101,8 +94,6 @@ public class BariumModMenu implements ModMenuApi {
                 .setDefaultValue(defaults.MAX_GLOBAL_PARTICLES).setTooltip(Text.translatable("tooltip.barium.max_global_particles")).setSaveConsumer(v -> BariumConfig.C.MAX_GLOBAL_PARTICLES = v).build());
 
             mainCategory.addEntry(entryBuilder.startTextDescription(Text.literal(" ")).build());
-
-            // --- Subtítulo: Visuais e Lógica ---
             mainCategory.addEntry(entryBuilder.startTextDescription(Text.translatable("category.barium.game_logic").formatted(Formatting.YELLOW)).build());
 
             mainCategory.addEntry(entryBuilder.startBooleanToggle(Text.translatable("option.barium.disable_texture_animations"), BariumConfig.C.DISABLE_TEXTURE_ANIMATIONS)
@@ -125,6 +116,27 @@ public class BariumModMenu implements ModMenuApi {
                     .setDefaultValue(defaults.REDUCE_AMBIENT_PARTICLES).setTooltip(Text.translatable("tooltip.barium.reduce_ambient_particles")).setSaveConsumer(v -> BariumConfig.C.REDUCE_AMBIENT_PARTICLES = v).build());
             mainCategory.addEntry(entryBuilder.startBooleanToggle(Text.translatable("option.barium.enable_hopper_culling"), BariumConfig.C.ENABLE_HOPPER_TICK_CULLING)
                     .setDefaultValue(defaults.ENABLE_HOPPER_TICK_CULLING).setTooltip(Text.translatable("tooltip.barium.enable_hopper_culling")).setSaveConsumer(v -> BariumConfig.C.ENABLE_HOPPER_TICK_CULLING = v).build());
+
+            // === NOVO BLOCO DE RESOLUÇÃO / RETRO ===
+            mainCategory.addEntry(entryBuilder.startTextDescription(Text.literal(" ")).build());
+            mainCategory.addEntry(entryBuilder.startTextDescription(Text.translatable("option.barium.resolution_header").formatted(Formatting.YELLOW)).build());
+
+            mainCategory.addEntry(entryBuilder.startIntSlider(Text.translatable("option.barium.render_scale"), BariumConfig.C.RENDER_SCALE_PERCENT, 10, 100)
+                    .setDefaultValue(defaults.RENDER_SCALE_PERCENT)
+                    .setTooltip(Text.translatable("tooltip.barium.render_scale"))
+                    .setSaveConsumer(v -> {
+                        BariumConfig.C.RENDER_SCALE_PERCENT = v;
+                        MinecraftClient.getInstance().onResolutionChanged();
+                    }).build());
+
+            mainCategory.addEntry(entryBuilder.startBooleanToggle(Text.translatable("option.barium.use_retro_filter"), BariumConfig.C.USE_RETRO_FILTER)
+                    .setDefaultValue(defaults.USE_RETRO_FILTER)
+                    .setTooltip(Text.translatable("tooltip.barium.use_retro_filter"))
+                    .setSaveConsumer(v -> {
+                        BariumConfig.C.USE_RETRO_FILTER = v;
+                        MinecraftClient.getInstance().onResolutionChanged();
+                    }).build());
+            // ========================================
 
             return builder.build();
         };

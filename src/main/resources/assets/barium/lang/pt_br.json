@@ -107,9 +107,15 @@
   "option.barium.enable_half_res_outlines": "Efeito de Brilho em Meia Resolução",
   "tooltip.barium.enable_half_res_outlines": "Renderiza o efeito de brilho em meia resolução para melhor desempenho.",
 
-    "option.barium.enable_rotation_throttling": "Otimização de Rotação Dinâmica",
+  "option.barium.enable_rotation_throttling": "Otimização de Rotação Dinâmica",
   "tooltip.barium.enable_rotation_throttling": "Suspende o carregamento de novos chunks enquanto você gira a câmera rapidamente.\nElimina travamentos ao olhar ao redor.",
 
   "option.barium.enable_fast_math": "Fast Math (Matemática Rápida)",
-  "tooltip.barium.enable_fast_math": "Usa tabelas pré-calculadas para seno e cosseno.\nMelhora levemente o FPS geral e a geração de terreno."
+  "tooltip.barium.enable_fast_math": "Usa tabelas pré-calculadas para seno e cosseno.\nMelhora levemente o FPS geral e a geração de terreno.",
+
+  "option.barium.resolution_header": "Resolução e Escala (Retro Mode)",
+  "option.barium.render_scale": "Escala de Renderização (%)",
+  "tooltip.barium.render_scale": "Reduz a resolução interna do jogo. 50% = Metade da resolução (Muito FPS, Visual Pixelado).",
+  "option.barium.use_retro_filter": "Filtro Retrô (Pixelado)",
+  "tooltip.barium.use_retro_filter": "Se ativado, usa pixels nítidos ao reduzir a resolução. Se desativado, a imagem fica borrada."
 }
