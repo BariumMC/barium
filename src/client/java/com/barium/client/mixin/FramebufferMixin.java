@@ -1,7 +1,7 @@
 package com.barium.client.mixin;
 
 import com.barium.config.BariumConfig;
-import com.mojang.blaze3d.platform.GlStateManager;
+import com.mojang.blaze3d.opengl.GlStateManager;
 import net.minecraft.client.gl.Framebuffer;
 import org.lwjgl.opengl.GL11;
 import org.spongepowered.asm.mixin.Mixin;
