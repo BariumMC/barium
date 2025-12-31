@@ -11,22 +11,21 @@ import org.spongepowered.asm.mixin.injection.ModifyVariable;
 public class FramebufferMixin {
 
     /**
-     * Intercepta o parâmetro 'filter' no método 'setFilter'.
-     * Se o modo Retrô estiver ativado, forçamos o filtro para NEAREST (Pixelado).
+     * Garante que, se o buffer for o nosso RetroBuffer (ou qualquer um em modo retro),
+     * o filtro usado seja o NEAREST (Pixelado).
      */
     @ModifyVariable(
         method = "setFilter(Lcom/mojang/blaze3d/textures/FilterMode;Z)V", 
         at = @At("HEAD"), 
         argsOnly = true,
-        ordinal = 0 // O primeiro argumento (FilterMode)
+        ordinal = 0
     )
     private FilterMode barium$forceRetroFilter(FilterMode original) {
-        // Se a escala estiver reduzida (< 100%) e o filtro Retrô estiver ligado:
         if (BariumConfig.C.RENDER_SCALE_PERCENT < 100 && BariumConfig.C.USE_RETRO_FILTER) {
-            return FilterMode.NEAREST; // Retorna "Pixelado"
+            // Nota: Isso afetará todos os framebuffers se o jogo tentar mudar o filtro
+            // enquanto a config está ativa, mas é o comportamento desejado para o look "Retro".
+            return FilterMode.NEAREST;
         }
-        
-        // Caso contrário, deixa o filtro original (que costuma ser LINEAR/Borrado ou o que o jogo pediu)
         return original;
     }
 }
