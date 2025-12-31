@@ -126,7 +126,10 @@ public class BariumModMenu implements ModMenuApi {
                     .setTooltip(Text.translatable("tooltip.barium.render_scale"))
                     .setSaveConsumer(v -> {
                         BariumConfig.C.RENDER_SCALE_PERCENT = v;
-                        MinecraftClient.getInstance().onResolutionChanged();
+                        // Correção: Verifica se a instância do cliente e a janela existem antes de chamar
+                        if (MinecraftClient.getInstance() != null && MinecraftClient.getInstance().getWindow() != null) {
+                            MinecraftClient.getInstance().onResolutionChanged();
+                        }
                     }).build());
 
             mainCategory.addEntry(entryBuilder.startBooleanToggle(Text.translatable("option.barium.use_retro_filter"), BariumConfig.C.USE_RETRO_FILTER)
@@ -134,7 +137,9 @@ public class BariumModMenu implements ModMenuApi {
                     .setTooltip(Text.translatable("tooltip.barium.use_retro_filter"))
                     .setSaveConsumer(v -> {
                         BariumConfig.C.USE_RETRO_FILTER = v;
-                        MinecraftClient.getInstance().onResolutionChanged();
+                        if (MinecraftClient.getInstance() != null && MinecraftClient.getInstance().getWindow() != null) {
+                            MinecraftClient.getInstance().onResolutionChanged();
+                        }
                     }).build());
             // ========================================
 
