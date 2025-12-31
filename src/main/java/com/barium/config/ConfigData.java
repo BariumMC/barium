@@ -80,8 +80,4 @@ public class ConfigData {
 
     // ================== Fast Math ================== //
     public boolean ENABLE_FAST_MATH = true;
-
-    // ================== Render Scale (NOVO) ================== //
-    public int RENDER_SCALE_PERCENT = 100; 
-    public boolean USE_RETRO_FILTER = true; 
 }

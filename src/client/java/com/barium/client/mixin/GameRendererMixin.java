@@ -3,7 +3,6 @@ package com.barium.client.mixin;
 import com.barium.client.optimization.CameraRotationTracker;
 import com.barium.client.optimization.EntityOutlineOptimizer;
 import com.barium.client.optimization.GuiRendererOptimizer;
-import com.barium.client.util.RetroBufferManager;
 import com.barium.config.BariumConfig;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gl.Framebuffer;
@@ -18,6 +17,7 @@ public class GameRendererMixin {
 
     @Inject(method = "render", at = @At("HEAD"))
     private void barium$preRenderOptimize(CallbackInfo ci) {
+        // Atualiza o status da rotação no início do frame
         CameraRotationTracker.update();
 
         if (BariumConfig.C.ENABLE_AGGRESSIVE_OPTIMIZATION) {
@@ -25,34 +25,18 @@ public class GameRendererMixin {
         }
     }
 
-    // --- LÓGICA RETRO START ---
-    
-    // Antes de renderizar o mundo (World + Hand), trocamos para o buffer pequeno
-    @Inject(method = "renderWorld", at = @At("HEAD"))
-    private void barium$startRetroRender(CallbackInfo ci) {
-        if (RetroBufferManager.isActive()) {
-            RetroBufferManager.beginRender(MinecraftClient.getInstance());
-        }
+    @Inject(method = "render", at = @At("TAIL"))
+    private void barium$postRenderOptimize(CallbackInfo ci) {
+        // Lógica pós-render, se necessária no futuro
     }
 
-    // Depois de renderizar o mundo, pegamos o buffer pequeno e desenhamos grande na tela
-    @Inject(method = "renderWorld", at = @At("TAIL"))
-    private void barium$endRetroRender(CallbackInfo ci) {
-        if (RetroBufferManager.isActive()) {
-            RetroBufferManager.endRenderAndBlit(MinecraftClient.getInstance());
-        }
-    }
-    
-    @Inject(method = "onResized", at = @At("HEAD"))
-    private void barium$onResized(int width, int height, CallbackInfo ci) {
-        RetroBufferManager.resize();
-    }
-
-    // --- LÓGICA RETRO END ---
-
+    /**
+     * Aplica o Downsampling Inteligente (Reduz a resolução apenas do brilho/outline).
+     */
     @Inject(method = "onResized(II)V", at = @At("RETURN"))
     private void barium$forceResizeEntityOutlineFramebuffer(int width, int height, CallbackInfo ci) {
         Framebuffer entityOutlinesFramebuffer = MinecraftClient.getInstance().worldRenderer.getEntityOutlinesFramebuffer();
+        
         if (entityOutlinesFramebuffer != null) {
             int divisor = EntityOutlineOptimizer.getResolutionDivisor();
             if (divisor > 1) {

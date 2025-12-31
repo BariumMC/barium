@@ -129,11 +129,5 @@
   "category.barium.general": "General",
   "category.barium.quality": "Quality",
   "category.barium.performance": "Performance",
-  "category.barium.advanced": "Advanced",
-
-  "option.barium.resolution_header": "Resolution & Scale (Retro Mode)",
-  "option.barium.render_scale": "Render Scale (%)",
-  "tooltip.barium.render_scale": "Reduces the internal render resolution. 50% = Half resolution (High FPS, Pixelated Look).",
-  "option.barium.use_retro_filter": "Retro Filter (Pixelated)",
-  "tooltip.barium.use_retro_filter": "If enabled, uses sharp pixels when downscaling. If disabled, the image looks blurry."
+  "category.barium.advanced": "Advanced"
 }

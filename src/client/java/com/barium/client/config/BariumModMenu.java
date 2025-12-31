@@ -8,7 +8,6 @@ import com.terraformersmc.modmenu.api.ModMenuApi;
 import me.shedaniel.clothconfig2.api.ConfigBuilder;
 import me.shedaniel.clothconfig2.api.ConfigCategory;
 import me.shedaniel.clothconfig2.api.ConfigEntryBuilder;
-import net.minecraft.client.MinecraftClient;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
 
@@ -116,32 +115,8 @@ public class BariumModMenu implements ModMenuApi {
                     .setDefaultValue(defaults.REDUCE_AMBIENT_PARTICLES).setTooltip(Text.translatable("tooltip.barium.reduce_ambient_particles")).setSaveConsumer(v -> BariumConfig.C.REDUCE_AMBIENT_PARTICLES = v).build());
             mainCategory.addEntry(entryBuilder.startBooleanToggle(Text.translatable("option.barium.enable_hopper_culling"), BariumConfig.C.ENABLE_HOPPER_TICK_CULLING)
                     .setDefaultValue(defaults.ENABLE_HOPPER_TICK_CULLING).setTooltip(Text.translatable("tooltip.barium.enable_hopper_culling")).setSaveConsumer(v -> BariumConfig.C.ENABLE_HOPPER_TICK_CULLING = v).build());
-
-            // === NOVO BLOCO DE RESOLUÇÃO / RETRO ===
-            mainCategory.addEntry(entryBuilder.startTextDescription(Text.literal(" ")).build());
-            mainCategory.addEntry(entryBuilder.startTextDescription(Text.translatable("option.barium.resolution_header").formatted(Formatting.YELLOW)).build());
-
-            mainCategory.addEntry(entryBuilder.startIntSlider(Text.translatable("option.barium.render_scale"), BariumConfig.C.RENDER_SCALE_PERCENT, 10, 100)
-                    .setDefaultValue(defaults.RENDER_SCALE_PERCENT)
-                    .setTooltip(Text.translatable("tooltip.barium.render_scale"))
-                    .setSaveConsumer(v -> {
-                        BariumConfig.C.RENDER_SCALE_PERCENT = v;
-                        // Correção: Verifica se a instância do cliente e a janela existem antes de chamar
-                        if (MinecraftClient.getInstance() != null && MinecraftClient.getInstance().getWindow() != null) {
-                            MinecraftClient.getInstance().onResolutionChanged();
-                        }
-                    }).build());
-
-            mainCategory.addEntry(entryBuilder.startBooleanToggle(Text.translatable("option.barium.use_retro_filter"), BariumConfig.C.USE_RETRO_FILTER)
-                    .setDefaultValue(defaults.USE_RETRO_FILTER)
-                    .setTooltip(Text.translatable("tooltip.barium.use_retro_filter"))
-                    .setSaveConsumer(v -> {
-                        BariumConfig.C.USE_RETRO_FILTER = v;
-                        if (MinecraftClient.getInstance() != null && MinecraftClient.getInstance().getWindow() != null) {
-                            MinecraftClient.getInstance().onResolutionChanged();
-                        }
-                    }).build());
-            // ========================================
+            mainCategory.addEntry(entryBuilder.startBooleanToggle(Text.translatable("option.barium.enable_fast_math"), BariumConfig.C.ENABLE_FAST_MATH)
+                .setDefaultValue(defaults.ENABLE_FAST_MATH).setTooltip(Text.translatable("tooltip.barium.enable_fast_math")).setSaveConsumer(v -> BariumConfig.C.ENABLE_FAST_MATH = v).build());
 
             return builder.build();
         };
