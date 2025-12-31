@@ -1,10 +1,14 @@
 package com.barium.client.util;
 
+import com.barium.client.mixin.FramebufferAccessor;
 import com.barium.config.BariumConfig;
+import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.textures.FilterMode;
 import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.gl.Framebuffer;
 import net.minecraft.client.gl.SimpleFramebuffer;
+import org.lwjgl.opengl.GL30;
 
 public class RetroBufferManager {
     
@@ -32,8 +36,8 @@ public class RetroBufferManager {
         if (retroBuffer == null || scaledW != lastWidth || scaledH != lastHeight || lastScale != BariumConfig.C.RENDER_SCALE_PERCENT) {
             if (retroBuffer != null) retroBuffer.delete();
             
-            // CORREÇÃO 1: Construtor agora usa apenas 3 argumentos (removemos o boolean do Mac)
-            retroBuffer = new SimpleFramebuffer(scaledW, scaledH, true);
+            // CORREÇÃO 1: Adicionado o nome "BariumRetro" no construtor
+            retroBuffer = new SimpleFramebuffer("BariumRetro", scaledW, scaledH, true);
             
             FilterMode filter = BariumConfig.C.USE_RETRO_FILTER ? FilterMode.NEAREST : FilterMode.LINEAR;
             retroBuffer.setFilter(filter);
@@ -43,11 +47,12 @@ public class RetroBufferManager {
             lastScale = BariumConfig.C.RENDER_SCALE_PERCENT;
         }
 
-        // CORREÇÃO 2: Usa IS_MACOS em vez de IS_SYSTEM_MAC, ou false por segurança
-        // (Geralmente 'true' no Mac evita erros de driver, mas false é o padrão seguro)
-        retroBuffer.clear(MinecraftClient.IS_MACOS);
+        // CORREÇÃO 2: Removido IS_MACOS/IS_SYSTEM_MAC, usamos false (padrão seguro)
+        retroBuffer.setClearColor(0.0F, 0.0F, 0.0F, 0.0F);
+        retroBuffer.clear(false); // No Mac seria true, mas false funciona universalmente
         
-        // Inicia a escrita no buffer pequeno
+        // CORREÇÃO 3: Tenta usar beginWrite padrão. Se falhar no futuro, usamos GL direto.
+        // A maioria das versões 1.21.x ainda usa beginWrite(boolean setViewport).
         retroBuffer.beginWrite(true);
     }
 
@@ -55,11 +60,11 @@ public class RetroBufferManager {
         if (!isActive() || retroBuffer == null) return;
 
         // Volta para o Framebuffer principal (da Janela)
-        client.getFramebuffer().beginWrite(true);
+        Framebuffer mainBuffer = client.getFramebuffer();
+        mainBuffer.beginWrite(true);
 
-        // CORREÇÃO 3: Substituímos o código manual de desenho e RenderSystem
-        // pelo novo método "blitToScreen()" que o log de erro sugeriu existir na classe Framebuffer.
-        // Ele lida internamente com blend, depth e desenho na tela cheia.
+        // CORREÇÃO 4: Substituído draw() por blitToScreen() que é o padrão moderno
+        // Isso desenha o conteúdo do retroBuffer na tela inteira
         retroBuffer.blitToScreen();
     }
     
