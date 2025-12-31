@@ -24,9 +24,7 @@
 		"TextureAtlasMixin",
 		"WorldRendererAccessor",
 		"WorldRendererMixin",
-		"WindowMixin",
-		"FramebufferMixin",
-		"FramebufferAccessor"
+		"WindowMixin"
 	],
 	"injectors": {
 		"defaultRequire": 1
