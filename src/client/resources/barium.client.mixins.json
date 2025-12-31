@@ -25,7 +25,8 @@
 		"WorldRendererAccessor",
 		"WorldRendererMixin",
 		"WindowMixin",
-		"FramebufferMixin"
+		"FramebufferMixin",
+		"FramebufferAccessor"
 	],
 	"injectors": {
 		"defaultRequire": 1

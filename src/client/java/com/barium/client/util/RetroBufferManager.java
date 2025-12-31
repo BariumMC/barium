@@ -2,7 +2,6 @@ package com.barium.client.util;
 
 import com.barium.client.mixin.FramebufferAccessor;
 import com.barium.config.BariumConfig;
-import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.textures.FilterMode;
 import net.minecraft.client.MinecraftClient;
@@ -36,7 +35,7 @@ public class RetroBufferManager {
         if (retroBuffer == null || scaledW != lastWidth || scaledH != lastHeight || lastScale != BariumConfig.C.RENDER_SCALE_PERCENT) {
             if (retroBuffer != null) retroBuffer.delete();
             
-            // CORREÇÃO 1: Adicionado o nome "BariumRetro" no construtor
+            // Construtor atualizado: (String name, int width, int height, boolean useDepth)
             retroBuffer = new SimpleFramebuffer("BariumRetro", scaledW, scaledH, true);
             
             FilterMode filter = BariumConfig.C.USE_RETRO_FILTER ? FilterMode.NEAREST : FilterMode.LINEAR;
@@ -47,24 +46,39 @@ public class RetroBufferManager {
             lastScale = BariumConfig.C.RENDER_SCALE_PERCENT;
         }
 
-        // CORREÇÃO 2: Removido IS_MACOS/IS_SYSTEM_MAC, usamos false (padrão seguro)
-        retroBuffer.setClearColor(0.0F, 0.0F, 0.0F, 0.0F);
-        retroBuffer.clear(false); // No Mac seria true, mas false funciona universalmente
-        
-        // CORREÇÃO 3: Tenta usar beginWrite padrão. Se falhar no futuro, usamos GL direto.
-        // A maioria das versões 1.21.x ainda usa beginWrite(boolean setViewport).
-        retroBuffer.beginWrite(true);
+        // --- MANIPULAÇÃO MANUAL DO FRAMEBUFFER (Substituindo beginWrite/clear) ---
+
+        // 1. Pega o ID do OpenGL do nosso buffer pequeno
+        int fboId = ((FramebufferAccessor)retroBuffer).getFbo();
+
+        // 2. Binda o Framebuffer manualmente
+        GL30.glBindFramebuffer(GL30.GL_FRAMEBUFFER, fboId);
+
+        // 3. Ajusta o Viewport para o tamanho PEQUENO (Crucial para não distorcer)
+        RenderSystem.viewport(0, 0, scaledW, scaledH);
+
+        // 4. Limpa o buffer (Cor e Profundidade)
+        RenderSystem.clearColor(0.0F, 0.0F, 0.0F, 0.0F); // Substitui retroBuffer.setClearColor
+        RenderSystem.clear(GL30.GL_COLOR_BUFFER_BIT | GL30.GL_DEPTH_BUFFER_BIT, false); // Substitui retroBuffer.clear
     }
 
     public static void endRenderAndBlit(MinecraftClient client) {
         if (!isActive() || retroBuffer == null) return;
 
-        // Volta para o Framebuffer principal (da Janela)
-        Framebuffer mainBuffer = client.getFramebuffer();
-        mainBuffer.beginWrite(true);
+        // --- VOLTA PARA O BUFFER DA TELA ---
 
-        // CORREÇÃO 4: Substituído draw() por blitToScreen() que é o padrão moderno
-        // Isso desenha o conteúdo do retroBuffer na tela inteira
+        Framebuffer mainBuffer = client.getFramebuffer();
+        int mainFboId = ((FramebufferAccessor)mainBuffer).getFbo();
+        int windowW = client.getWindow().getFramebufferWidth();
+        int windowH = client.getWindow().getFramebufferHeight();
+
+        // 1. Binda o Framebuffer principal (Tela)
+        GL30.glBindFramebuffer(GL30.GL_FRAMEBUFFER, mainFboId);
+
+        // 2. Restaura o Viewport para o tamanho da JANELA
+        RenderSystem.viewport(0, 0, windowW, windowH);
+
+        // 3. Desenha o buffer pequeno esticado na tela
         retroBuffer.blitToScreen();
     }
     
