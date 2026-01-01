@@ -17,7 +17,7 @@ import java.util.List;
 public abstract class FrameGraphBuilderMixin {
 
     @Shadow
-    private final List<?> passes;
+    private List<?> passes;
 
     // Remove a verificação de recursos que consome 40%+ da CPU
     @Inject(method = "checkResources", at = @At("HEAD"), cancellable = true)
