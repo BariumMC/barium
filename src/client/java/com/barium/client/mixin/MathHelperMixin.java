@@ -5,7 +5,7 @@ import net.minecraft.util.math.MathHelper;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Overwrite;
 
-@Mixin(MathHelper.class)
+@Mixin(value = MathHelper.class, priority = 2000)
 public class MathHelperMixin {
 
     private static final float[] SIN_TABLE_FAST = new float[65536];
