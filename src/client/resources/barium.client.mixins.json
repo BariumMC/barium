@@ -11,6 +11,7 @@
 		"ChunkRenderMixin",
 		"ClientWorldMixin",
 		"DebugHudMixin",
+		"FrameGraphBuilderMixin",
 		"EntityRendererMixin",
 		"GameRendererMixin",
 		"GuiRendererMixin",
