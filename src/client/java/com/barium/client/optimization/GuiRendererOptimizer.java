@@ -13,10 +13,6 @@ public class GuiRendererOptimizer {
     private static int staticFrameCounter = 0;
     private static Screen lastScreen = null;
     
-    // Configurações de Throttling
-    // Se a GUI estiver estática, renderiza apenas 1 a cada X frames
-    private static final int STATIC_GUI_UPDATE_RATE = 3; 
-
     public static void preRenderOptimize() {
         // Nada pesado aqui
     }
@@ -63,21 +59,8 @@ public class GuiRendererOptimizer {
             return false;
         }
 
-        // --- LÓGICA DE GUI ESTÁTICA ---
-        // Se chegamos aqui, o mouse está parado e a quantidade de elementos é a mesma.
-        // Provavelmente é um inventário aberto sem interação.
-
-        staticFrameCounter++;
-
-        // No modo agressivo, pulamos mais frames quando estático
-        int rate = BariumConfig.C.ENABLE_AGGRESSIVE_OPTIMIZATION ? STATIC_GUI_UPDATE_RATE * 2 : STATIC_GUI_UPDATE_RATE;
-
-        // Se ainda não atingimos o limite de frames para pular, CANCELA a renderização.
-        if (staticFrameCounter < rate) {
-            return true; // PULA! Economiza CPU.
-        }
-
-        // Hora de desenhar um frame para atualizar animações (glint, cursor piscando).
+        // Evita flicker: não pulamos mais frames inteiros de GUI.
+        // O ganho aqui era pequeno e podia causar cintilação perceptível em telas estáticas.
         staticFrameCounter = 0;
         return false;
     }
