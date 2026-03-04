@@ -2,7 +2,7 @@ package com.barium.client.optimization;
 
 import com.barium.config.BariumConfig;
 import net.minecraft.client.MinecraftClient;
-import java.util.List;
+import net.minecraft.client.gui.screen.Screen;
 
 public class GuiRendererOptimizer {
 
@@ -11,6 +11,7 @@ public class GuiRendererOptimizer {
     private static double lastMouseY = -1;
     private static boolean forceRenderNext = true;
     private static int staticFrameCounter = 0;
+    private static Screen lastScreen = null;
     
     // Configurações de Throttling
     // Se a GUI estiver estática, renderiza apenas 1 a cada X frames
@@ -28,20 +29,26 @@ public class GuiRendererOptimizer {
     public static boolean shouldSkipRenderPreparedDraws(int currentDrawCount) {
         if (!BariumConfig.C.ENABLE_GUI_OPTIMIZATION) return false;
 
+        MinecraftClient client = MinecraftClient.getInstance();
+        Screen currentScreen = client.currentScreen;
+        if (currentScreen != lastScreen) {
+            lastScreen = currentScreen;
+            forceRenderNext = true;
+        }
+
         // Sempre renderiza se forçado (ex: redimensionamento, abertura de tela)
         if (forceRenderNext) {
             forceRenderNext = false;
-            updateLastState(currentDrawCount);
+            updateLastState(currentDrawCount, client);
             return false;
         }
 
         // Se a quantidade de elementos mudou, renderiza imediatamente.
         if (currentDrawCount != lastDrawCount) {
-            updateLastState(currentDrawCount);
+            updateLastState(currentDrawCount, client);
             return false;
         }
 
-        MinecraftClient client = MinecraftClient.getInstance();
         if (client.mouse == null) return false;
 
         double mx = client.mouse.getX();
@@ -50,7 +57,7 @@ public class GuiRendererOptimizer {
         // Se o mouse se moveu, renderiza (para tooltips, hovers, slots).
         // Usamos uma tolerância pequena para evitar jitter de mouse de alta DPI.
         if (Math.abs(mx - lastMouseX) > 0.5 || Math.abs(my - lastMouseY) > 0.5) {
-            updateLastState(currentDrawCount);
+            updateLastState(currentDrawCount, client);
             lastMouseX = mx;
             lastMouseY = my;
             return false;
@@ -75,10 +82,14 @@ public class GuiRendererOptimizer {
         return false;
     }
 
-    private static void updateLastState(int count) {
+    private static void updateLastState(int count, MinecraftClient client) {
         lastDrawCount = count;
         // Reseta o contador para garantir fluidez imediata após uma interação
         staticFrameCounter = 0;
+        if (client != null && client.mouse != null) {
+            lastMouseX = client.mouse.getX();
+            lastMouseY = client.mouse.getY();
+        }
     }
 
     public static void postRenderOptimize() {
@@ -88,6 +99,7 @@ public class GuiRendererOptimizer {
         forceRenderNext = true;
         lastDrawCount = -1;
         staticFrameCounter = 0;
+        lastScreen = null;
     }
 
     public static void forceNextRender() {

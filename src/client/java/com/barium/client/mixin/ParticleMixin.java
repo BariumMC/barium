@@ -25,4 +25,10 @@ public abstract class ParticleMixin {
             ci.cancel();
         }
     }
+
+    @Inject(method = "markDead", at = @At("HEAD"))
+    private void barium$onParticleDead(CallbackInfo ci) {
+        if (!BariumConfig.C.ENABLE_GLOBAL_PARTICLE_LIMIT) return;
+        ParticleOptimizer.decrementParticleCount();
+    }
 }

@@ -2,8 +2,6 @@ package com.barium.client.mixin;
 
 import com.barium.client.optimization.CameraRotationTracker;
 import com.barium.client.optimization.EntityOutlineOptimizer;
-import com.barium.client.optimization.GuiRendererOptimizer;
-import com.barium.config.BariumConfig;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gl.Framebuffer;
 import net.minecraft.client.render.GameRenderer;
@@ -19,10 +17,6 @@ public class GameRendererMixin {
     private void barium$preRenderOptimize(CallbackInfo ci) {
         // Atualiza o status da rotação no início do frame
         CameraRotationTracker.update();
-
-        if (BariumConfig.C.ENABLE_AGGRESSIVE_OPTIMIZATION) {
-            GuiRendererOptimizer.forceNextRender();
-        }
     }
 
     @Inject(method = "render", at = @At("TAIL"))
