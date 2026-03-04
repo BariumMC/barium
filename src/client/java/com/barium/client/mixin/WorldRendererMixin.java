@@ -80,6 +80,8 @@ public abstract class WorldRendererMixin {
      */
     @Inject(method = "updateChunks(Lnet/minecraft/client/render/Camera;)V", at = @At("HEAD"))
     private void barium$beforeUpdateChunks(Camera camera, CallbackInfo ci) {
+        ChunkRenderManager.getInstance().beginFrame();
+
         // 1. Atualiza o Frustum Culling
         if (BariumConfig.C.ENABLE_FRUSTUM_CHUNK_CULLING) {
             Frustum frustum = ((WorldRendererAccessor) this).getFrustum();

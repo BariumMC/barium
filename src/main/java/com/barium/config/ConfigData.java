@@ -13,6 +13,8 @@ public class ConfigData {
     public boolean ENABLE_ADVANCED_SECTION_CULLING = false;
     public boolean ENABLE_ENCLOSED_SECTION_CULLING = false;
     public boolean ENABLE_EMPTY_CHUNK_SECTION_CULLING = true;
+    public boolean ENABLE_PER_SECTION_FRUSTUM_CULLING = true;
+    public boolean ENABLE_FRAME_VISIBILITY_CACHE = true;
 
     // ================== Forest / Tree Optimizations ================== //
     public boolean ENABLE_FOREST_SECTION_CULLING = true;
@@ -36,6 +38,8 @@ public class ConfigData {
     public boolean ENABLE_DISTANT_GEOMETRY_CULLING = true;
     public int DISTANT_GEOMETRY_CULL_DISTANCE = 32; 
     public boolean DISABLE_DISTANT_TRANSLUCENCY_SORTING = true;
+    public boolean CACHE_TRANSLUCENCY_SORT_WHILE_STABLE = true;
+    public double TRANSLUCENCY_STABLE_CAMERA_DELTA = 0.125;
 
     // ================== Culling & Level of Detail (LOD) ================== //
     public boolean ENABLE_ENTITY_CULLING = true;

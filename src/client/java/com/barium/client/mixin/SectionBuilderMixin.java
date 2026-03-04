@@ -1,6 +1,8 @@
 package com.barium.client.mixin;
 
 import com.barium.config.BariumConfig;
+import com.barium.client.util.ChunkRenderManager;
+import com.barium.client.util.ChunkVisibilityManager;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
@@ -23,6 +25,10 @@ public class SectionBuilderMixin {
 
     @Unique
     private boolean barium_isDistant = false;
+    @Unique
+    private boolean barium_cameraStable = false;
+
+    @Unique private static Vec3d barium$lastCameraPos = null;
 
     // Detecta se a seção está longe antes de começar a construir
     @Inject(method = "build", at = @At("HEAD"))
@@ -37,6 +43,19 @@ public class SectionBuilderMixin {
         // Define o estado de "distante" baseado na config (padrão 32 blocos = 2 chunks)
         int threshold = BariumConfig.C.DISTANT_GEOMETRY_CULL_DISTANCE;
         this.barium_isDistant = (dx > threshold || dz > threshold);
+
+        Vec3d cameraPos = MinecraftClient.getInstance().gameRenderer.getCamera() != null
+                ? MinecraftClient.getInstance().gameRenderer.getCamera().getPos()
+                : null;
+        if (cameraPos == null || barium$lastCameraPos == null) {
+            this.barium_cameraStable = false;
+        } else {
+            double maxDeltaSq = BariumConfig.C.TRANSLUCENCY_STABLE_CAMERA_DELTA * BariumConfig.C.TRANSLUCENCY_STABLE_CAMERA_DELTA;
+            this.barium_cameraStable = cameraPos.squaredDistanceTo(barium$lastCameraPos) <= maxDeltaSq;
+        }
+        if (cameraPos != null) {
+            barium$lastCameraPos = cameraPos;
+        }
     }
 
     /**
@@ -48,12 +67,31 @@ public class SectionBuilderMixin {
         if (BariumConfig.C.DISABLE_DISTANT_TRANSLUCENCY_SORTING && this.barium_isDistant) {
             return null; // VertexSorter nulo = sem ordenação (Renderização muito mais rápida)
         }
+
+        if (BariumConfig.C.CACHE_TRANSLUCENCY_SORT_WHILE_STABLE && this.barium_cameraStable) {
+            return null;
+        }
+
         return sorter;
     }
 
     // Mantém a otimização de seções vazias que já fizemos
     @Inject(method = "build", at = @At("HEAD"), cancellable = true)
     private void barium$cullEmptySections(ChunkSectionPos sectionPos, ChunkRendererRegion renderRegion, VertexSorter vertexSorter, net.minecraft.client.render.chunk.BlockBufferAllocatorStorage allocatorStorage, CallbackInfoReturnable<SectionBuilder.RenderData> cir) {
+        if (BariumConfig.C.ENABLE_PER_SECTION_FRUSTUM_CULLING) {
+            if (!ChunkRenderManager.getInstance().isSectionInFrustum(sectionPos.getSectionX(), sectionPos.getSectionY(), sectionPos.getSectionZ())) {
+                cir.setReturnValue(new SectionBuilder.RenderData());
+                return;
+            }
+        }
+
+        if (BariumConfig.C.ENABLE_VISIBILITY_GRAPH_CULLING) {
+            if (!ChunkVisibilityManager.getInstance().isSectionPotentiallyVisible(sectionPos.getSectionX(), sectionPos.getSectionY(), sectionPos.getSectionZ())) {
+                cir.setReturnValue(new SectionBuilder.RenderData());
+                return;
+            }
+        }
+
         if (!BariumConfig.C.ENABLE_EMPTY_CHUNK_SECTION_CULLING) return;
         if (renderRegion == null || isSectionEmpty(renderRegion, sectionPos)) {
             cir.setReturnValue(new SectionBuilder.RenderData());
