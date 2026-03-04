@@ -15,6 +15,11 @@ public class ConfigData {
     public boolean ENABLE_EMPTY_CHUNK_SECTION_CULLING = true;
     public boolean ENABLE_PER_SECTION_FRUSTUM_CULLING = true;
     public boolean ENABLE_FRAME_VISIBILITY_CACHE = true;
+    public boolean ENABLE_PREDICTIVE_OCCLUSION_CULLING = true;
+    public int PREDICTIVE_LOOKAHEAD_MS = 100;
+    public int PREDICTIVE_HORIZONTAL_RADIUS_SECTIONS = 8;
+    public int PREDICTIVE_VERTICAL_RADIUS_SECTIONS = 3;
+    public int PREDICTIVE_FORWARD_EXTRA_SECTIONS = 4;
 
     // ================== Forest / Tree Optimizations ================== //
     public boolean ENABLE_FOREST_SECTION_CULLING = true;

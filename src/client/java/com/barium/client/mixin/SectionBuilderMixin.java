@@ -78,14 +78,20 @@ public class SectionBuilderMixin {
     // Mantém a otimização de seções vazias que já fizemos
     @Inject(method = "build", at = @At("HEAD"), cancellable = true)
     private void barium$cullEmptySections(ChunkSectionPos sectionPos, ChunkRendererRegion renderRegion, VertexSorter vertexSorter, net.minecraft.client.render.chunk.BlockBufferAllocatorStorage allocatorStorage, CallbackInfoReturnable<SectionBuilder.RenderData> cir) {
+        boolean predictedVisible = false;
+
         if (BariumConfig.C.ENABLE_PER_SECTION_FRUSTUM_CULLING) {
-            if (!ChunkRenderManager.getInstance().isSectionInFrustum(sectionPos.getSectionX(), sectionPos.getSectionY(), sectionPos.getSectionZ())) {
-                cir.setReturnValue(new SectionBuilder.RenderData());
-                return;
+            boolean inFrustum = ChunkRenderManager.getInstance().isSectionInFrustum(sectionPos.getSectionX(), sectionPos.getSectionY(), sectionPos.getSectionZ());
+            if (!inFrustum) {
+                predictedVisible = ChunkRenderManager.getInstance().isSectionPredictedVisible(sectionPos.getSectionX(), sectionPos.getSectionY(), sectionPos.getSectionZ());
+                if (!predictedVisible) {
+                    cir.setReturnValue(new SectionBuilder.RenderData());
+                    return;
+                }
             }
         }
 
-        if (BariumConfig.C.ENABLE_VISIBILITY_GRAPH_CULLING) {
+        if (BariumConfig.C.ENABLE_VISIBILITY_GRAPH_CULLING && !predictedVisible) {
             if (!ChunkVisibilityManager.getInstance().isSectionPotentiallyVisible(sectionPos.getSectionX(), sectionPos.getSectionY(), sectionPos.getSectionZ())) {
                 cir.setReturnValue(new SectionBuilder.RenderData());
                 return;
