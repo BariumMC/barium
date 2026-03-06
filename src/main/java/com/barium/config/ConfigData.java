@@ -45,6 +45,8 @@ public class ConfigData {
     public boolean DISABLE_DISTANT_TRANSLUCENCY_SORTING = true;
     public boolean CACHE_TRANSLUCENCY_SORT_WHILE_STABLE = true;
     public double TRANSLUCENCY_STABLE_CAMERA_DELTA = 0.125;
+    public int DISTANT_DETAIL_CULL_DISTANCE = 64;
+    public boolean ENABLE_AGGRESSIVE_DISTANT_DETAIL_CULLING = true;
 
     // ================== Culling & Level of Detail (LOD) ================== //
     public boolean ENABLE_ENTITY_CULLING = true;

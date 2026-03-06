@@ -27,11 +27,6 @@ public abstract class HandledScreenMixin<T extends ScreenHandler> {
     @Shadow protected T handler;
 
 
-    @Inject(method = "render(Lnet/minecraft/client/gui/DrawContext;IIF)V", at = @At("HEAD"))
-    private void barium$skipFirstRenderFrame(DrawContext context, int mouseX, int mouseY, float delta, CallbackInfo ci) {
-        // Desativado: cancelar o primeiro frame causava piscadas perceptíveis ao abrir GUI.
-    }
-
     @Inject(
         method = "drawMouseoverTooltip(Lnet/minecraft/client/gui/DrawContext;II)V",
         at = @At("HEAD"),
