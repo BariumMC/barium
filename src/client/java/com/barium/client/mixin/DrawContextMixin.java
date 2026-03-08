@@ -10,7 +10,6 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
-import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 @Mixin(DrawContext.class)
 public class DrawContextMixin {
@@ -64,32 +63,6 @@ public class DrawContextMixin {
 
         if (isTextCompletelyOffscreen(textRenderer, x, y, textRenderer.getWidth(text))) {
             ci.cancel();
-        }
-    }
-
-    @Inject(method = "drawTextWithShadow(Lnet/minecraft/client/font/TextRenderer;Ljava/lang/String;III)I", at = @At("HEAD"), cancellable = true)
-    private void barium$cullOffscreenShadowString(TextRenderer textRenderer, String text, int x, int y, int color, CallbackInfoReturnable<Integer> cir) {
-        if (!BariumConfig.C.ENABLE_GUI_OPTIMIZATION) return;
-        if (text == null || text.isEmpty() || (color & 0xFF000000) == 0) {
-            cir.setReturnValue(0);
-            return;
-        }
-
-        if (textRenderer != null && isTextCompletelyOffscreen(textRenderer, x, y, textRenderer.getWidth(text))) {
-            cir.setReturnValue(0);
-        }
-    }
-
-    @Inject(method = "drawTextWithShadow(Lnet/minecraft/client/font/TextRenderer;Lnet/minecraft/text/Text;III)I", at = @At("HEAD"), cancellable = true)
-    private void barium$cullOffscreenShadowText(TextRenderer textRenderer, Text text, int x, int y, int color, CallbackInfoReturnable<Integer> cir) {
-        if (!BariumConfig.C.ENABLE_GUI_OPTIMIZATION) return;
-        if (text == null || (color & 0xFF000000) == 0) {
-            cir.setReturnValue(0);
-            return;
-        }
-
-        if (textRenderer != null && isTextCompletelyOffscreen(textRenderer, x, y, textRenderer.getWidth(text))) {
-            cir.setReturnValue(0);
         }
     }
 
