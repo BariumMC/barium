@@ -66,6 +66,33 @@ public class DrawContextMixin {
         }
     }
 
+
+    @Inject(method = "drawTextWithShadow(Lnet/minecraft/client/font/TextRenderer;Ljava/lang/String;III)V", at = @At("HEAD"), cancellable = true)
+    private void barium$cullShadowString(TextRenderer textRenderer, String text, int x, int y, int color, CallbackInfo ci) {
+        if (!BariumConfig.C.ENABLE_GUI_OPTIMIZATION) return;
+        if (text == null || text.isEmpty() || (color & 0xFF000000) == 0) {
+            ci.cancel();
+            return;
+        }
+
+        if (textRenderer != null && isTextCompletelyOffscreen(textRenderer, x, y, textRenderer.getWidth(text))) {
+            ci.cancel();
+        }
+    }
+
+    @Inject(method = "drawTextWithShadow(Lnet/minecraft/client/font/TextRenderer;Lnet/minecraft/text/Text;III)V", at = @At("HEAD"), cancellable = true)
+    private void barium$cullShadowText(TextRenderer textRenderer, Text text, int x, int y, int color, CallbackInfo ci) {
+        if (!BariumConfig.C.ENABLE_GUI_OPTIMIZATION) return;
+        if (text == null || (color & 0xFF000000) == 0) {
+            ci.cancel();
+            return;
+        }
+
+        if (textRenderer != null && isTextCompletelyOffscreen(textRenderer, x, y, textRenderer.getWidth(text))) {
+            ci.cancel();
+        }
+    }
+
     private static boolean isTextCompletelyOffscreen(TextRenderer textRenderer, int x, int y, int textWidth) {
         MinecraftClient client = MinecraftClient.getInstance();
         if (client == null || client.getWindow() == null) return false;
