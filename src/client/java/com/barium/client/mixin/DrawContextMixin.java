@@ -1,15 +1,16 @@
 package com.barium.client.mixin;
 
 import com.barium.config.BariumConfig;
+import com.mojang.blaze3d.pipeline.RenderPipeline;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.font.TextRenderer;
 import net.minecraft.client.gui.DrawContext;
-import com.mojang.blaze3d.pipeline.RenderPipeline;
 import net.minecraft.text.Text;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 @Mixin(DrawContext.class)
 public class DrawContextMixin {
@@ -18,55 +19,36 @@ public class DrawContextMixin {
     private void barium$cullInvisibleFills(RenderPipeline pipeline, int x1, int y1, int x2, int y2, int color, CallbackInfo ci) {
         if (!BariumConfig.C.ENABLE_GUI_OPTIMIZATION) return;
 
-        // Verificação rápida de Alpha: (color >> 24) & 0xFF. Se for 0, é totalmente transparente.
         if ((color & 0xFF000000) == 0) {
             ci.cancel();
             return;
         }
 
-        // Área zero
         if (x1 == x2 || y1 == y2) {
             ci.cancel();
             return;
         }
 
-        MinecraftClient client = MinecraftClient.getInstance();
-        if (client == null || client.getWindow() == null) {
-            return;
-        }
-
-        int windowWidth = client.getWindow().getScaledWidth();
-        int windowHeight = client.getWindow().getScaledHeight();
         int minX = Math.min(x1, x2);
         int maxX = Math.max(x1, x2);
         int minY = Math.min(y1, y2);
         int maxY = Math.max(y1, y2);
 
-        // Retângulo totalmente fora da viewport da GUI
-        if (maxX <= 0 || minX >= windowWidth || maxY <= 0 || minY >= windowHeight) {
+        if (isRectCompletelyOffscreen(minX, minY, maxX, maxY)) {
             ci.cancel();
         }
     }
 
     @Inject(method = "drawText(Lnet/minecraft/client/font/TextRenderer;Ljava/lang/String;IIIZ)V", at = @At("HEAD"), cancellable = true)
     private void barium$cullEmptyString(TextRenderer textRenderer, String text, int x, int y, int color, boolean shadow, CallbackInfo ci) {
-        // Verifica se o texto é nulo, vazio, ou se a cor é transparente
         if (BariumConfig.C.ENABLE_GUI_OPTIMIZATION && (text == null || text.isEmpty() || (color & 0xFF000000) == 0)) {
             ci.cancel();
             return;
         }
 
-        if (!BariumConfig.C.ENABLE_GUI_OPTIMIZATION || textRenderer == null) return;
+        if (!BariumConfig.C.ENABLE_GUI_OPTIMIZATION || textRenderer == null || text == null) return;
 
-        MinecraftClient client = MinecraftClient.getInstance();
-        if (client == null || client.getWindow() == null) return;
-
-        int windowWidth = client.getWindow().getScaledWidth();
-        int windowHeight = client.getWindow().getScaledHeight();
-        int textWidth = textRenderer.getWidth(text);
-        int textHeight = textRenderer.fontHeight;
-
-        if (x >= windowWidth || y >= windowHeight || x + textWidth <= 0 || y + textHeight <= 0) {
+        if (isTextCompletelyOffscreen(textRenderer, x, y, textRenderer.getWidth(text))) {
             ci.cancel();
         }
     }
@@ -80,16 +62,55 @@ public class DrawContextMixin {
 
         if (!BariumConfig.C.ENABLE_GUI_OPTIMIZATION || textRenderer == null || text == null) return;
 
+        if (isTextCompletelyOffscreen(textRenderer, x, y, textRenderer.getWidth(text))) {
+            ci.cancel();
+        }
+    }
+
+    @Inject(method = "drawTextWithShadow(Lnet/minecraft/client/font/TextRenderer;Ljava/lang/String;III)I", at = @At("HEAD"), cancellable = true)
+    private void barium$cullOffscreenShadowString(TextRenderer textRenderer, String text, int x, int y, int color, CallbackInfoReturnable<Integer> cir) {
+        if (!BariumConfig.C.ENABLE_GUI_OPTIMIZATION) return;
+        if (text == null || text.isEmpty() || (color & 0xFF000000) == 0) {
+            cir.setReturnValue(0);
+            return;
+        }
+
+        if (textRenderer != null && isTextCompletelyOffscreen(textRenderer, x, y, textRenderer.getWidth(text))) {
+            cir.setReturnValue(0);
+        }
+    }
+
+    @Inject(method = "drawTextWithShadow(Lnet/minecraft/client/font/TextRenderer;Lnet/minecraft/text/Text;III)I", at = @At("HEAD"), cancellable = true)
+    private void barium$cullOffscreenShadowText(TextRenderer textRenderer, Text text, int x, int y, int color, CallbackInfoReturnable<Integer> cir) {
+        if (!BariumConfig.C.ENABLE_GUI_OPTIMIZATION) return;
+        if (text == null || (color & 0xFF000000) == 0) {
+            cir.setReturnValue(0);
+            return;
+        }
+
+        if (textRenderer != null && isTextCompletelyOffscreen(textRenderer, x, y, textRenderer.getWidth(text))) {
+            cir.setReturnValue(0);
+        }
+    }
+
+    private static boolean isTextCompletelyOffscreen(TextRenderer textRenderer, int x, int y, int textWidth) {
         MinecraftClient client = MinecraftClient.getInstance();
-        if (client == null || client.getWindow() == null) return;
+        if (client == null || client.getWindow() == null) return false;
 
         int windowWidth = client.getWindow().getScaledWidth();
         int windowHeight = client.getWindow().getScaledHeight();
-        int textWidth = textRenderer.getWidth(text);
         int textHeight = textRenderer.fontHeight;
 
-        if (x >= windowWidth || y >= windowHeight || x + textWidth <= 0 || y + textHeight <= 0) {
-            ci.cancel();
-        }
+        return x >= windowWidth || y >= windowHeight || x + textWidth <= 0 || y + textHeight <= 0;
+    }
+
+    private static boolean isRectCompletelyOffscreen(int minX, int minY, int maxX, int maxY) {
+        MinecraftClient client = MinecraftClient.getInstance();
+        if (client == null || client.getWindow() == null) return false;
+
+        int windowWidth = client.getWindow().getScaledWidth();
+        int windowHeight = client.getWindow().getScaledHeight();
+
+        return maxX <= 0 || minX >= windowWidth || maxY <= 0 || minY >= windowHeight;
     }
 }
