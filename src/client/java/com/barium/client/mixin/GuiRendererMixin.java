@@ -21,8 +21,8 @@ public abstract class GuiRendererMixin {
     }
 
     /**
-     * Otimização Crítica: renderPreparedDraws consome muita CPU iterando listas.
-     * Se o otimizador detectar que a tela está estática, cancelamos totalmente.
+     * Caminho conservador: só cancelamos renderPreparedDraws quando não há draws.
+     * Evita sobrecarga desnecessária sem reintroduzir flicker da GUI.
      */
     @Inject(method = "renderPreparedDraws", at = @At("HEAD"), cancellable = true)
     private void barium$optimizeRenderPreparedDraws(CallbackInfo ci) {
