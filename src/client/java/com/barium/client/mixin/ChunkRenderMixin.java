@@ -1,5 +1,6 @@
 package com.barium.client.mixin;
 
+import com.barium.client.chunk.ClientChunkManager;
 import com.barium.client.util.ChunkRenderManager;
 import com.barium.client.util.FloodFillVisibilityManager;
 import com.barium.config.BariumConfig;
@@ -75,6 +76,12 @@ public abstract class ChunkRenderMixin {
                 cir.setReturnValue(false);
                 return;
             }
+        }
+
+        // 3. ClientChunkManager (cilíndrico + prioridade direcional)
+        if (!ClientChunkManager.getInstance().shouldBuildChunkMesh(origin)) {
+            cir.setReturnValue(false);
+            return;
         }
 
         // 2. Frustum Culling (Campo de Visão)
