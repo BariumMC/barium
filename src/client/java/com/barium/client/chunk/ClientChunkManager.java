@@ -61,7 +61,7 @@ public final class ClientChunkManager {
         meshBuildQueue.clear();
 
         ChunkPos center = player.getChunkPos();
-        Vec3d look = camera.getRotation();
+        Vec3d look = player.getRotationVec(1.0F);
         int cameraSectionY = MathHelper.floor(camera.getPos().y) >> 4;
         int bottomSection = world.getBottomY() >> 4;
 
