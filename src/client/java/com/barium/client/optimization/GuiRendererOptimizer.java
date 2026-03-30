@@ -10,19 +10,19 @@ public class GuiRendererOptimizer {
     private static double lastMouseX = -1;
     private static double lastMouseY = -1;
     private static boolean forceRenderNext = true;
-    private static int staticFrameCounter = 0;
     private static Screen lastScreen = null;
     
-    // Configurações de Throttling
-    // Se a GUI estiver estática, renderiza apenas 1 a cada X frames
-    private static final int STATIC_GUI_UPDATE_RATE = 3; 
-
     public static void preRenderOptimize() {
         // Nada pesado aqui
     }
 
     /**
-     * Decide se deve pular a renderização do frame de GUI atual.
+     * Decide se deve pular a renderização de draws preparados.
+     *
+     * Regras conservadoras para evitar regressão visual/flicker:
+     * - nunca pula quando há draws para processar;
+     * - só pula quando a lista está vazia.
+     *
      * @param currentDrawCount O tamanho da lista de draws (O(1)).
      * @return true se devemos pular (cancelar) a renderização.
      */
@@ -34,6 +34,13 @@ public class GuiRendererOptimizer {
         if (currentScreen != lastScreen) {
             lastScreen = currentScreen;
             forceRenderNext = true;
+        }
+
+        // Caminho rápido: sem draws, não há trabalho útil em renderPreparedDraws.
+        if (currentDrawCount == 0) {
+            updateLastState(currentDrawCount, client);
+            forceRenderNext = false;
+            return true;
         }
 
         // Sempre renderiza se forçado (ex: redimensionamento, abertura de tela)
@@ -63,29 +70,12 @@ public class GuiRendererOptimizer {
             return false;
         }
 
-        // --- LÓGICA DE GUI ESTÁTICA ---
-        // Se chegamos aqui, o mouse está parado e a quantidade de elementos é a mesma.
-        // Provavelmente é um inventário aberto sem interação.
-
-        staticFrameCounter++;
-
-        // No modo agressivo, pulamos mais frames quando estático
-        int rate = BariumConfig.C.ENABLE_AGGRESSIVE_OPTIMIZATION ? STATIC_GUI_UPDATE_RATE * 2 : STATIC_GUI_UPDATE_RATE;
-
-        // Se ainda não atingimos o limite de frames para pular, CANCELA a renderização.
-        if (staticFrameCounter < rate) {
-            return true; // PULA! Economiza CPU.
-        }
-
-        // Hora de desenhar um frame para atualizar animações (glint, cursor piscando).
-        staticFrameCounter = 0;
+        // Evita flicker: não pulamos mais frames inteiros de GUI com conteúdo.
         return false;
     }
 
     private static void updateLastState(int count, MinecraftClient client) {
         lastDrawCount = count;
-        // Reseta o contador para garantir fluidez imediata após uma interação
-        staticFrameCounter = 0;
         if (client != null && client.mouse != null) {
             lastMouseX = client.mouse.getX();
             lastMouseY = client.mouse.getY();
@@ -98,7 +88,6 @@ public class GuiRendererOptimizer {
     public static void reset() {
         forceRenderNext = true;
         lastDrawCount = -1;
-        staticFrameCounter = 0;
         lastScreen = null;
     }
 
