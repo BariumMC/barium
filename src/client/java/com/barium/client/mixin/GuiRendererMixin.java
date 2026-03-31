@@ -15,9 +15,12 @@ public abstract class GuiRendererMixin {
 
     @Shadow @Final private List<?> draws;
 
-    @Inject(method = "render", at = @At("HEAD"))
+    @Inject(method = "render", at = @At("HEAD"), cancellable = true)
     private void barium$preRenderOptimize(CallbackInfo ci) {
         GuiRendererOptimizer.preRenderOptimize();
+        if (GuiRendererOptimizer.shouldSkipGuiRender()) {
+            ci.cancel();
+        }
     }
 
     /**
