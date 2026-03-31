@@ -31,4 +31,20 @@ public abstract class ClientWorldMixin {
             }
         }
     }
+
+    /**
+     * Reduz o custo de partículas/blocos ambientais (lava, fumaça, etc.)
+     * executando os random display ticks em metade dos ticks do cliente.
+     *
+     * Isso é aplicado apenas quando a opção REDUCE_AMBIENT_PARTICLES está ativa.
+     */
+    @Inject(method = "doRandomBlockDisplayTicks", at = @At("HEAD"), cancellable = true)
+    private void barium$throttleRandomBlockDisplayTicks(CallbackInfo ci) {
+        if (!BariumConfig.C.REDUCE_AMBIENT_PARTICLES) return;
+
+        ClientWorld world = (ClientWorld) (Object) this;
+        if ((world.getTime() & 1L) != 0L) {
+            ci.cancel();
+        }
+    }
 }
