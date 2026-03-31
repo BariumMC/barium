@@ -1,5 +1,6 @@
 package com.barium.client.mixin;
 
+import com.barium.client.chunk.ClientChunkManager;
 import com.barium.client.optimization.EntityOutlineOptimizer;
 import com.barium.client.optimization.ChunkUploadThrottler;
 import com.barium.client.util.ChunkRenderManager;
@@ -89,6 +90,11 @@ public abstract class WorldRendererMixin {
         }
 
         ChunkRenderManager.getInstance().beginFrame(camera.getPos());
+
+        if (client.player != null) {
+            ClientChunkManager.getInstance().setFrustum(frustum);
+            ClientChunkManager.getInstance().update(camera, client.player);
+        }
 
         // 2. Atualiza o Flood Fill (se ativado)
         if (BariumConfig.C.ENABLE_FLOOD_FILL_CULLING) {
