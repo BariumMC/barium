@@ -1,6 +1,7 @@
 package com.barium.client.chunk;
 
 import com.barium.client.util.ChunkRenderManager;
+import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.network.ClientPlayerEntity;
 import net.minecraft.client.render.Camera;
@@ -14,8 +15,6 @@ import net.minecraft.world.chunk.ChunkSection;
 import net.minecraft.world.chunk.WorldChunk;
 
 import java.util.Comparator;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.PriorityQueue;
 
 /**
@@ -31,8 +30,8 @@ public final class ClientChunkManager {
     private static final int VERTICAL_RANGE_SECTIONS = 8;
     private static final int MAX_MESH_BUILDS_PER_FRAME = 12;
 
-    private final Map<Long, ChunkRenderState> chunkStates = new HashMap<>();
-    private final Map<Long, SectionRenderState[]> sectionStates = new HashMap<>();
+    private final Long2ObjectOpenHashMap<ChunkRenderState> chunkStates = new Long2ObjectOpenHashMap<>();
+    private final Long2ObjectOpenHashMap<SectionRenderState[]> sectionStates = new Long2ObjectOpenHashMap<>();
     private final PriorityQueue<ChunkRenderState> meshBuildQueue =
         new PriorityQueue<>(Comparator.comparingDouble(ChunkRenderState::priorityScore).reversed());
 
@@ -72,36 +71,42 @@ public final class ClientChunkManager {
                     continue; // cylinder base (circle) in horizontal plane
                 }
 
-                ChunkPos chunkPos = new ChunkPos(center.x + dx, center.z + dz);
-                long key = chunkPos.toLong();
-                ChunkRenderState renderState = chunkStates.computeIfAbsent(key, ignored -> new ChunkRenderState(chunkPos));
+                int chunkX = center.x + dx;
+                int chunkZ = center.z + dz;
+                long key = ChunkPos.toLong(chunkX, chunkZ);
+                ChunkRenderState renderState = chunkStates.get(key);
+                if (renderState == null) {
+                    renderState = new ChunkRenderState(new ChunkPos(chunkX, chunkZ));
+                    chunkStates.put(key, renderState);
+                }
 
-                boolean chunkVisible = ChunkRenderManager.getInstance().isChunkInFrustum(chunkPos.x, chunkPos.z);
+                boolean chunkVisible = ChunkRenderManager.getInstance().isChunkInFrustum(chunkX, chunkZ);
                 float score = computePriorityScore(dx, dz, dist, look, chunkVisible);
                 renderState.setVisible(chunkVisible);
                 renderState.setPriorityScore(score);
 
-                updateVisibleChunks(world, chunkPos, cameraSectionY, bottomSection, renderState);
+                updateVisibleChunks(world, chunkX, chunkZ, key, cameraSectionY, bottomSection, renderState);
             }
         }
 
         scheduleMeshBuilds();
     }
 
-    public void updateVisibleChunks(ClientWorld world, ChunkPos chunkPos, int cameraSectionY, int bottomSection, ChunkRenderState chunkState) {
-        WorldChunk chunk = world.getChunk(chunkPos.x, chunkPos.z);
+    public void updateVisibleChunks(ClientWorld world, int chunkX, int chunkZ, long chunkKey, int cameraSectionY, int bottomSection, ChunkRenderState chunkState) {
+        WorldChunk chunk = world.getChunk(chunkX, chunkZ);
         if (chunk == null) {
             return;
         }
 
         ChunkSection[] sections = chunk.getSectionArray();
-        SectionRenderState[] states = sectionStates.computeIfAbsent(chunkPos.toLong(), ignored -> {
-            SectionRenderState[] arr = new SectionRenderState[sections.length];
+        SectionRenderState[] states = sectionStates.get(chunkKey);
+        if (states == null || states.length != sections.length) {
+            states = new SectionRenderState[sections.length];
             for (int i = 0; i < sections.length; i++) {
-                arr[i] = new SectionRenderState(i, sections[i] == null || sections[i].isEmpty());
+                states[i] = new SectionRenderState(i, sections[i] == null || sections[i].isEmpty());
             }
-            return arr;
-        });
+            sectionStates.put(chunkKey, states);
+        }
 
         for (int i = 0; i < sections.length; i++) {
             ChunkSection section = sections[i];
@@ -120,7 +125,7 @@ public final class ClientChunkManager {
 
             boolean sectionVisible = inVerticalRange
                 && chunkState.isVisible()
-                && ChunkRenderManager.getInstance().isSectionInFrustum(chunkPos.x, sectionY, chunkPos.z);
+                && ChunkRenderManager.getInstance().isSectionInFrustum(chunkX, sectionY, chunkZ);
 
             sectionState.setVisible(sectionVisible);
             sectionState.setNeedsMeshUpdate(sectionVisible || (inVerticalRange && chunkState.priorityScore() > 80.0f));
