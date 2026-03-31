@@ -17,6 +17,21 @@ public class GuiRendererOptimizer {
     }
 
     /**
+     * Fast-path global para quando a HUD está explicitamente escondida (F1)
+     * e nenhuma tela está aberta. Nesse cenário o GuiRenderer não produz
+     * saída útil, então podemos pular o frame de GUI inteiro.
+     */
+    public static boolean shouldSkipGuiRender() {
+        if (!BariumConfig.C.ENABLE_GUI_OPTIMIZATION) return false;
+
+        MinecraftClient client = MinecraftClient.getInstance();
+        if (client == null || client.options == null) return false;
+        if (client.currentScreen != null) return false;
+
+        return client.options.hudHidden;
+    }
+
+    /**
      * Decide se deve pular a renderização de draws preparados.
      *
      * Regras conservadoras para evitar regressão visual/flicker:
