@@ -92,6 +92,10 @@
   "tooltip.barium.enable_gui_optimization": "Otimiza o desempenho de renderização da GUI, similar às otimizações do Sodium. Reduz overhead ao renderizar elementos da interface.",
   "option.barium.mipmap_level_override": "Forçar Nível de Mipmap (0-4)",
   "tooltip.barium.mipmap_level_override": "Força uma resolução de textura menor. Valores maiores reduzem o uso de VRAM e podem melhorar o FPS com pacotes de textura, mas deixam as texturas borradas.\nRequer reinicialização. 0=Desligado.",
+  "option.barium.enable_hand_render_throttling": "Limitar Render da Mão",
+  "tooltip.barium.enable_hand_render_throttling": "Modo adaptativo: só reduz frames da mão sob pressão de FPS e rotação rápida, evitando skip consecutivo para reduzir flicker.",
+  "option.barium.hand_render_skip_frames": "Frames Pulados da Mão",
+  "tooltip.barium.hand_render_skip_frames": "Define quantos frames da mão serão pulados entre renders. 1 = leve, 3 = agressivo.",
   
   "option.barium.enable_entity_tick_culling": "Otimização de Ticks de Entidades",
   "tooltip.barium.enable_entity_tick_culling": "Reduz a frequência de atualização da lógica (IA) de entidades distantes.",
@@ -101,6 +105,8 @@
 
   "option.barium.enable_hopper_culling": "Otimização de Funis",
   "tooltip.barium.enable_hopper_culling": "Reduz a frequência de atualização de funis distantes. Grande economia de CPU para farms.",
+  "option.barium.enable_background_event_throttling": "Limitar Eventos em Segundo Plano",
+  "tooltip.barium.enable_background_event_throttling": "Usa um agendador adaptativo em 3 fases para pollEvents no background (rápido ao perder foco, normal em seguida, e econômico em idle).",
 
   "option.barium.disable_entity_outlines": "Desativar Efeito de Brilho",
   "tooltip.barium.disable_entity_outlines": "Desativa completamente o efeito de contorno brilhante.",
