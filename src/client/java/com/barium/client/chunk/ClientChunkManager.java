@@ -39,6 +39,12 @@ public final class ClientChunkManager {
 
     private Frustum frustum;
     private int frameId;
+    private int lastFullUpdateFrame = Integer.MIN_VALUE;
+    private double lastCameraX;
+    private double lastCameraY;
+    private double lastCameraZ;
+    private float lastPlayerYaw;
+    private float lastPlayerPitch;
 
     public static ClientChunkManager getInstance() {
         return INSTANCE;
@@ -61,6 +67,14 @@ public final class ClientChunkManager {
         frameId++;
         meshBuildQueue.clear();
         ChunkRenderManager renderManager = ChunkRenderManager.getInstance();
+        Vec3d cameraPos = camera.getPos();
+
+        if (shouldSkipFullUpdate(cameraPos, player)) {
+            scheduleMeshBuilds();
+            return;
+        }
+        cacheUpdateSnapshot(cameraPos, player);
+        lastFullUpdateFrame = frameId;
 
         ChunkPos center = player.getChunkPos();
         Vec3d look = player.getRotationVec(1.0F);
@@ -91,6 +105,10 @@ public final class ClientChunkManager {
                 float score = computePriorityScore(dx, dz, dist, distSq, lookX, lookZ, chunkVisible);
                 renderState.setVisible(chunkVisible);
                 renderState.setPriorityScore(score);
+
+                if (!chunkVisible && score < 40.0f) {
+                    continue;
+                }
 
                 updateVisibleChunks(world, renderManager, chunkX, chunkZ, key, cameraSectionY, bottomSection, renderState);
             }
@@ -200,5 +218,28 @@ public final class ClientChunkManager {
         sectionStates.clear();
         meshBuildQueue.clear();
         frustum = null;
+        lastFullUpdateFrame = Integer.MIN_VALUE;
+    }
+
+    private boolean shouldSkipFullUpdate(Vec3d cameraPos, ClientPlayerEntity player) {
+        if (lastFullUpdateFrame == Integer.MIN_VALUE) return false;
+
+        double dx = cameraPos.x - lastCameraX;
+        double dy = cameraPos.y - lastCameraY;
+        double dz = cameraPos.z - lastCameraZ;
+        double movementSq = dx * dx + dy * dy + dz * dz;
+        boolean stablePosition = movementSq < 0.02 * 0.02;
+        boolean stableRotation = Math.abs(player.getYaw() - lastPlayerYaw) < 0.5f
+                && Math.abs(player.getPitch() - lastPlayerPitch) < 0.5f;
+
+        return stablePosition && stableRotation && (frameId - lastFullUpdateFrame) < 2;
+    }
+
+    private void cacheUpdateSnapshot(Vec3d cameraPos, ClientPlayerEntity player) {
+        lastCameraX = cameraPos.x;
+        lastCameraY = cameraPos.y;
+        lastCameraZ = cameraPos.z;
+        lastPlayerYaw = player.getYaw();
+        lastPlayerPitch = player.getPitch();
     }
 }
