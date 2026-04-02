@@ -24,6 +24,7 @@
 		"ParticleMixin",
 		"RenderSystemMixin",
 		"SectionBuilderMixin",
+		"SoundManagerMixin",
 		"SpriteLoaderMixin",
 		"TextureAtlasMixin",
 		"WorldRendererAccessor",
