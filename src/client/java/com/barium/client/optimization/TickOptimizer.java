@@ -71,6 +71,15 @@ public final class TickOptimizer {
         if (world == null || client == null) return false;
 
         long worldTime = world.getTime();
+        if (client.player != null) {
+            double horizontalVelSq = client.player.getVelocity().x * client.player.getVelocity().x
+                    + client.player.getVelocity().z * client.player.getVelocity().z;
+            // Em movimento, random display ticks (lava/fumaça/ambiente) custam muito e são pouco perceptíveis.
+            if (horizontalVelSq > 0.0025 || client.player.isSprinting()) {
+                return (worldTime % 3L) != 0L; // executa ~33% dos ticks.
+            }
+        }
+
         if (!client.isWindowFocused()) {
             return (worldTime & 3L) != 0L; // 25% dos ticks em background.
         }
@@ -79,7 +88,7 @@ public final class TickOptimizer {
         if (fps > 0 && fps < 35) {
             return (worldTime % 3L) != 0L; // ~33% quando FPS muito baixo.
         }
-        if (fps > 0 && fps < 55) {
+        if (fps > 0 && fps < 75) {
             return (worldTime & 1L) != 0L; // 50% quando FPS abaixo da meta.
         }
         return false;
