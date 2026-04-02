@@ -1,6 +1,7 @@
 package com.barium.client.chunk;
 
 import com.barium.client.util.ChunkRenderManager;
+import com.barium.config.BariumConfig;
 import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.network.ClientPlayerEntity;
@@ -31,6 +32,8 @@ public final class ClientChunkManager {
     private static final int MAX_MESH_BUILDS_PER_FRAME = 12;
     private static final int HORIZONTAL_RADIUS_SQ = HORIZONTAL_RADIUS_CHUNKS * HORIZONTAL_RADIUS_CHUNKS;
     private static final float NEAR_VISIBLE_PRIORITY_THRESHOLD = 80.0f;
+    private static final int FULL_UPDATE_NEAR_RADIUS_CHUNKS = 8;
+    private static final int FULL_UPDATE_NEAR_RADIUS_SQ = FULL_UPDATE_NEAR_RADIUS_CHUNKS * FULL_UPDATE_NEAR_RADIUS_CHUNKS;
 
     private final Long2ObjectOpenHashMap<ChunkRenderState> chunkStates = new Long2ObjectOpenHashMap<>();
     private final Long2ObjectOpenHashMap<SectionRenderState[]> sectionStates = new Long2ObjectOpenHashMap<>();
@@ -89,6 +92,9 @@ public final class ClientChunkManager {
                 int distSq = dxSq + (dz * dz);
                 if (distSq > HORIZONTAL_RADIUS_SQ) {
                     continue; // cylinder base (circle) in horizontal plane
+                }
+                if (!shouldProcessChunkThisFrame(distSq, center.x + dx, center.z + dz)) {
+                    continue;
                 }
                 double dist = Math.sqrt(distSq);
 
@@ -161,9 +167,14 @@ public final class ClientChunkManager {
             boolean inVerticalRange = verticalDistance <= VERTICAL_RANGE_SECTIONS;
             sectionState.setInVerticalRange(inVerticalRange);
 
-            boolean sectionVisible = inVerticalRange
-                && (renderManager.isSectionPredictedVisible(chunkX, sectionY, chunkZ)
-                || (chunkVisible && renderManager.isSectionInFrustum(chunkX, sectionY, chunkZ)));
+            boolean sectionVisible = false;
+            if (inVerticalRange) {
+                if (chunkVisible) {
+                    sectionVisible = renderManager.isSectionInFrustum(chunkX, sectionY, chunkZ);
+                } else if (BariumConfig.C.ENABLE_PREDICTIVE_OCCLUSION_CULLING && nearVisibleChunk) {
+                    sectionVisible = renderManager.isSectionPredictedVisible(chunkX, sectionY, chunkZ);
+                }
+            }
 
             sectionState.setVisible(sectionVisible);
             boolean needsMesh = sectionVisible || (inVerticalRange && nearVisibleChunk);
@@ -241,5 +252,14 @@ public final class ClientChunkManager {
         lastCameraZ = cameraPos.z;
         lastPlayerYaw = player.getYaw();
         lastPlayerPitch = player.getPitch();
+    }
+
+    private boolean shouldProcessChunkThisFrame(int distSq, int chunkX, int chunkZ) {
+        if (distSq <= FULL_UPDATE_NEAR_RADIUS_SQ) {
+            return true;
+        }
+        // Amostragem em checkerboard para chunks mais distantes:
+        // reduz custo de update sem impacto visual relevante em movimento.
+        return ((chunkX + chunkZ + frameId) & 1) == 0;
     }
 }
