@@ -144,8 +144,8 @@ public final class ClientChunkManager {
             sectionState.setInVerticalRange(inVerticalRange);
 
             boolean sectionVisible = inVerticalRange
-                && chunkVisible
-                && renderManager.isSectionInFrustum(chunkX, sectionY, chunkZ);
+                && (renderManager.isSectionPredictedVisible(chunkX, sectionY, chunkZ)
+                || (chunkVisible && renderManager.isSectionInFrustum(chunkX, sectionY, chunkZ)));
 
             sectionState.setVisible(sectionVisible);
             boolean needsMesh = sectionVisible || (inVerticalRange && nearVisibleChunk);
