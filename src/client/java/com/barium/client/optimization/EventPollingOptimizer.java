@@ -3,6 +3,7 @@ package com.barium.client.optimization;
 import com.barium.config.BariumConfig;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.util.Util;
+import org.lwjgl.glfw.GLFW;
 
 /**
  * Agendador adaptativo de pollEvents inspirado em técnicas usadas em mods
@@ -13,6 +14,9 @@ public final class EventPollingOptimizer {
     private static final long FAST_UNFOCUSED_INTERVAL_MS = 4L;
     private static final long NORMAL_UNFOCUSED_INTERVAL_MS = 8L;
     private static final long IDLE_UNFOCUSED_INTERVAL_MS = 16L;
+    private static final long MENU_UNFOCUSED_INTERVAL_MS = 16L;
+    private static final long MENU_IDLE_UNFOCUSED_INTERVAL_MS = 24L;
+    private static final long ICONIFIED_INTERVAL_MS = 33L;
     private static final long BACKGROUND_GRACE_MS = 2_000L;
     private static final long BACKGROUND_IDLE_MS = 10_000L;
 
@@ -41,7 +45,7 @@ public final class EventPollingOptimizer {
             unfocusedSinceMs = now;
         }
 
-        long interval = computeTargetInterval(now);
+        long interval = computeTargetInterval(client, now);
         return now - lastPollMs < interval;
     }
 
@@ -49,7 +53,18 @@ public final class EventPollingOptimizer {
         lastPollMs = Util.getMeasuringTimeMs();
     }
 
-    private static long computeTargetInterval(long now) {
+    private static long computeTargetInterval(MinecraftClient client, long now) {
+        if (isWindowIconified(client)) {
+            return ICONIFIED_INTERVAL_MS;
+        }
+
+        if (client.world == null) {
+            long unfocusedFor = unfocusedSinceMs < 0L ? 0L : now - unfocusedSinceMs;
+            return unfocusedFor <= BACKGROUND_IDLE_MS
+                    ? MENU_UNFOCUSED_INTERVAL_MS
+                    : MENU_IDLE_UNFOCUSED_INTERVAL_MS;
+        }
+
         if (unfocusedSinceMs < 0L) {
             return NORMAL_UNFOCUSED_INTERVAL_MS;
         }
@@ -62,5 +77,11 @@ public final class EventPollingOptimizer {
             return NORMAL_UNFOCUSED_INTERVAL_MS;
         }
         return IDLE_UNFOCUSED_INTERVAL_MS;
+    }
+
+    private static boolean isWindowIconified(MinecraftClient client) {
+        if (client == null) return false;
+        long handle = client.getWindow().getHandle();
+        return handle != 0L && GLFW.glfwGetWindowAttrib(handle, GLFW.GLFW_ICONIFIED) == GLFW.GLFW_TRUE;
     }
 }
