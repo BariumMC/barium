@@ -2,27 +2,16 @@ package com.barium.client.mixin;
 
 import com.barium.client.optimization.HudOptimizer;
 import com.barium.config.BariumConfig;
-import com.google.common.collect.Lists;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.hud.DebugHud;
 import net.minecraft.util.Formatting;
-import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
-import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
-import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.ModifyVariable;
-import org.spongepowered.asm.mixin.injection.Redirect;
-import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
-import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 import java.util.List;
 
 @Mixin(DebugHud.class)
 public abstract class DebugHudMixin {
-
-    @Shadow @Final private MinecraftClient client;
 
     // --- LÓGICA DE CACHE E MODIFICAÇÃO PARA O HUD DE DEBUG (F3) ---
     // CORREÇÃO: Os métodos getLeftText e getRightText foram removidos.
@@ -44,21 +33,6 @@ public abstract class DebugHudMixin {
         // Se devemos recalcular, atualizamos o cache com a nova lista e a retornamos.
         HudOptimizer.updateDebugHudCache("debug_left", originalList);
         return originalList;
-    }
-
-    /**
-     * O F3 aceita uma atualização ligeiramente menos frequente.
-     * Quando o cache está ativo, renderizamos em metade da taxa para reduzir
-     * custo de reordenação/bidi de texto.
-     */
-    @Inject(method = "render(Lnet/minecraft/client/gui/DrawContext;)V", at = @At("HEAD"), cancellable = true)
-    private void barium$throttleDebugHudRender(DrawContext context, CallbackInfo ci) {
-        if (!BariumConfig.C.CACHE_DEBUG_HUD) return;
-        if (client == null || client.world == null) return;
-
-        if ((client.world.getTime() & 1L) != 0L) {
-            ci.cancel();
-        }
     }
 
     // Intercepta a lista do lado DIREITO (ordinal = 1)

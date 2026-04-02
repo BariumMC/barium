@@ -104,6 +104,10 @@
   "tooltip.barium.enable_gui_optimization": "Optimizes GUI rendering performance, similar to Sodium's optimizations. Reduces overhead when rendering interface elements.",
   "option.barium.mipmap_level_override": "Mipmap Level Override (0-4)",
   "tooltip.barium.mipmap_level_override": "Forces a lower texture resolution. Higher values reduce VRAM usage and can improve FPS with resource packs, but make textures blurrier.\nRequires a game restart. 0=Off.",
+  "option.barium.enable_hand_render_throttling": "Enable Hand Render Throttling",
+  "tooltip.barium.enable_hand_render_throttling": "Adaptive mode: only throttles hand frames under low FPS + fast camera rotation, avoiding consecutive skips to reduce flicker.",
+  "option.barium.hand_render_skip_frames": "Hand Render Skip Frames",
+  "tooltip.barium.hand_render_skip_frames": "How many hand frames to skip between renders. 1 = light, 3 = aggressive.",
 
   "option.barium.enable_entity_tick_culling": "Enable Entity Tick Culling",
   "tooltip.barium.enable_entity_tick_culling": "Reduces the update frequency of distant entities' logic (AI).",
@@ -114,6 +118,8 @@
   "tooltip.barium.reduce_ambient_particles": "Reduces the frequency of ambient particle effects (torch smoke, water drips).",
   "option.barium.enable_hopper_culling": "Enable Hopper Culling",
   "tooltip.barium.enable_hopper_culling": "Reduces the update frequency of distant hoppers. Huge CPU saver for farms.",
+  "option.barium.enable_background_event_throttling": "Enable Background Event Throttling",
+  "tooltip.barium.enable_background_event_throttling": "Uses a 3-phase adaptive pollEvents scheduler in background (fast right after focus loss, normal, then idle-saving).",
 
   "option.barium.enable_flood_fill_culling": "Enable Flood-Fill Culling",
   "tooltip.barium.enable_flood_fill_culling": "A robust algorithm that discovers visible chunks by 'flooding' out from the camera. Very stable and effective, prevents rendering anything the player can't see. Recommended ON.",

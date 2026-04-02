@@ -82,12 +82,15 @@ public class ConfigData {
     public boolean DISABLE_TEXTURE_ANIMATIONS = false;
     public boolean ENABLE_GUI_OPTIMIZATION = true;
     public int MIPMAP_LEVEL_OVERRIDE = 0;
+    public boolean ENABLE_HAND_RENDER_THROTTLING = false;
+    public int HAND_RENDER_SKIP_FRAMES = 1;
 
     // ================== Game Logic & Tick Optimizations ================== //
     public boolean ENABLE_ENTITY_TICK_CULLING = true;
     public double ENTITY_TICK_CULLING_DISTANCE_SQ = 64 * 64;
     public boolean REDUCE_AMBIENT_PARTICLES = true;
     public boolean ENABLE_HOPPER_TICK_CULLING = true;
+    public boolean ENABLE_BACKGROUND_EVENT_THROTTLING = true;
 
     // ================== Fast Math ================== //
     public boolean ENABLE_FAST_MATH = true;

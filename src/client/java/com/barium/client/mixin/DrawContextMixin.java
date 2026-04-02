@@ -31,6 +31,28 @@ public class DrawContextMixin {
         }
     }
 
+    @Inject(method = "drawStackOverlay(Lnet/minecraft/client/font/TextRenderer;Lnet/minecraft/item/ItemStack;IILjava/lang/String;)V", at = @At("HEAD"), cancellable = true, require = 0)
+    private void barium$skipUnneededStackOverlay(TextRenderer textRenderer, ItemStack stack, int x, int y, String countOverride, CallbackInfo ci) {
+        if (!BariumConfig.C.ENABLE_GUI_OPTIMIZATION) return;
+        if (stack == null || stack.isEmpty()) {
+            ci.cancel();
+            return;
+        }
+
+        boolean hasCountOverride = countOverride != null && !countOverride.isEmpty();
+        boolean needsCountText = stack.getCount() != 1;
+        boolean needsDurabilityBar = stack.isItemBarVisible();
+
+        if (!hasCountOverride && !needsCountText && !needsDurabilityBar) {
+            ci.cancel();
+        }
+    }
+
+    @Inject(method = "drawStackOverlay(Lnet/minecraft/client/font/TextRenderer;Lnet/minecraft/item/ItemStack;II)V", at = @At("HEAD"), cancellable = true, require = 0)
+    private void barium$skipUnneededStackOverlayWithoutOverride(TextRenderer textRenderer, ItemStack stack, int x, int y, CallbackInfo ci) {
+        barium$skipUnneededStackOverlay(textRenderer, stack, x, y, null, ci);
+    }
+
     @Inject(method = "fill(Lcom/mojang/blaze3d/pipeline/RenderPipeline;IIIII)V", at = @At("HEAD"), cancellable = true)
     private void barium$cullInvisibleFills(RenderPipeline pipeline, int x1, int y1, int x2, int y2, int color, CallbackInfo ci) {
         if (!BariumConfig.C.ENABLE_GUI_OPTIMIZATION) return;
