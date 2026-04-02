@@ -17,6 +17,7 @@
 		"HandRenderMixin",
 		"GuiRendererMixin",
 		"InGameHudMixin",
+		"ItemStackMixin",
 		"DrawContextMixin",
 		"HandledScreenMixin",
 		"ParticleAccessor",
