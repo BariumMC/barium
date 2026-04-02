@@ -14,6 +14,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 @Mixin(DrawContext.class)
 public class DrawContextMixin {
+    private static int barium$overlayFrameCounter = 0;
 
     @Inject(method = "drawItem(Lnet/minecraft/item/ItemStack;II)V", at = @At("HEAD"), cancellable = true, require = 0)
     private void barium$skipEmptyItemDraw(ItemStack stack, int x, int y, CallbackInfo ci) {
@@ -42,6 +43,11 @@ public class DrawContextMixin {
         boolean hasCountOverride = countOverride != null && !countOverride.isEmpty();
         boolean needsCountText = stack.getCount() != 1;
         boolean needsDurabilityBar = stack.isItemBarVisible();
+
+        if (!hasCountOverride && needsCountText && !needsDurabilityBar && barium$shouldThrottleCountOverlay()) {
+            ci.cancel();
+            return;
+        }
 
         if (!hasCountOverride && !needsCountText && !needsDurabilityBar) {
             ci.cancel();
@@ -151,5 +157,19 @@ public class DrawContextMixin {
         int windowHeight = client.getWindow().getScaledHeight();
 
         return maxX <= 0 || minX >= windowWidth || maxY <= 0 || minY >= windowHeight;
+    }
+
+    private static boolean barium$shouldThrottleCountOverlay() {
+        MinecraftClient client = MinecraftClient.getInstance();
+        if (client == null || client.player == null) return false;
+        if (client.currentScreen != null) return false;
+
+        double vx = client.player.getVelocity().x;
+        double vz = client.player.getVelocity().z;
+        double horizontalVelocitySq = vx * vx + vz * vz;
+        if (horizontalVelocitySq < 0.0025) return false;
+
+        barium$overlayFrameCounter++;
+        return (barium$overlayFrameCounter & 1) != 0; // metade dos overlays de contagem enquanto em movimento.
     }
 }
