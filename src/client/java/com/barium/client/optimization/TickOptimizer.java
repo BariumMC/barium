@@ -26,10 +26,16 @@ public final class TickOptimizer {
         if (entity.isPlayer() || entity.hasPassengers() || entity.hasVehicle()) return false;
 
         double distanceSq = entity.squaredDistanceTo(player);
-        if (distanceSq <= 64.0 * 64.0) return false;
+        if (distanceSq <= 40.0 * 40.0) return false;
 
-        // Só reduz tick quando já está fora do alcance normal de render por distância.
-        if (entity.shouldRender(distanceSq)) return false;
+        boolean offscreenByDirection = isLikelyOffscreenFromPlayer(player, entity);
+        boolean beyondRenderDistance = !entity.shouldRender(distanceSq);
+
+        // Em alcance médio, só cull se estiver fora da direção de visão.
+        if (distanceSq <= 64.0 * 64.0 && !offscreenByDirection) return false;
+
+        // Em alcance alto, cull por distância ou por estar fora da direção de visão.
+        if (!beyondRenderDistance && !offscreenByDirection) return false;
 
         int divider;
         if (distanceSq > 196.0 * 196.0) {
@@ -38,8 +44,19 @@ public final class TickOptimizer {
             divider = 8;
         } else if (distanceSq > 96.0 * 96.0) {
             divider = 6;
-        } else {
+        } else if (distanceSq > 64.0 * 64.0) {
             divider = 4;
+        } else {
+            divider = 2;
+        }
+
+        if (offscreenByDirection && distanceSq > 48.0 * 48.0) {
+            divider = Math.max(divider, 3);
+        }
+
+        int fps = client.getCurrentFps();
+        if (fps > 0 && fps < 45) {
+            divider += 1;
         }
 
         if (!client.isWindowFocused()) {
@@ -100,5 +117,22 @@ public final class TickOptimizer {
     private static boolean isWindowIconified(MinecraftClient client) {
         long handle = client.getWindow().getHandle();
         return handle != 0L && GLFW.glfwGetWindowAttrib(handle, GLFW.GLFW_ICONIFIED) == GLFW.GLFW_TRUE;
+    }
+
+    private static boolean isLikelyOffscreenFromPlayer(ClientPlayerEntity player, Entity entity) {
+        double dx = entity.getX() - player.getX();
+        double dy = entity.getEyeY() - player.getEyeY();
+        double dz = entity.getZ() - player.getZ();
+        double lenSq = dx * dx + dy * dy + dz * dz;
+        if (lenSq < 1.0e-6) return false;
+
+        double invLen = 1.0 / Math.sqrt(lenSq);
+        double dirX = dx * invLen;
+        double dirY = dy * invLen;
+        double dirZ = dz * invLen;
+
+        var look = player.getRotationVec(1.0F);
+        double dot = look.x * dirX + look.y * dirY + look.z * dirZ;
+        return dot < 0.15; // fora do cone frontal principal.
     }
 }
