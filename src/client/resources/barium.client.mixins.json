@@ -10,6 +10,7 @@
 		"ChunkBuilderMixin",
 		"ChunkRenderMixin",
 		"ClientWorldMixin",
+		"ClientPlayNetworkHandlerMixin",
 		"DebugHudMixin",
 		"FrameGraphBuilderMixin",
 		"EntityRendererMixin",
