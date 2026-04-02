@@ -185,7 +185,8 @@ public final class ClientChunkManager {
             return 10_000.0f;
         }
 
-        double invLen = MathHelper.fastInverseSqrt((float) distSq);
+        // Evita uso de API deprecated em MathHelper.fastInverseSqrt (1.21.9).
+        double invLen = 1.0D / Math.sqrt(distSq);
         double dot = (dx * lookX + dz * lookZ) * invLen;
 
         float visibilityBoost = isVisible ? 40.0f : 0.0f;
