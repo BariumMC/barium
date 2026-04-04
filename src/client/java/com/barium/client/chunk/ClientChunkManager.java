@@ -1,6 +1,7 @@
 package com.barium.client.chunk;
 
 import com.barium.client.util.ChunkRenderManager;
+import com.barium.config.BariumConfig;
 import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.network.ClientPlayerEntity;
@@ -29,6 +30,10 @@ public final class ClientChunkManager {
     private static final int HORIZONTAL_RADIUS_CHUNKS = 12;
     private static final int VERTICAL_RANGE_SECTIONS = 8;
     private static final int MAX_MESH_BUILDS_PER_FRAME = 12;
+    private static final int HORIZONTAL_RADIUS_SQ = HORIZONTAL_RADIUS_CHUNKS * HORIZONTAL_RADIUS_CHUNKS;
+    private static final float NEAR_VISIBLE_PRIORITY_THRESHOLD = 80.0f;
+    private static final int FULL_UPDATE_NEAR_RADIUS_CHUNKS = 8;
+    private static final int FULL_UPDATE_NEAR_RADIUS_SQ = FULL_UPDATE_NEAR_RADIUS_CHUNKS * FULL_UPDATE_NEAR_RADIUS_CHUNKS;
 
     private final Long2ObjectOpenHashMap<ChunkRenderState> chunkStates = new Long2ObjectOpenHashMap<>();
     private final Long2ObjectOpenHashMap<SectionRenderState[]> sectionStates = new Long2ObjectOpenHashMap<>();
@@ -37,6 +42,12 @@ public final class ClientChunkManager {
 
     private Frustum frustum;
     private int frameId;
+    private int lastFullUpdateFrame = Integer.MIN_VALUE;
+    private double lastCameraX;
+    private double lastCameraY;
+    private double lastCameraZ;
+    private float lastPlayerYaw;
+    private float lastPlayerPitch;
 
     public static ClientChunkManager getInstance() {
         return INSTANCE;
@@ -58,18 +69,34 @@ public final class ClientChunkManager {
 
         frameId++;
         meshBuildQueue.clear();
+        ChunkRenderManager renderManager = ChunkRenderManager.getInstance();
+        Vec3d cameraPos = camera.getPos();
+
+        if (shouldSkipFullUpdate(cameraPos, player)) {
+            scheduleMeshBuilds();
+            return;
+        }
+        cacheUpdateSnapshot(cameraPos, player);
+        lastFullUpdateFrame = frameId;
 
         ChunkPos center = player.getChunkPos();
         Vec3d look = player.getRotationVec(1.0F);
+        final double lookX = look.x;
+        final double lookZ = look.z;
         int cameraSectionY = MathHelper.floor(camera.getPos().y) >> 4;
         int bottomSection = world.getBottomY() >> 4;
 
         for (int dx = -HORIZONTAL_RADIUS_CHUNKS; dx <= HORIZONTAL_RADIUS_CHUNKS; dx++) {
+            int dxSq = dx * dx;
             for (int dz = -HORIZONTAL_RADIUS_CHUNKS; dz <= HORIZONTAL_RADIUS_CHUNKS; dz++) {
-                double dist = Math.sqrt(dx * dx + dz * dz);
-                if (dist > HORIZONTAL_RADIUS_CHUNKS) {
+                int distSq = dxSq + (dz * dz);
+                if (distSq > HORIZONTAL_RADIUS_SQ) {
                     continue; // cylinder base (circle) in horizontal plane
                 }
+                if (!shouldProcessChunkThisFrame(distSq, center.x + dx, center.z + dz)) {
+                    continue;
+                }
+                double dist = Math.sqrt(distSq);
 
                 int chunkX = center.x + dx;
                 int chunkZ = center.z + dz;
@@ -80,19 +107,32 @@ public final class ClientChunkManager {
                     chunkStates.put(key, renderState);
                 }
 
-                boolean chunkVisible = ChunkRenderManager.getInstance().isChunkInFrustum(chunkX, chunkZ);
-                float score = computePriorityScore(dx, dz, dist, look, chunkVisible);
+                boolean chunkVisible = renderManager.isChunkInFrustum(chunkX, chunkZ);
+                float score = computePriorityScore(dx, dz, dist, distSq, lookX, lookZ, chunkVisible);
                 renderState.setVisible(chunkVisible);
                 renderState.setPriorityScore(score);
 
-                updateVisibleChunks(world, chunkX, chunkZ, key, cameraSectionY, bottomSection, renderState);
+                if (!chunkVisible && score < 40.0f) {
+                    continue;
+                }
+
+                updateVisibleChunks(world, renderManager, chunkX, chunkZ, key, cameraSectionY, bottomSection, renderState);
             }
         }
 
         scheduleMeshBuilds();
     }
 
-    public void updateVisibleChunks(ClientWorld world, int chunkX, int chunkZ, long chunkKey, int cameraSectionY, int bottomSection, ChunkRenderState chunkState) {
+    public void updateVisibleChunks(
+            ClientWorld world,
+            ChunkRenderManager renderManager,
+            int chunkX,
+            int chunkZ,
+            long chunkKey,
+            int cameraSectionY,
+            int bottomSection,
+            ChunkRenderState chunkState
+    ) {
         WorldChunk chunk = world.getChunk(chunkX, chunkZ);
         if (chunk == null) {
             return;
@@ -107,6 +147,10 @@ public final class ClientChunkManager {
             }
             sectionStates.put(chunkKey, states);
         }
+
+        boolean chunkQueuedForBuild = false;
+        boolean nearVisibleChunk = chunkState.priorityScore() > NEAR_VISIBLE_PRIORITY_THRESHOLD;
+        boolean chunkVisible = chunkState.isVisible();
 
         for (int i = 0; i < sections.length; i++) {
             ChunkSection section = sections[i];
@@ -123,15 +167,22 @@ public final class ClientChunkManager {
             boolean inVerticalRange = verticalDistance <= VERTICAL_RANGE_SECTIONS;
             sectionState.setInVerticalRange(inVerticalRange);
 
-            boolean sectionVisible = inVerticalRange
-                && chunkState.isVisible()
-                && ChunkRenderManager.getInstance().isSectionInFrustum(chunkX, sectionY, chunkZ);
+            boolean sectionVisible = false;
+            if (inVerticalRange) {
+                if (chunkVisible) {
+                    sectionVisible = renderManager.isSectionInFrustum(chunkX, sectionY, chunkZ);
+                } else if (BariumConfig.C.ENABLE_PREDICTIVE_OCCLUSION_CULLING && nearVisibleChunk) {
+                    sectionVisible = renderManager.isSectionPredictedVisible(chunkX, sectionY, chunkZ);
+                }
+            }
 
             sectionState.setVisible(sectionVisible);
-            sectionState.setNeedsMeshUpdate(sectionVisible || (inVerticalRange && chunkState.priorityScore() > 80.0f));
+            boolean needsMesh = sectionVisible || (inVerticalRange && nearVisibleChunk);
+            sectionState.setNeedsMeshUpdate(needsMesh);
 
-            if (sectionState.needsMeshUpdate()) {
+            if (needsMesh && !chunkQueuedForBuild && chunkState.markQueuedThisFrame(frameId)) {
                 meshBuildQueue.add(chunkState);
+                chunkQueuedForBuild = true;
             }
         }
     }
@@ -158,13 +209,14 @@ public final class ClientChunkManager {
         return state.priorityScore() >= 40.0f;
     }
 
-    private float computePriorityScore(int dx, int dz, double dist, Vec3d look, boolean isVisible) {
+    private float computePriorityScore(int dx, int dz, double dist, int distSq, double lookX, double lookZ, boolean isVisible) {
         if (dx == 0 && dz == 0) {
             return 10_000.0f;
         }
 
-        Vec3d direction = new Vec3d(dx, 0.0, dz).normalize();
-        double dot = look.dotProduct(direction);
+        // Evita uso de API deprecated em MathHelper.fastInverseSqrt (1.21.9).
+        double invLen = 1.0D / Math.sqrt(distSq);
+        double dot = (dx * lookX + dz * lookZ) * invLen;
 
         float visibilityBoost = isVisible ? 40.0f : 0.0f;
         float directionBoost = (float) (dot * 20.0);
@@ -177,5 +229,37 @@ public final class ClientChunkManager {
         sectionStates.clear();
         meshBuildQueue.clear();
         frustum = null;
+        lastFullUpdateFrame = Integer.MIN_VALUE;
+    }
+
+    private boolean shouldSkipFullUpdate(Vec3d cameraPos, ClientPlayerEntity player) {
+        if (lastFullUpdateFrame == Integer.MIN_VALUE) return false;
+
+        double dx = cameraPos.x - lastCameraX;
+        double dy = cameraPos.y - lastCameraY;
+        double dz = cameraPos.z - lastCameraZ;
+        double movementSq = dx * dx + dy * dy + dz * dz;
+        boolean stablePosition = movementSq < 0.02 * 0.02;
+        boolean stableRotation = Math.abs(player.getYaw() - lastPlayerYaw) < 0.5f
+                && Math.abs(player.getPitch() - lastPlayerPitch) < 0.5f;
+
+        return stablePosition && stableRotation && (frameId - lastFullUpdateFrame) < 2;
+    }
+
+    private void cacheUpdateSnapshot(Vec3d cameraPos, ClientPlayerEntity player) {
+        lastCameraX = cameraPos.x;
+        lastCameraY = cameraPos.y;
+        lastCameraZ = cameraPos.z;
+        lastPlayerYaw = player.getYaw();
+        lastPlayerPitch = player.getPitch();
+    }
+
+    private boolean shouldProcessChunkThisFrame(int distSq, int chunkX, int chunkZ) {
+        if (distSq <= FULL_UPDATE_NEAR_RADIUS_SQ) {
+            return true;
+        }
+        // Amostragem em checkerboard para chunks mais distantes:
+        // reduz custo de update sem impacto visual relevante em movimento.
+        return ((chunkX + chunkZ + frameId) & 1) == 0;
     }
 }

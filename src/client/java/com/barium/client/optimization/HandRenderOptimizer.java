@@ -3,13 +3,9 @@ package com.barium.client.optimization;
 import com.barium.config.BariumConfig;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.network.ClientPlayerEntity;
+import org.lwjgl.glfw.GLFW;
 
 public final class HandRenderOptimizer {
-    private static int frameCounter = 0;
-    private static float lastYaw = 0.0f;
-    private static float lastPitch = 0.0f;
-    private static boolean lastFrameSkipped = false;
-
     private HandRenderOptimizer() {
     }
 
@@ -24,44 +20,17 @@ public final class HandRenderOptimizer {
             return false;
         }
 
-        if (player.isUsingItem() || player.isBlocking() || player.isRiding()) {
-            lastFrameSkipped = false;
+        if (player.isUsingItem() || player.isBlocking() || player.isRiding() || player.isSpectator()) {
             return false;
         }
 
-        // Estratégia adaptativa: só tenta economizar durante rotação rápida + FPS baixo,
-        // evitando skip consecutivo para eliminar o efeito de "piscar" perceptível.
-        float yaw = player.getYaw();
-        float pitch = player.getPitch();
-        float deltaYaw = Math.abs(yaw - lastYaw);
-        float deltaPitch = Math.abs(pitch - lastPitch);
-        if (deltaYaw > 180.0f) {
-            deltaYaw = 360.0f - deltaYaw;
+        // Política anti-flicker: nunca pular mão em foco.
+        // Só economiza quando a janela não está ativa/minimizada.
+        if (!client.isWindowFocused()) {
+            return true;
         }
 
-        lastYaw = yaw;
-        lastPitch = pitch;
-
-        float angularDelta = deltaYaw + deltaPitch;
-        int fps = Math.max(1, client.getCurrentFps());
-        boolean underPressure = fps < 55;
-        boolean rotatingFast = angularDelta > 4.0f;
-
-        if (!underPressure || !rotatingFast) {
-            lastFrameSkipped = false;
-            return false;
-        }
-
-        int skipFrames = Math.max(1, BariumConfig.C.HAND_RENDER_SKIP_FRAMES);
-        frameCounter = (frameCounter + 1) % (skipFrames + 1);
-        boolean shouldSkipByCadence = frameCounter != 0;
-
-        if (!shouldSkipByCadence || lastFrameSkipped) {
-            lastFrameSkipped = false;
-            return false;
-        }
-
-        lastFrameSkipped = true;
-        return true;
+        long handle = client.getWindow().getHandle();
+        return handle != 0L && GLFW.glfwGetWindowAttrib(handle, GLFW.GLFW_ICONIFIED) == GLFW.GLFW_TRUE;
     }
 }

@@ -14,7 +14,6 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 @Mixin(DrawContext.class)
 public class DrawContextMixin {
-
     @Inject(method = "drawItem(Lnet/minecraft/item/ItemStack;II)V", at = @At("HEAD"), cancellable = true, require = 0)
     private void barium$skipEmptyItemDraw(ItemStack stack, int x, int y, CallbackInfo ci) {
         if (!BariumConfig.C.ENABLE_GUI_OPTIMIZATION) return;
@@ -152,4 +151,5 @@ public class DrawContextMixin {
 
         return maxX <= 0 || minX >= windowWidth || maxY <= 0 || minY >= windowHeight;
     }
+
 }

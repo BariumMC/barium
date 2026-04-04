@@ -16,6 +16,10 @@ public class ChunkRenderManager {
 
     private Frustum frustum;
     private Vec3d lastCameraPos;
+    private float lastYaw = Float.NaN;
+    private float lastPitch = Float.NaN;
+    private static final double CACHE_REUSE_POS_DELTA_SQ = 0.05 * 0.05;
+    private static final float CACHE_REUSE_ROT_DELTA = 0.75f;
 
     private final Long2BooleanOpenHashMap chunkVisibilityCache = new Long2BooleanOpenHashMap();
     private final Long2BooleanOpenHashMap sectionVisibilityCache = new Long2BooleanOpenHashMap();
@@ -29,7 +33,7 @@ public class ChunkRenderManager {
     }
 
     public void beginFrame(Vec3d cameraPos) {
-        if (BariumConfig.C.ENABLE_FRAME_VISIBILITY_CACHE) {
+        if (BariumConfig.C.ENABLE_FRAME_VISIBILITY_CACHE && shouldInvalidateVisibilityCache(cameraPos)) {
             chunkVisibilityCache.clear();
             sectionVisibilityCache.clear();
         }
@@ -155,6 +159,33 @@ public class ChunkRenderManager {
         }
 
         lastCameraPos = cameraPos;
+    }
+
+    private boolean shouldInvalidateVisibilityCache(Vec3d cameraPos) {
+        MinecraftClient client = MinecraftClient.getInstance();
+        if (client == null || client.player == null || cameraPos == null) {
+            return true;
+        }
+
+        if (lastCameraPos == null || Float.isNaN(lastYaw) || Float.isNaN(lastPitch)) {
+            lastYaw = client.player.getYaw();
+            lastPitch = client.player.getPitch();
+            return true;
+        }
+
+        float yaw = client.player.getYaw();
+        float pitch = client.player.getPitch();
+        float yawDelta = Math.abs(yaw - lastYaw);
+        float pitchDelta = Math.abs(pitch - lastPitch);
+        double movementSq = cameraPos.squaredDistanceTo(lastCameraPos);
+
+        boolean invalidate = movementSq > CACHE_REUSE_POS_DELTA_SQ
+                || yawDelta > CACHE_REUSE_ROT_DELTA
+                || pitchDelta > CACHE_REUSE_ROT_DELTA;
+
+        lastYaw = yaw;
+        lastPitch = pitch;
+        return invalidate;
     }
 
     private boolean computeChunkInFrustum(int chunkX, int chunkZ) {

@@ -1,6 +1,6 @@
 package com.barium.client.mixin;
 
-import com.barium.config.BariumConfig;
+import com.barium.client.optimization.TickOptimizer;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.world.ClientWorld;
 import net.minecraft.entity.Entity;
@@ -13,22 +13,12 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 public abstract class ClientWorldMixin {
 
     @Inject(method = "tickEntity(Lnet/minecraft/entity/Entity;)V", at = @At("HEAD"), cancellable = true)
-    private void barium$smartTickCulling(Entity entity, CallbackInfo ci) {
-        if (!BariumConfig.C.ENABLE_ENTITY_TICK_CULLING) return;
-        
-        // Jogadores e veículos sempre processam normalmente
-        if (entity.isPlayer() || entity.hasPassengers()) return;
-
+    private void barium$adaptiveEntityTickCulling(Entity entity, CallbackInfo ci) {
         MinecraftClient client = MinecraftClient.getInstance();
         if (client.player == null) return;
 
-        double distSq = entity.squaredDistanceTo(client.player);
-        
-        // Se estiver além de 64 blocos, processa apenas 25% dos ticks
-        if (distSq > 4096.0) {
-            if (entity.age % 4 != 0) {
-                ci.cancel();
-            }
+        if (TickOptimizer.shouldSkipEntityTick(entity, client.player, client)) {
+            ci.cancel();
         }
     }
 
@@ -39,11 +29,10 @@ public abstract class ClientWorldMixin {
      * Isso é aplicado apenas quando a opção REDUCE_AMBIENT_PARTICLES está ativa.
      */
     @Inject(method = "doRandomBlockDisplayTicks", at = @At("HEAD"), cancellable = true)
-    private void barium$throttleRandomBlockDisplayTicks(CallbackInfo ci) {
-        if (!BariumConfig.C.REDUCE_AMBIENT_PARTICLES) return;
-
+    private void barium$adaptiveRandomBlockDisplayTicks(CallbackInfo ci) {
         ClientWorld world = (ClientWorld) (Object) this;
-        if ((world.getTime() & 1L) != 0L) {
+        MinecraftClient client = MinecraftClient.getInstance();
+        if (TickOptimizer.shouldSkipRandomBlockDisplayTicks(world, client)) {
             ci.cancel();
         }
     }
