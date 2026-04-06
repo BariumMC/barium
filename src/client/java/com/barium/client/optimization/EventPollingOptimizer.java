@@ -28,17 +28,27 @@ public final class EventPollingOptimizer {
     }
 
     public static boolean shouldSkipPollEvents(MinecraftClient client) {
-        if (!BariumConfig.C.ENABLE_BACKGROUND_EVENT_THROTTLING) return false;
         if (client == null) return false;
 
         boolean focused = client.isWindowFocused();
         long now = Util.getMeasuringTimeMs();
 
         if (focused) {
-            wasFocused = true;
-            unfocusedSinceMs = -1L;
-            return false;
+            if (!wasFocused) {
+                wasFocused = true;
+                unfocusedSinceMs = -1L;
+                return false;
+            }
+
+            if (!BariumConfig.C.ENABLE_FOCUSED_EVENT_THROTTLING) {
+                return false;
+            }
+
+            long interval = Math.max(0L, BariumConfig.C.FOCUSED_EVENT_POLL_INTERVAL_MS);
+            return now - lastPollMs < interval;
         }
+
+        if (!BariumConfig.C.ENABLE_BACKGROUND_EVENT_THROTTLING) return false;
 
         if (wasFocused) {
             wasFocused = false;

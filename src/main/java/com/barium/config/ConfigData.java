@@ -91,6 +91,8 @@ public class ConfigData {
     public boolean REDUCE_AMBIENT_PARTICLES = true;
     public boolean ENABLE_HOPPER_TICK_CULLING = true;
     public boolean ENABLE_BACKGROUND_EVENT_THROTTLING = true;
+    public boolean ENABLE_FOCUSED_EVENT_THROTTLING = true;
+    public int FOCUSED_EVENT_POLL_INTERVAL_MS = 5;
 
     // ================== Fast Math ================== //
     public boolean ENABLE_FAST_MATH = true;
