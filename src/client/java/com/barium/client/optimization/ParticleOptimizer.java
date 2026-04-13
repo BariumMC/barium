@@ -28,4 +28,12 @@ public class ParticleOptimizer {
     public static void incrementParticleCount() {
         particleCount.incrementAndGet();
     }
+
+    public static void decrementParticleCount() {
+        particleCount.updateAndGet(count -> Math.max(0, count - 1));
+    }
+
+    public static void resetParticleCount() {
+        particleCount.set(0);
+    }
 }

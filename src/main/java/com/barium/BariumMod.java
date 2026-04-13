@@ -1,4 +1,3 @@
-// --- Edite o arquivo: src/main/java/com/barium/BariumMod.java ---
 package com.barium;
 
 import com.barium.config.ConfigManager;
@@ -13,8 +12,8 @@ public class BariumMod implements ModInitializer {
     @Override
     public void onInitialize() {
         LOGGER.info("Inicializando Barium...");
-        
-        // Carrega a configuração do arquivo assim que o mod é inicializado.
+
+        // Este mod é client-side. No common initializer mantemos apenas setup seguro/agnóstico.
         ConfigManager.loadConfig();
 
         LOGGER.info("Barium inicializado com sucesso!");

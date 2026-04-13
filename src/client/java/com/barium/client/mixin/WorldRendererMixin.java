@@ -1,5 +1,6 @@
 package com.barium.client.mixin;
 
+import com.barium.client.chunk.ClientChunkManager;
 import com.barium.client.optimization.EntityOutlineOptimizer;
 import com.barium.client.optimization.ChunkUploadThrottler;
 import com.barium.client.util.ChunkRenderManager;
@@ -81,9 +82,18 @@ public abstract class WorldRendererMixin {
     @Inject(method = "updateChunks(Lnet/minecraft/client/render/Camera;)V", at = @At("HEAD"))
     private void barium$beforeUpdateChunks(Camera camera, CallbackInfo ci) {
         // 1. Atualiza o Frustum Culling
+        Frustum frustum = ((WorldRendererAccessor) this).getFrustum();
         if (BariumConfig.C.ENABLE_FRUSTUM_CHUNK_CULLING) {
-            Frustum frustum = ((WorldRendererAccessor) this).getFrustum();
             ChunkRenderManager.getInstance().setFrustum(frustum);
+        } else {
+            ChunkRenderManager.getInstance().setFrustum(null);
+        }
+
+        ChunkRenderManager.getInstance().beginFrame(camera.getPos());
+
+        if (client.player != null) {
+            ClientChunkManager.getInstance().setFrustum(frustum);
+            ClientChunkManager.getInstance().update(camera, client.player);
         }
 
         // 2. Atualiza o Flood Fill (se ativado)

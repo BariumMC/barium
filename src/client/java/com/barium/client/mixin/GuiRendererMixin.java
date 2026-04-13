@@ -15,14 +15,17 @@ public abstract class GuiRendererMixin {
 
     @Shadow @Final private List<?> draws;
 
-    @Inject(method = "render", at = @At("HEAD"))
+    @Inject(method = "render", at = @At("HEAD"), cancellable = true)
     private void barium$preRenderOptimize(CallbackInfo ci) {
         GuiRendererOptimizer.preRenderOptimize();
+        if (GuiRendererOptimizer.shouldSkipGuiRender()) {
+            ci.cancel();
+        }
     }
 
     /**
-     * Otimização Crítica: renderPreparedDraws consome muita CPU iterando listas.
-     * Se o otimizador detectar que a tela está estática, cancelamos totalmente.
+     * Caminho conservador: só cancelamos renderPreparedDraws quando não há draws.
+     * Evita sobrecarga desnecessária sem reintroduzir flicker da GUI.
      */
     @Inject(method = "renderPreparedDraws", at = @At("HEAD"), cancellable = true)
     private void barium$optimizeRenderPreparedDraws(CallbackInfo ci) {

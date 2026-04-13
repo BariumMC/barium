@@ -77,6 +77,7 @@ public abstract class ChunkRenderMixin {
             }
         }
 
+
         // 2. Frustum Culling (Campo de Visão)
         if (BariumConfig.C.ENABLE_FRUSTUM_CHUNK_CULLING) {
             if (!ChunkRenderManager.getInstance().isChunkInFrustum(chunkX, chunkZ)) {

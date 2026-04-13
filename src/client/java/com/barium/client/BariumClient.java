@@ -1,6 +1,8 @@
 package com.barium.client;
 
 import com.barium.BariumMod;
+import com.barium.client.chunk.ClientChunkManager;
+import com.barium.client.optimization.ParticleOptimizer;
 import com.barium.client.util.ChunkRenderManager;
 import com.barium.client.util.ChunkVisibilityManager;
 import net.fabricmc.api.ClientModInitializer;
@@ -42,6 +44,8 @@ public class BariumClient implements ClientModInitializer {
                 ChunkVisibilityManager.getInstance().clear();
                 // CORREÇÃO: A chamada ao método clear() agora funcionará.
                 this.chunkRenderManager.clear();
+                ClientChunkManager.getInstance().clear();
+                ParticleOptimizer.resetParticleCount();
             }
         });
 

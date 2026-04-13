@@ -13,6 +13,13 @@ public class ConfigData {
     public boolean ENABLE_ADVANCED_SECTION_CULLING = false;
     public boolean ENABLE_ENCLOSED_SECTION_CULLING = false;
     public boolean ENABLE_EMPTY_CHUNK_SECTION_CULLING = true;
+    public boolean ENABLE_PER_SECTION_FRUSTUM_CULLING = true;
+    public boolean ENABLE_FRAME_VISIBILITY_CACHE = true;
+    public boolean ENABLE_PREDICTIVE_OCCLUSION_CULLING = true;
+    public int PREDICTIVE_LOOKAHEAD_MS = 100;
+    public int PREDICTIVE_HORIZONTAL_RADIUS_SECTIONS = 8;
+    public int PREDICTIVE_VERTICAL_RADIUS_SECTIONS = 3;
+    public int PREDICTIVE_FORWARD_EXTRA_SECTIONS = 4;
 
     // ================== Forest / Tree Optimizations ================== //
     public boolean ENABLE_FOREST_SECTION_CULLING = true;
@@ -36,6 +43,10 @@ public class ConfigData {
     public boolean ENABLE_DISTANT_GEOMETRY_CULLING = true;
     public int DISTANT_GEOMETRY_CULL_DISTANCE = 32; 
     public boolean DISABLE_DISTANT_TRANSLUCENCY_SORTING = true;
+    public boolean CACHE_TRANSLUCENCY_SORT_WHILE_STABLE = true;
+    public double TRANSLUCENCY_STABLE_CAMERA_DELTA = 0.125;
+    public int DISTANT_DETAIL_CULL_DISTANCE = 64;
+    public boolean ENABLE_AGGRESSIVE_DISTANT_DETAIL_CULLING = true;
 
     // ================== Culling & Level of Detail (LOD) ================== //
     public boolean ENABLE_ENTITY_CULLING = true;
@@ -71,12 +82,17 @@ public class ConfigData {
     public boolean DISABLE_TEXTURE_ANIMATIONS = false;
     public boolean ENABLE_GUI_OPTIMIZATION = true;
     public int MIPMAP_LEVEL_OVERRIDE = 0;
+    public boolean ENABLE_HAND_RENDER_THROTTLING = false;
+    public int HAND_RENDER_SKIP_FRAMES = 1;
 
     // ================== Game Logic & Tick Optimizations ================== //
     public boolean ENABLE_ENTITY_TICK_CULLING = true;
     public double ENTITY_TICK_CULLING_DISTANCE_SQ = 64 * 64;
     public boolean REDUCE_AMBIENT_PARTICLES = true;
     public boolean ENABLE_HOPPER_TICK_CULLING = true;
+    public boolean ENABLE_BACKGROUND_EVENT_THROTTLING = true;
+    public boolean ENABLE_FOCUSED_EVENT_THROTTLING = true;
+    public int FOCUSED_EVENT_POLL_INTERVAL_MS = 5;
 
     // ================== Fast Math ================== //
     public boolean ENABLE_FAST_MATH = true;
